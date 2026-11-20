@@ -67,7 +67,7 @@ Object.assign(VP.L, {
   lf_night: ['Anoiteceu: as luzes da cidade acenderam', 'Night has fallen: the city lights are on'], lf_morning: ['Bom dia, cidade!', 'Good morning, city!'],
   // phone menu / map / activities / photo / radio
   lf_menu: ['Celular', 'Phone'], lf_map: ['Mapa', 'Map'], lf_acts: ['Atividades', 'Activities'], lf_photoMode: ['Foto', 'Photo'], lf_actsNear: ['Atividades perto de você', 'Activities near you'],
-  lf_setWp: ['Toque no mapa para marcar o destino', 'Tap the map to set a waypoint'], lf_wpSet: ['Destino marcado', 'Waypoint set'], lf_wpClear: ['Limpar destino', 'Clear waypoint'], lf_wpHere: ['Você chegou ao destino', 'You have arrived'],
+  lf_setWp: ['Toque no mapa para marcar o destino', 'Tap the map to set a waypoint'], lf_wpSet: ['Destino marcado', 'Waypoint set'], lf_wpClear: ['Limpar destino', 'Clear waypoint'], lf_wpHere: ['Você chegou ao destino', 'You have arrived'], lf_wpNoWay: ['Sem caminho até lá (bairro fechado)', 'No way there yet (closed neighbourhood)'],
   lf_legFood: ['Comida', 'Food'], lf_legShop: ['Lojas', 'Shops'], lf_legClinic: ['Clínica', 'Clinic'], lf_legMission: ['Missões', 'Missions'], lf_legFriend: ['Amigos', 'Friends'], lf_legFun: ['Diversão', 'Fun'], lf_legYou: ['Você', 'You'],
   lf_go: ['Ir', 'Go'], lf_zoom: ['Zoom', 'Zoom'], lf_m: ['m', 'm'],
   lf_a_box: ['Caixa de papelão (dormir e salvar)', 'Cardboard box (sleep and save)'], lf_a_table: ['Mesas do restaurante (derrubar coisas)', 'Restaurant tables (knock things off)'], lf_a_sofa: ['Sofá da vitrine (arranhar)', 'Showroom sofa (scratch)'],

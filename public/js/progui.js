@@ -123,7 +123,7 @@ addEventListener('keydown', e => {
   const G = Game.G, key = (e.key || '').toLowerCase(); if (!hudOn(G)) return;
   if (key === '4' || key === '5' || key === '6') I.pressed['q' + (+key - 4)] = true;
   else if (key === 'b' || key === 'i') I.pressed.inv = true;
-  else if (key === 't' && G.free) I.pressed.acts = true;
+  // T belongs to the city-life phone menu (which lists Atividades too); the activities button on touch still opens this screen
   else if (key === 'e' && G.edge && G.free && !G.ctx) I.pressed.edge = true;
 });
 

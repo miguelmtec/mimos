@@ -182,7 +182,9 @@ Life.activities = function (G) {
   for (const p of L.props) if (ACTS[p.k]) push(ACTS[p.k][0], tr(ACTS[p.k][1]), p.x, p.y, 'fun');
   for (const c of L.animals) if (c.kind === 'cat' && !c.gang && !c.out) push(c.celeb ? '⭐' : c.friend ? '💛' : '🐱', c.celeb ? c.name : tr('lf_a_cat', c.name), c.x, c.y, 'friend');
   if (G.markers) for (const m of G.markers) { if (m.k === 'mission' || m.k === 'race') { const mm = VP.Missions.get(m.n); push(m.k === 'race' ? '🏁' : '▶', mm ? VP.mname(mm) : tr('lf_a_mission'), m.x, m.y, 'mission'); } else if (m.k === 'shop') push('🛍', tr('shop'), m.x, m.y, 'shop'); else if (m.k === 'npc') push('💬', m.label, m.x, m.y, 'mission'); else if (/clinic|vet/.test(m.k)) push('➕', m.label || tr('lf_legClinic'), m.x, m.y, 'clinic'); }
-  out.sort((p, q) => p.d - q.d); return out;
+  // places inside a neighbourhood that is still fenced off cannot be walked to: leave them out of the list
+  const lk = G.lockedHoods, res = lk && !G.W.real ? out.filter(o => !lk[VP.World.distAt(G.W, o.x, o.y)]) : out;
+  res.sort((p, q) => p.d - q.d); return res;
 };
 // puddles sit at fixed spots (a hash of the 192 px cell), so the renderer and the splash check agree without sharing state
 LL.puddleAt = function (cx, cy) { let h = (cx * 73856093) ^ (cy * 19349663); h = (h ^ (h >>> 13)) >>> 0; if (h % 5 > 1) return null; return { x: (cx + 0.2 + ((h >>> 3) % 60) / 100) * 192, y: (cy + 0.2 + ((h >>> 9) % 60) / 100) * 192, r: 22 + (h >>> 15) % 20 }; };

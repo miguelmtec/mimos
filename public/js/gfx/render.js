@@ -181,11 +181,12 @@ function syncRemote(f, dt) {
     let key = f.carKey; if (!key || key.type !== f.car) key = f.carKey = { kind: 'rcar', type: f.car };
     const K = VP.Art.CARS[f.car] || VP.Art.CARS.sedan, o = obj(key, () => buildCar(K === VP.Art.CARS[f.car] ? f.car : 'sedan', K, null));
     o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); o.rotation.y = Math.PI / 2 - f.ry; if (o.userData.heads) o.userData.heads.visible = false;
-    return;
+    if (!K.conv) return;                                   // closed cars hide the driver; in a convertible the cat rides in the open
   }
   const o = obj(f, () => buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0));
-  turn(o, f.ry || 0, dt * 12);
-  o.position.set(f.x * S, hAt(f.x, f.y), f.y * S);
+  turn(o, f.ry || 0, f.car ? 1 : dt * 12);
+  o.position.set(f.x * S, hAt(f.x, f.y) + (f.car ? 0.42 : 0), f.y * S);
+  if (f.car) { const st = o.userData.st || (o.userData.st = {}); st.t = f.t; st.walk = 0; st.hop = 0; st.spin = 0; st.sit = 1; st.wave = 0; st.mouth = 0; animCat(o, st); return; }
   { const dx = o.position.x - camera.position.x, dz = o.position.z - camera.position.z; o.visible = dx * dx + dz * dz > 6.2; }
   const st = o.userData.st || (o.userData.st = {}); st.t = f.t; st.walk = f.walk; st.hop = 0; st.spin = 0; st.sit = 0; st.wave = 0; st.mouth = 0;
   if (f.em) { const k = f.em.k, et = f.t; if (k === 'dance') { st.walk = 1; st.hop = Math.abs(Math.sin(et * 8)) * 0.38; st.spin = Math.sin(et * 4.5) * 1.1; } else if (k === 'sit') st.sit = 1; else if (k === 'wave') { st.wave = 1; st.hop = Math.abs(Math.sin(et * 6)) * 0.08; } else st.mouth = 0.8; }

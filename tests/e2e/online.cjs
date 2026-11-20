@@ -1,6 +1,6 @@
 // Cidade Online end to end: two browsers in the same room, against the REAL api/online handler on an in-memory
 // database (tests/helpers/online-dev-server.mjs) and, for the "ws" section, the real real-time server.
-//   node tests/e2e/online.cjs [poll|fallback|ws|shots]      screenshots -> $VP_SHOTS (default /tmp)
+//   node tests/e2e/online.cjs [poll|desktop|extras|fallback|ws|shots]      screenshots -> $VP_SHOTS (default /tmp)
 const L = require('./lib.cjs');
 const only = process.argv[2] || '';
 const out = [], ok = (n, c, extra) => { out.push((c ? 'PASS ' : 'FAIL ') + n + (c || extra === undefined ? '' : '  -> ' + JSON.stringify(extra))); };
@@ -30,10 +30,10 @@ const spotInView = () => { const G = __vp.G, c = G.cats[G.active], H = VP.HUD; l
 const track = (page, ms) => page.evaluate(ms => new Promise(res => { const xs = []; const iv = setInterval(() => { const r = [...VP.Online.remotes.values()][0]; if (r && r.f) xs.push(Math.round(r.f.x * 10) / 10); }, 80); setTimeout(() => { clearInterval(iv); res(xs); }, ms); }), ms);
 
 // a second player without a browser: it talks to the same API (ticket + ticks), which is all a client is to the server
-async function robot(S, cat) {
+async function robot(S, cat, room) {
   const H = { origin: S.url.replace(/\/$/, ''), 'content-type': 'application/json' };
   const tk = await (await fetch(S.url + 'api/online/ticket?cat=' + cat, { headers: H })).json();
-  const st = { room: 'city', x: 1200, z: 4100, ry: 0, anim: 'idle' };
+  const st = { room: room || 'city', x: 1200, z: 4100, ry: 0, anim: 'idle' };
   const bot = { you: tk.you, last: null };
   bot.tick = async over => { Object.assign(st, { emote: undefined, phrase: undefined, car: undefined, anim: 'idle' }, over); const r = await fetch(S.url + 'api/online/tick', { method: 'POST', headers: H, body: JSON.stringify({ ticket: tk.ticket, ...st }) }); bot.last = await r.json(); if (bot.last.room) st.room = bot.last.room; return bot.last; };
   await bot.tick({});
@@ -203,7 +203,7 @@ async function pair(S, label, wantTransport) {
     const S = await startDevServer(); L.URL = S.url;
     const D = await L.open(false, { routes }); D.mobile = false;
     await D.page.evaluate(() => { VP.Audio.sfx = () => {}; });
-    await L.shot(D.page, 'online-d-title');
+    await sleep(1500); await L.shot(D.page, 'online-d-title');
     ok('desktop enters through the menu', await enterByMenu(D, 'mimo'));
     const bot = await robot(S, 'morticia');
     const spot = await D.page.evaluate(spotInView);
@@ -240,6 +240,40 @@ async function pair(S, label, wantTransport) {
     await D.page.evaluate(() => VP.UI.pause()); await sleep(300); await L.shot(D.page, 'online-d-pause');
     ok('desktop zero console errors', D.errors.length === 0, D.errors);
     await D.browser.close(); await S.close();
+  }
+
+  // ================= entries (menu, world map) and a real city =================
+  if (!only || only === 'extras' || only === 'shots') {
+    const S = await startDevServer(); L.URL = S.url;
+    for (const mobile of [true, false]) {
+      const P = await client(mobile), tag = mobile ? 'm' : 'd';
+      await sleep(1200);
+      if (mobile) await L.shot(P.page, 'online-m-title');
+      ok(`extras ${tag} the menu has the Cidade Online button`, await P.page.evaluate(() => { const b = document.querySelector('#s-title [data-act=online]'); if (!b) return false; const r = b.getBoundingClientRect(); return r.width > 120 && r.bottom <= innerHeight; }));
+      await P.page.evaluate(() => { VP.S.stars = { 1: 3 }; VP.S.unlocked = 2; VP.Tour.open(); });
+      await sleep(400); await L.shot(P.page, `online-${tag}-world`);
+      ok(`extras ${tag} the world map has the Cidade Online button`, await P.page.evaluate(() => !!document.querySelector('#s-world [data-act=online]')));
+      await tap(P.page, '#s-world [data-act=online]');
+      ok(`extras ${tag} it opens the lobby with the open cities`, await P.page.evaluate(() => VP.UI.screen === 'online' && [...document.querySelectorAll('#onroom option')].map(o => o.value).join() === 'city,miami,rio'));
+      // a real city is another room: Copacabana, with a scripted second cat already there
+      const bot = await robot(S, 'mimosa', 'rio');
+      await P.page.selectOption('#onroom', 'rio');
+      await tap(P.page, '[data-act=onEnter]');
+      ok(`extras ${tag} enters a real city online`, await until(P.page, () => VP.Online.state === 'on' && VP.Online.room === 'rio#1' && __vp.G.tour === 'rio', null, 30000), await info(P.page));
+      await sleep(4800);                                        // the arrival camera
+      const spot = await P.page.evaluate(spotInView);
+      await bot.tick({ x: spot.x, z: spot.y, phrase: 4, ps: 1 });
+      ok(`extras ${tag} and meets the cat that is there`, await until(P.page, () => [...VP.Online.remotes.values()].some(r => r.f && r.say), null, 12000));
+      ok(`extras ${tag} real-city online keeps the rules (no missions, no dogs)`, await P.page.evaluate(() => { const G = __vp.G; return G.markers.length === 0 && G.dogs.length === 0 && G.noPolice; }));
+      await sleep(400); await L.shot(P.page, `online-${tag}-rio`);
+      // going to another map from the pause menu leaves the room
+      await P.page.evaluate(() => VP.UI.free());
+      await sleep(500);
+      ok(`extras ${tag} going back to the solo city leaves the room`, (await info(P.page)).state === 'off' && !(await S.db.rows('vp_presence')).some(r => r.id !== bot.you.id));
+      ok(`extras ${tag} zero console errors`, P.errors.length === 0, P.errors);
+      await P.browser.close(); await S.db.reset();
+    }
+    await S.close();
   }
 
   // ================= failures: 503, mid-session outage, kill switch, full city =================

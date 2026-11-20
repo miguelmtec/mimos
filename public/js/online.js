@@ -444,7 +444,9 @@ function sheet(kind, arg) {
   else if (kind === 'list') { const rs = [...O.remotes.values()]; el.innerHTML = `<div class="obox"><div class="ohead"><b>🌐 ${esc(O.roomLabel())} · 👥 ${rs.length + 1}</b><button class="chip" data-o="close">✕</button></div><div class="orow me"><b>💛 ${esc(O.you ? O.you.name : '')}</b><span class="small">${t('on_you')}</span></div>${rs.length ? rs.map(row).join('') : `<p class="small">${t('on_aloneLong')}</p>`}<p class="small">🛡 ${t('on_safe')}</p><button class="btn ghost sm" data-o="leave">🚪 ${t('on_leave')}</button></div>`; }
   else if (kind === 'cat') { const r = O.remotes.get(arg); if (!r) { O.sheet = null; return; } el.innerHTML = `<div class="obox"><div class="ohead"><b>🐱 ${esc(r.name)}</b><button class="chip" data-o="close">✕</button></div>${row(r)}</div>`; }
   else if (kind === 'rep') { const r = O.remotes.get(arg); if (!r) { O.sheet = null; return; } el.innerHTML = `<div class="obox"><div class="ohead"><b>🚩 ${t('on_report')}: ${esc(r.name)}</b><button class="chip" data-o="close">✕</button></div><p class="small">${t('on_repWhy')}</p><div class="ogrid one">${REASONS.map(x => `<button class="ophrase" data-o="repSend" data-id="${esc(r.id)}" data-r="${x}">${t('on_r_' + x)}</button>`).join('')}</div><p class="small">${t('on_repNote')}</p></div>`; }
+  const born = performance.now();
   el.addEventListener('click', e => {
+    if (performance.now() - born < 350) return;               // the tap that opened the sheet must not press what appears under the finger
     const b = e.target.closest('[data-o]'); if (!b) { if (e.target === el) closeSheet(); return; }
     const o = b.dataset.o, id = b.dataset.id;
     VP.Audio.sfx('click');

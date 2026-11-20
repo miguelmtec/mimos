@@ -12,7 +12,8 @@ const until = async (page, fn, arg, ms = 12000) => { try { await page.waitForFun
 const tap = async (page, sel) => { await page.locator(sel).first().click({ force: true }); await page.waitForTimeout(250); };
 // tap on the HUD canvas (touch or mouse, whatever the context is)
 const hudTap = async (P, x, y) => { if (P.mobile) await P.page.touchscreen.tap(x, y); else await P.page.mouse.click(x, y); await P.page.waitForTimeout(300); };
-async function client(mobile) { const P = await L.open(mobile, { routes }); P.mobile = mobile; await P.page.evaluate(() => { VP.Audio.sfx = () => {}; }); return P; }
+// two software-rendered browsers share the CPU here: the lightest graphics keep the frame rate usable
+async function client(mobile) { const P = await L.open(mobile, { routes }); P.mobile = mobile; await P.page.evaluate(() => { VP.Audio.sfx = () => {}; VP.R3.setQuality(0); }); return P; }
 // through the menus, like a player: title -> Cidade Online -> pick who the others see -> enter
 async function enterByMenu(P, cat) {
   await tap(P.page, '[data-act=online]');
@@ -46,6 +47,7 @@ async function pair(S, label, wantTransport) {
   const x0 = b.remotes[0].x;
   const [, xs] = await Promise.all([walk(A.page, 150, 0, 4200), track(B.page, 6500)]);
   const moved = xs[xs.length - 1] - x0, distinct = new Set(xs).size, maxStep = Math.max(...xs.slice(1).map((v, i) => Math.abs(v - xs[i])));
+  if (process.env.VP_DEBUG) console.log(label, 'track', xs.join(' '));
   ok(P + 'B sees A move', moved > 450 && moved < 760, { moved });
   ok(P + 'movement is interpolated (many small steps)', distinct > 25 && maxStep < 75, { distinct, maxStep, samples: xs.length });
   const ax = await A.page.evaluate(() => __vp.G.cats[__vp.G.active].x);

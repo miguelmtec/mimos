@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "_doc": "Special rewards with controlled scarcity. cap of an item = ceil(active players in the last 30 days / ratio of its tier); unico = 1 per season. Tune ratios, chances and items here. Items are looks/trophies only, earned by play, never sold, no cash-out.",
+ "season": "2026-natal",
+ "ratios": { "raro": 10, "epico": 50, "lendario": 200 },
+ "limits": { "claimsPerDay": 20, "minMissionSeconds": 8 },
+ "consolation": { "coins": 150 },
+ "sources": { "mission": { "chance": 0.12, "premiumMult": 2, "tiers": { "raro": 75, "epico": 21, "lendario": 4 } } },
+ "vault": { "goal": 50, "eventMinutes": 60 },
+ "items": [
+  { "id": "coleira_neon", "tier": "raro", "icon": "📿", "name": { "pt": "Coleira Neon", "en": "Neon Collar" } },
+  { "id": "oculos_aviador", "tier": "raro", "icon": "🕶", "name": { "pt": "Óculos de Aviador", "en": "Aviator Shades" } },
+  { "id": "laco_estrela", "tier": "raro", "icon": "🎀", "name": { "pt": "Laço de Estrelas", "en": "Star Bow" } },
+  { "id": "gorro_natal", "tier": "raro", "icon": "🎅", "season": "2026-natal", "name": { "pt": "Gorro de Natal Neon", "en": "Neon Santa Hat" } },
+  { "id": "capa_aurora", "tier": "epico", "icon": "🧥", "name": { "pt": "Capa Aurora", "en": "Aurora Cape" } },
+  { "id": "asas_cristal", "tier": "epico", "icon": "🪽", "name": { "pt": "Asas de Cristal", "en": "Crystal Wings" } },
+  { "id": "rena_dourada", "tier": "epico", "icon": "🦌", "season": "2026-natal", "name": { "pt": "Galhadas Douradas", "en": "Golden Antlers" } },
+  { "id": "coroa_lenda", "tier": "lendario", "icon": "👑", "name": { "pt": "Coroa da Lenda", "en": "Legend Crown" } },
+  { "id": "rastro_cometa", "tier": "lendario", "icon": "☄", "name": { "pt": "Rastro de Cometa", "en": "Comet Trail" } },
+  { "id": "estrela_abrigo", "tier": "unico", "icon": "🌟", "name": { "pt": "Estrela do Abrigo", "en": "Star of the Shelter" } }
+ ],
+ "caches": [
+  { "id": "h_01", "tier": "raro" }, { "id": "h_02", "tier": "raro" }, { "id": "h_03", "tier": "raro" }, { "id": "h_04", "tier": "raro" }, { "id": "h_05", "tier": "raro" }, { "id": "h_06", "tier": "raro" },
+  { "id": "h_07", "tier": "epico" }, { "id": "h_08", "tier": "epico" }, { "id": "h_09", "tier": "lendario", "chance": 0.5 }, { "id": "h_10", "tier": "unico", "chance": 0.25 },
+  { "id": "g_01", "tier": "epico", "premium": true }, { "id": "g_02", "tier": "epico", "premium": true }, { "id": "g_03", "tier": "lendario", "premium": true, "chance": 0.5 },
+  { "id": "natal_01", "tier": "raro", "month": 12 }, { "id": "natal_02", "tier": "raro", "month": 12 }, { "id": "natal_03", "tier": "raro", "month": 12 }, { "id": "natal_04", "tier": "raro", "month": 12 }, { "id": "natal_05", "tier": "raro", "month": 12 },
+  { "id": "natal_06", "tier": "raro", "month": 12 }, { "id": "natal_07", "tier": "raro", "month": 12 }, { "id": "natal_08", "tier": "raro", "month": 12 }, { "id": "natal_09", "tier": "raro", "month": 12 }, { "id": "natal_10", "tier": "raro", "month": 12 },
+  { "id": "natal_11", "tier": "raro", "month": 12 }, { "id": "natal_12", "tier": "raro", "month": 12 }, { "id": "natal_13", "tier": "raro", "month": 12 }, { "id": "natal_14", "tier": "raro", "month": 12 }, { "id": "natal_15", "tier": "raro", "month": 12 },
+  { "id": "natal_16", "tier": "raro", "month": 12 }, { "id": "natal_17", "tier": "raro", "month": 12 }, { "id": "natal_18", "tier": "raro", "month": 12 }, { "id": "natal_19", "tier": "raro", "month": 12 }, { "id": "natal_20", "tier": "raro", "month": 12 },
+  { "id": "natal_21", "tier": "epico", "month": 12 }, { "id": "natal_22", "tier": "epico", "month": 12 }, { "id": "natal_23", "tier": "epico", "month": 12 }, { "id": "natal_24", "tier": "epico", "month": 12 }, { "id": "natal_25", "tier": "lendario", "month": 12 }
+ ]
+}

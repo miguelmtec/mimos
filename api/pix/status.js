@@ -13,5 +13,7 @@ export default async function handler(req, res) {
   const [product, name] = String(j.external_reference || '').split('|');
   const p = PRODUCTS[product];
   const paid = j.status === 'approved' && p && Math.abs(Number(j.transaction_amount) - p.price) < 0.001;
+  // "Cofre dos Mimos": every paid order fills the community vault (best effort, never blocks the purchase)
+  if (paid) { try { const { getSql } = await import('../_lib/db.js'); const sql = await getSql(); if (sql) { const { sqlStore } = await import('../_lib/rewards.js'); const st = sqlStore(sql); await st.ensure(); await st.addOrder(id); } } catch (e) { /* the vault is optional */ } }
   return res.status(200).json({ id, status: j.status, paid, product: paid ? product : null, grants: paid ? p.grants : [], name: paid ? name : null });
 }

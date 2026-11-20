@@ -246,6 +246,39 @@ const boot = async (mobile, opts) => { const r = await L.open(mobile, opts); awa
     ok('vehicles: zero console errors', errors.length === 0, errors.slice(0, 3));
     await browser.close();
   });
+  await sec('rewards', async () => {
+    // guest: common finds only, no rare claim; the Mimos wear nothing they did not earn
+    { const { browser, page, errors } = await boot(true);
+      await page.waitForFunction(() => VP.Rewards.cfg && VP.Mimos.data, null, { timeout: 8000 });
+      const g = await page.evaluate(async () => { const o = {}, Rw = VP.Rewards, Mm = VP.Mimos, Wd = VP.Wardrobe; __vp.unlockAll(); __vp.free(); const G = __vp.G; o.caches = G.caches.length; o.gold = G.caches.filter(c => c.cache.premium).length; o.natal = Rw.cfg.caches.filter(c => c.month === 12).length;
+        const it = G.caches[0], cash = VP.S.cash; G.cats[0].x = it.x; G.cats[0].y = it.y; G.active = 0; for (let i = 0; i < 20; i++) VP.Game.update(1 / 30); await new Promise(r => setTimeout(r, 200)); o.opened = VP.S.rw.caches[it.cache.id] === 1 && VP.S.cash >= cash + 60; o.rare = VP.S.rw.items.length; o.hiddenPiece = VP.S.owned.filter(x => x.startsWith('mm_')).length;
+        o.items = Mm.data.items.length; o.inWardrobe = Wd.data.items.filter(i => i.line === 'mimos').length; const leg = Wd.data.items.find(i => i.id === 'mm_coroa_lanche'), coin = Wd.data.items.find(i => i.id === 'mm_pijama'), ach = Wd.data.items.find(i => i.id === 'mm_caneca');
+        o.guestOwns = [Wd.owns(leg), Wd.owns(coin), Wd.owns(ach), Mm.isAdmin()]; VP.S.wear = { morticia: { head: 'mm_coroa_lanche' } }; o.gated = !VP.R3.spec('morticia', false).acc.crown; o.how = [Mm.howText(leg), Mm.howText(coin), Mm.howText(ach)];
+        const lk = window.getMimosShowcaseLook(); o.look = lk && [lk.id, Object.keys(lk.cats).length, !!lk.cats.mimo.spec.fur, lk.cats.morticia.items.length]; o.rot = new Set([0, 1, 2, 3].map(w => Mm.look(new Date(2026, 1, 2 + w * 7)).id)).size; o.dec = Mm.look(new Date(2026, 11, 10)).id;
+        VP.UI.show('title'); o.card = !!document.querySelector('[data-act=look]'); VP.UI.show('look'); o.rows = document.querySelectorAll('#s-look .pg-item').length; VP.UI.show('rarity'); o.rar = document.querySelectorAll('#s-rarity .pg-item').length; return o; });
+      ok('hidden caches in the city (golden ones hidden from non-premium); 25 Natal gifts in the data', g.caches >= 8 && g.gold === 0 && g.natal === 25, g);
+      ok('guest opening a cache: a common find, never a rare item; one hidden Coleção piece', g.opened && g.rare === 0 && g.hiddenPiece === 1, g);
+      ok('Coleção Mimos: 30+ items merged into the wardrobe', g.items >= 30 && g.inWardrobe === g.items, g);
+      ok('guests do not own the collection; wearing an unowned piece falls back to the default', g.guestOwns.join() === 'false,false,false,false' && g.gated, g);
+      ok('"Quero esse look": every piece says how to get it (coins, achievement, rare reward)', /moedas/.test(g.how[1]) && /conquista/.test(g.how[2]) && g.how[0].length > 10 && g.card && g.rows >= 6, g);
+      ok('getMimosShowcaseLook(): specs for the three cats, rotating weekly, Natal in December', g.look[1] === 3 && g.look[2] && g.rot === 4 && g.dec === 'natal', g);
+      ok('Raridade page lists every special item', g.rar >= 10, g);
+      ok('rewards (guest): zero console errors', errors.length === 0, errors.slice(0, 3));
+      await browser.close(); }
+    // logged in as the owner: full wardrobe; claims go to the server and come back with a serial
+    { const calls = []; const routes = async page => page.route('**/api/**', r => { const u = new URL(r.request().url()), j = (st, b) => r.fulfill({ status: st, contentType: 'application/json', body: JSON.stringify(b) });
+        if (u.pathname === '/api/me') return j(200, { user: { id: 'u1', email: 'dono@x.com', admin: true }, cats: [] }); if (u.pathname === '/api/rewards/claim') { const b = JSON.parse(r.request().postData()); calls.push(b); return j(200, b.source === 'mission' ? { item: { id: 'coleira_neon', tier: 'raro', name: { pt: 'Coleira Neon', en: 'Neon Collar' }, icon: '📿' }, serial: 7, cap: 23, season: '2026-natal' } : { consolation: { coins: 150, tier: 'raro' } }); }
+        if (u.pathname === '/api/rewards/rarity') return j(200, { season: '2026-natal', active: 230, items: [{ id: 'coleira_neon', tier: 'raro', minted: 7, cap: 23, firstOwner: 'Pipoca' }], vault: { orders: 20, goal: 50, fills: 0, filledAt: null } }); if (u.pathname === '/api/rewards/mine') return j(200, { items: calls.some(c => c.source === 'mission') ? [{ id: 'coleira_neon', tier: 'raro', serial: 7, minted: 23, season: '2026-natal' }] : [] }); if (u.pathname === '/api/save') return j(200, { data: null }); return j(200, { cats: [], top: [] }); });
+      const { browser, page, errors } = await boot(true, { routes });
+      await page.waitForFunction(() => VP.Acct.status === 'in' && VP.Rewards.cfg && VP.Mimos.data, null, { timeout: 8000 });
+      const a = await page.evaluate(async () => { const o = {}, Wd = VP.Wardrobe; o.admin = VP.Mimos.isAdmin(); o.all = Wd.data.items.every(i => Wd.owns(i)); VP.S.wear = { morticia: { head: 'mm_coroa_lanche' } }; o.wears = !!VP.R3.spec('morticia', false).acc.crown; o.veh = VP.Veh.ORDER.every(k => VP.Veh.unlocked(k));
+        __vp.unlockAll(); const st0 = setTimeout; window.setTimeout = f => { f(); return 0; }; __vp.start(1); __vp.G.time = 5; __vp.win(); window.setTimeout = st0; o.perfect = VP.UI.last().perfect; await new Promise(r => setTimeout(r, 400)); for (let i = 0; i < 40 && !((VP.S.rw || {}).items || []).length; i++) await new Promise(r => setTimeout(r, 150)); o.items = (VP.S.rw || {}).items || []; o.dbg = [VP.UI.last().stars, VP.UI.last().time, VP.Long.goldTime(VP.UI.last().m), VP.UI.last().noFaint]; VP.UI.show("rarity"); await new Promise(r => setTimeout(r, 400)); o.text = document.querySelector('#s-rarity').textContent; VP.UI.show('profile'); o.profile = /#7/.test(document.querySelector('#s-profile').textContent); return o; });
+      ok('owner account (admin): the whole wardrobe and every vehicle, read from the account', a.admin && a.all && a.wears && a.veh, a);
+      ok('perfect run (3 stars, gold time, no faints) claims on the server; item arrives with serial and tier', a.perfect && calls.some(c => c.source === 'mission' && c.stars === 3 && c.gold === true) && a.items.length === 1 && a.items[0].serial === 7, [a.items, a.direct, a.ap, a.err]);
+      ok('serial shows on the profile and the Raridade page ("#7 de 23", who owns #1, the vault)', a.profile && /#7 de 23/.test(a.text) && /7 de 23 existem/.test(a.text) && /Pipoca/.test(a.text) && /20\/50/.test(a.text), a.text.slice(0, 300));
+      ok('rewards (account): zero console errors', errors.length === 0, errors.slice(0, 3));
+      await browser.close(); }
+  });
   await sec('weight', async () => {
     const { browser, page, errors } = await L.open(true, { routes: async page => { await page.route('**/api/**', r => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' })); } });
     await page.waitForTimeout(1500);

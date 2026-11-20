@@ -73,6 +73,13 @@ Game.addCats = function (x, y) {
       energy: 100, belly: 70, exhausted: false, combo: 0, comboT: 0, dashT: 0, dx: 0, dy: 0, invis: 0, recoil: 0, idle: 0, hitSet: null, aiT: 0, stuck: 0,
     });
   });
+  // never spawn inside a wall (narrow real-world streets)
+  const used = [];
+  for (const c of G.cats) {
+    let ok = !W.blocked(c.x, c.y, c.r + 3, 0);
+    for (let r = 0; r < 9 && !ok; r++) for (let k = 0; k < 8 && !ok; k++) { const an = k * 0.785, px = x + Math.cos(an) * r * 20, py = y + Math.sin(an) * r * 20; if (!W.blocked(px, py, c.r + 3, 0) && !used.some(u => U.d2(u.x, u.y, px, py) < 24 * 24)) { c.x = px; c.y = py; ok = true; } }
+    used.push({ x: c.x, y: c.y });
+  }
   G.cam.x = x; G.cam.y = y;
   refreshFields(true);
 };
@@ -435,8 +442,8 @@ function updCat(c, dt) {
     if (c.exhausted && Math.random() < dt * 1.5) part({ x: c.x + 8, y: c.y - 44, k: 'icon', icon: 'zzz', vy: -30, vx: 12, size: 9, life: 0.9 });
   }
   if (c.name === 'morticia') {
-    c.belly = Math.max(0, c.belly - dt * 0.85 * G.hungerMul * (G.car ? 0.5 : 1));
-    if (c.belly <= 0) { c.hungerT = (c.hungerT || 0) + dt; if (c.hungerT > 1) { c.hungerT = 0; c.hp -= 3; c.flash = 0.1; text(c.x, c.y - 46, tr('hungry'), '#ffb347', 13); if (c.hp <= 0) downCat(c); if (!G.tut.hungry) { G.tut.hungry = 1; say(tr('tipHungry'), '#ffb347', 3); } } }
+    if (!G.car) c.belly = Math.max(0, c.belly - dt * 0.85 * G.hungerMul);
+    if (c.belly <= 0) { c.hungerT = (c.hungerT || 0) + dt; if (c.hungerT > 1 && !G.car) { c.hungerT = 0; if (c.hp > 12) { c.hp = Math.max(12, c.hp - 3); c.flash = 0.1; } text(c.x, c.y - 46, tr('hungry'), '#ffb347', 13); if (!G.tut.hungry) { G.tut.hungry = 1; say(tr('tipHungry'), '#ffb347', 3); } } }
     if (G.feast > 0) feastTick(c, dt);
   }
   if (G.car) { c.x = G.car.x; c.y = G.car.y; return; }

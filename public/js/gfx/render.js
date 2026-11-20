@@ -195,7 +195,7 @@ function syncItem(it) {
 const HIDE_DONE = { fgate: 1, crate: 1, laser: 1, vlaser: 1, sdoor: 1 };
 function syncProp(p, G) {
   const o = obj(p, () => {
-    const m = buildProp(p, W.lots[0].pal); if (!m) return null;
+    const m = buildProp(p, W.lots[0] ? W.lots[0].pal : W.pal); if (!m) return null;
     if (p.k === 'cage' && p.friend) { const k = buildCat(CAT_SPECS[p.friend]); k.position.y = 0.24; m.add(k); m.userData.kit = k; }
     if (p.k === 'stand') { m.userData.food = []; for (let i = 0; i < 3; i++) { const f = new THREE.Mesh(itemGeo(p.food), MAT.lit); f.position.set(-0.6 + i * 0.6, 1.3, 0.1); f.scale.setScalar(1.1); m.add(f); m.userData.food.push(f); } }
     return m;
@@ -287,6 +287,25 @@ function applyMood(idx, dt) {
 }
 R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && G.m.d > 4 && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active]; return VP.World.distAt(W, a.x, a.y); };
 
+// ---------- Natal Neon: seasonal decorations for the home city (trees, light strings); snow comes from the mood ----------
+let xmas = null;
+function setXmas(on) {
+  if (!on) { if (xmas) xmas.visible = false; return; }
+  if (!xmas || xmas.userData.W !== W) {
+    if (xmas) scene.remove(xmas);
+    xmas = new THREE.Group(); xmas.userData.W = W;
+    const b = new GB(), n = new GB(), cols = ['#ff3355', '#7CFF6B', '#ffd23f', '#2de2e6', '#ff4fb8'], pts = { glowPts: [] };
+    for (const l of W.lots) if (l.type === 'arena' || l.type === 'plaza' || l.type === 'park' || l.type === 'beach') {
+      const x = (l.tx + 0.6) * 2, z = (l.ty + 0.6) * 2, y = LAND_H;
+      b.cyl('#6a4a3b', x, y + 0.4, z, 0.25, 0.8, 0.25); for (let i = 0; i < 4; i++) b.cone('#1f8f5a', x, y + 1.4 + i * 0.95, z, 1.7 - i * 0.36, 1.6, 1.7 - i * 0.36);
+      n.sph('#ffd23f', x, y + 5.3, z, 0.28); for (let i = 0; i < 12; i++) { const a = i * 2.4, yy = y + 1.0 + i * 0.32, r = 1.45 - i * 0.1; n.lo(cols[i % 5], x + Math.sin(a) * r, yy, z + Math.cos(a) * r, 0.13); }
+      if (l.type === 'beach') for (let i = 0; i < 5; i++) { const sx = (l.tx + 1 + i * 1.4) * 2, sz = (l.ty + 2 + (i % 2)) * 2; b.sph('#ffffff', sx, y + 0.5, sz, 0.6); b.sph('#ffffff', sx, y + 1.3, sz, 0.42); n.cone('#ff8a3d', sx, y + 1.3, sz + 0.45, 0.07, 0.3, 0.07, Math.PI / 2); }
+    }
+    W.lamps.forEach((p, i) => { n.lo(cols[i % 5], p.x * S, 3.4, p.y * S, 0.16); n.lo(cols[(i + 2) % 5], p.x * S + 0.5, 3.1, p.y * S, 0.14); n.lo(cols[(i + 3) % 5], p.x * S - 0.5, 3.1, p.y * S, 0.14); });
+    xmas.add(b.mesh(MAT.flat), n.mesh(MAT.glow)); xmas.children.forEach(m => { m.frustumCulled = false; }); scene.add(xmas); void pts;
+  }
+  xmas.visible = true;
+}
 // ---------- camera ----------
 function updateCamera(G, dt) {
   const a = G.car || G.cats[G.active];
@@ -350,7 +369,7 @@ R.render = function (G, dt) {
   const m = R.moodOf(G);
   weather(G, G.real, m);
   if (m === 3) { R.flash = Math.max(0, (R.flash || 0) - dt * 3); if (Math.random() < dt * 0.09) { R.flash = 1; VP.Audio.sfx('thunder', 3); } } else R.flash = 0;
-  applyMood(m, dt);
+  applyMood(m, dt); setXmas(m === 6 && !W.real);
   for (; rn < fx.rings.length; rn++) fx.rings[rn].visible = false;
   flush();
   city.waterTex.offset.x = G.real * 0.004; city.waterTex.offset.y = G.real * 0.006;

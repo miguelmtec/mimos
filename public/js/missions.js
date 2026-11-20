@@ -177,7 +177,7 @@ const TYPES = {
         const lot = B.R('comp' + 'ACBD'[i]), gate = c[0], lock = c[1];
         const gp = gate === 'fence' ? B.propOf(lot, 'fgate') : gate === 'switch' ? B.propOf(lot, 'laser') : gate === 'open' ? null : B.propOf(lot, 'sdoor');
         const cage = Game.addProp({ k: 'cage', x: lot.cx, y: lot.cy - 10, friend: 'f' + (i % 4), lock: lock === 'link' ? 'bolt' : lock, link: lock === 'link' ? gp.id : null, lot });
-        compGuards(B, lot, Math.max(1, gsize(B) - 1));
+        compGuards(B, lot, Math.min(3, Math.max(1, gsize(B) - 1)));
         gateSteps(B, lot, gate);
         if (lock === 'key') {
           const holder = B.dogs(B.farPoint(350, 1000), ['cop'], { carry: 'key' })[0];
@@ -366,6 +366,7 @@ function nearestLoot(G) {
 M.world = () => VP.City || (VP.City = World.gen({ seed: 7 }));
 M.start = function (m) {
   const type = TYPES[m.type], p = m.p, W = m.tourCity ? VP.CityCache[m.tourCity] : M.world();
+  if (m.tourCity && !W.tourStart) { M.startTour(m.tourCity); Game.end(); }
   const B = { m, p, lv: m.lv, geo: m.geo, rng: U.rng(m.n * 977 + 13), comps: {} };
   if (type.plan) type.plan(B);
   W.reset();
@@ -423,7 +424,7 @@ const TOUR_KINDS = ['race', 'deliver', 'brawl', 'feast', 'escape'], COMU_KINDS =
 M.tourMissions = function (id) {
   const ci = M.cities.findIndex(c => c.id === id), meta = M.cities[ci], W = VP.CityCache[id], comu = (W.real.tags || []).includes('comunidade');
   const kinds = comu ? COMU_KINDS : TOUR_KINDS;
-  const list = kinds.map((kind, k) => ({ n: 1000 + ci * 10 + k, type: 'tour', tourCity: id, name: [VP.L['tk_' + kind][0], VP.L['tk_' + kind][1]], p: { kind, comu }, lv: Math.min(40, 4 + ci * 2 + k * 2), par: 150, hunger: 1, boss: null, bonus: true, side: true, d: 0, geo: 0 }));
+  const list = kinds.map((kind, k) => ({ n: 1000 + ci * 10 + k, type: 'tour', tourCity: id, name: [VP.L['tk_' + kind][0], VP.L['tk_' + kind][1]], p: { kind, comu }, lv: Math.min(40, 4 + ci * 2 + k * 2), par: kind === 'race' ? 260 : kind === 'deliver' || kind === 'kites' ? 160 : 190, hunger: 1, boss: null, bonus: true, side: true, d: 0, geo: 0 }));
   M.tourList = M.tourList.filter(m => m.tourCity !== id).concat(list);
   return list;
 };
@@ -433,7 +434,15 @@ M.startTour = function (id) {
   const G = Game.create(W, m);
   const B = mk({ m, p: {}, lv: m.lv, geo: 0, rng: U.rng(321 + id.length), W, G });
   const L = W.landmarks, S = VP.S;
-  if (!W.tourStart) { let best = W.snap(W.pw / 2, W.ph / 2) || W.randWalk(B.rng), bd = 1e18; for (const rd of W.roads) if (rd.w >= 6) for (const q of rd.pts) { const d = U.d2(q.x, q.y, W.pw / 2, W.ph / 2); if (d < bd && !W.blocked(q.x, q.y, 40, 0)) { bd = d; best = { x: q.x, y: q.y }; } } W.tourStart = best; }
+  if (!W.tourStart) { let best = W.snap(W.pw / 2, W.ph / 2) || W.randWalk(B.rng), bd = 1e18; for (const rd of W.roads) if (rd.w >= 6) for (const q of rd.pts) { const d = U.d2(q.x, q.y, W.pw / 2, W.ph / 2); if (d < bd && !W.blocked(q.x, q.y, 40, 0)) { bd = d; best = { x: q.x, y: q.y }; } } W.tourStart = best;
+    // keep everything on the street network connected to the start (courtyards and islands are skipped)
+    const fm = W.fieldMax; W.fieldMax = 0; const conn = W.field(best.x, best.y, 0); W.fieldMax = fm; W.conn = conn;
+    W.walkList = W.walkList.filter(i => conn[i] >= 0);
+    const snapC = (x, y) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < 30; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W.W - 2 && Y < W.H - 2 && conn[Y * W.W + X] >= 0 && W.gnd[Y * W.W + X] <= 2) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };
+    W.landmarks = W.landmarks.filter(l => { const q = snapC(l.x, l.y); if (!q) return false; l.gx = q.x; l.gy = q.y; return true; });
+    for (const rd of W.roads) rd.pts = rd.pts.filter(q => conn[Math.floor(q.y / T) * W.W + Math.floor(q.x / T)] >= 0);
+    W.roads = W.roads.filter(rd => rd.pts.length >= 2);
+  }
   const sp = W.tourStart;
   B.begin(sp, { paws: 1, traffic: comu ? 0 : (meta.traffic || 10), coffee: 10, parked: comu ? 0 : 14 });
   G.free = true; G.tour = id; G.steps = []; G.markers = []; G.npcs = [];

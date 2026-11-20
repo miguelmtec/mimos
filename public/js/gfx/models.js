@@ -87,6 +87,9 @@ export function buildCat(spec) {
   }
   if (A.collar) b.tor(A.collar, 0, 0.82, 0.05, 0.3, 0.3, 0.3, Math.PI / 2);
   if (A.scarf) { b.tor(A.scarf, 0, 0.84, 0.06, 0.34, 0.5, 0.34, Math.PI / 2); b.box(A.scarf, 0.2, 0.62, 0.36, 0.14, 0.4, 0.07, 0, 0, -0.2); }
+  if (A.pack) { b.box(A.pack, 0, 0.6, -0.5, 0.44, 0.44, 0.26); b.box('#ffffff', 0, 0.66, -0.64, 0.24, 0.14, 0.04); b.box(A.pack, -0.2, 0.7, -0.2, 0.06, 0.4, 0.5); b.box(A.pack, 0.2, 0.7, -0.2, 0.06, 0.4, 0.5); }
+  if (A.cape) { b.box(A.cape, 0, 0.52, -0.5, 0.74, 0.86, 0.05, 0.42); b.tor(A.cape, 0, 0.86, 0.02, 0.32, 0.32, 0.4, Math.PI / 2); }
+  if (A.wings) for (const sx of [-1, 1]) { b.sph(A.wings, sx * 0.42, 0.86, -0.4, 0.34, 0.2, 0.05, 0, sx * 0.5, sx * 0.6); b.sph(A.wings, sx * 0.36, 0.64, -0.42, 0.22, 0.14, 0.05, 0, sx * 0.5, sx * 0.2); }
   // arms
   const sleeve = coat || A.shirt || fur;
   b.sph(sleeve, -0.38, 0.56, 0.2, 0.13, 0.13, 0.2); b.sph(fur2, -0.38, 0.54, 0.4, 0.11);
@@ -280,7 +283,7 @@ export function itemGeo(k) {
     case 'sushi': b.box('#ffffff', 0, -0.06, 0, 0.5, 0.2, 0.28); b.box('#ff8a5c', 0, 0.08, 0, 0.54, 0.12, 0.3); b.box('#1e2b22', 0, 0, 0, 0.14, 0.34, 0.32); break;
     case 'hotdog': b.cyl('#e9b872', 0, -0.03, 0, 0.13, 0.6, 0.16, 0, 0, Math.PI / 2); b.cyl('#d1483b', 0, 0.07, 0, 0.09, 0.68, 0.09, 0, 0, Math.PI / 2); b.box('#ffd23f', 0, 0.15, 0, 0.5, 0.03, 0.04); break;
     case 'coffee': b.cyl('#ffffff', 0, 0, 0, 0.2, 0.36, 0.2); b.cyl('#6b3f22', 0, 0.185, 0, 0.17, 0.01, 0.17); b.tor('#ffffff', 0.24, 0, 0, 0.11, 0.12, 0.11); b.cyl('#ff4fb8', 0, -0.04, 0, 0.205, 0.1, 0.205); break;
-    case 'paw': b.sph('#ffd23f', 0, -0.08, 0, 0.24, 0.2, 0.09); for (const [x, y] of [[-0.26, 0.12], [-0.09, 0.26], [0.09, 0.26], [0.26, 0.12]]) b.sph('#ffd23f', x, y, 0, 0.1, 0.12, 0.08); b.sph('#fff3a8', -0.05, -0.05, 0.07, 0.08, 0.06, 0.03); break;
+    case 'gpaw': case 'paw': b.sph('#ffd23f', 0, -0.08, 0, 0.24, 0.2, 0.09); for (const [x, y] of [[-0.26, 0.12], [-0.09, 0.26], [0.09, 0.26], [0.26, 0.12]]) b.sph('#ffd23f', x, y, 0, 0.1, 0.12, 0.08); b.sph('#fff3a8', -0.05, -0.05, 0.07, 0.08, 0.06, 0.03); break;
     case 'cash': b.cyl('#3fcf55', 0, 0, 0, 0.26, 0.07, 0.26, Math.PI / 2); b.cyl('#7CFF6B', 0, 0, 0, 0.19, 0.09, 0.19, Math.PI / 2); b.box('#0d3b16', 0, 0, 0, 0.05, 0.22, 0.11); break;
     case 'catnip': for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; b.sph('#7CFF6B', Math.sin(a) * 0.16, 0.05 + Math.cos(a) * 0.16, 0, 0.14, 0.2, 0.04, 0, 0, -a); } b.cyl('#2e9e3f', 0, -0.2, 0, 0.03, 0.3, 0.03); break;
     case 'milk': b.box('#ffffff', 0, 0, 0, 0.28, 0.4, 0.28); b.box('#4cc9f0', 0, -0.04, 0, 0.29, 0.12, 0.29); b.cone('#bfe9ff', 0, 0.27, 0, 0.2, 0.14, 0.2, 0, Math.PI / 4); break;

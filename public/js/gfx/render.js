@@ -35,7 +35,7 @@ R.init = function (cv) {
   initFx(); initStage();
   R.ok = true; R.resize();
   addEventListener('resize', R.resize); addEventListener('orientationchange', () => setTimeout(R.resize, 250));
-  R.three = { THREE, scene, camera, renderer };
+  R.three = { THREE, scene, camera, renderer }; R.SPECS = CAT_SPECS;
   return true;
 };
 R.pixelRatio = () => Math.min(window.devicePixelRatio || 1, mobile ? [1, 1.25, 1.5][R.quality] : [1, 1.5, 2][R.quality]);
@@ -147,7 +147,7 @@ function syncCat(c, G, dt, near) {
   setMat(o, c.flash > 0 ? MAT.white : c.invis > 0 ? MAT.ghost : null);
   if (!c.down) shadow(o.position.x, o.position.z, o.position.y, 0.5 * ud.size, 0.5 * ud.size);
   if (c.root > 0) { const n = obj(c.netKey || (c.netKey = { kind: 'net' }), () => new THREE.Mesh(fx.bubbleGeo, fx.netMat)); n.position.set(o.position.x, o.position.y + 0.7, o.position.z); n.scale.setScalar(0.95); n.rotation.y = G.real * 2; }
-  if (ud.spec && ud.spec.shiny && c.walk && !c.down && Math.random() < dt * 14) VP.Game.fx.part({ x: c.x + U.rand(-8, 8), y: c.y + U.rand(-8, 8), k: 'star', col: c.name === 'mimosa' ? '#ff7ad9' : '#ffd23f', size: 5, life: 0.5, vy: -10 });
+  const tr = ud.spec && ud.spec.trail; if (tr && c.walk && !c.down && Math.random() < dt * 14) VP.Game.fx.part({ x: c.x + U.rand(-8, 8), y: c.y + U.rand(-8, 8), k: tr.shape || 'star', col: tr.col || '#ffd23f', size: 5, life: 0.5, vy: -10 });
   void near;
 }
 function syncDog(e, G, dt) {
@@ -178,9 +178,9 @@ function syncCar(c, G) {
   if (driven) { const fxp = Math.cos(c.a), fyp = Math.sin(c.a); glow(o.position.x + fxp * 3.2, 0.5, o.position.z + fyp * 3.2, '#fff6b0', 5); }
 }
 function syncItem(it) {
-  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' ? 1.7 : 1.35); return m; });
+  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : 1.35); return m; });
   o.position.set(it.x * S, hAt(it.x, it.y) + 0.65 + Math.sin(it.t * 3) * 0.12 + (it.z || 0) * S, it.y * S); o.rotation.y = it.t * 2.2;
-  if (it.k === 'paw') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', 5); else if (it.k === 'coffee' || it.k === 'catnip' || it.k === 'key' || it.k === 'milk') glow(o.position.x, o.position.y, o.position.z, it.k === 'key' ? '#ffd23f' : '#ffffff', 2.4);
+  if (it.k === 'paw' || it.k === 'gpaw') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', 5); else if (it.k === 'coffee' || it.k === 'catnip' || it.k === 'key' || it.k === 'milk') glow(o.position.x, o.position.y, o.position.z, it.k === 'key' ? '#ffd23f' : '#ffffff', 2.4);
 }
 const HIDE_DONE = { fgate: 1, crate: 1, laser: 1, vlaser: 1, sdoor: 1 };
 function syncProp(p, G) {
@@ -228,7 +228,7 @@ function syncTele(t) {
   else { o.rotation.y = -t.a; o.userData.d.scale.set(t.len * S, 1, t.w * S); o.userData.d.material.opacity = 0.15 + f * 0.4; }
 }
 function syncMarker(mk, G) {
-  const o = obj(mk, () => makeBeam(mk.col));
+  const o = obj(mk, () => { const b = makeBeam(mk.col); if (mk.thin) b.userData.beam.scale.set(0.5, 9, 0.5); return b; });
   o.position.set(mk.x * S, hAt(mk.x, mk.y), mk.y * S);
   o.userData.ring.rotation.y = G.real; o.userData.ring.scale.setScalar(2.4 + Math.sin(G.real * 3) * 0.2);
   glow(o.position.x, 1.2, o.position.z, mk.col, 9);

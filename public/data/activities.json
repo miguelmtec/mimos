@@ -1,0 +1,282 @@
+{
+ "version": 1,
+ "pawsPerDistrict": 5,
+ "trials": [
+  {
+   "id": "t_beach",
+   "d": 0,
+   "lv": 3,
+   "name": {
+    "pt": "Volta da Orla",
+    "en": "Boardwalk Lap"
+   },
+   "start": [
+    1,
+    7
+   ],
+   "cps": [
+    [
+     3,
+     7
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     1,
+     7
+    ]
+   ],
+   "time": 55,
+   "reward": 120
+  },
+  {
+   "id": "t_down",
+   "d": 1,
+   "lv": 12,
+   "name": {
+    "pt": "Circuito Neon",
+    "en": "Neon Circuit"
+   },
+   "start": [
+    1,
+    3
+   ],
+   "cps": [
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     3,
+     2
+    ]
+   ],
+   "time": 70,
+   "reward": 160
+  },
+  {
+   "id": "t_harbor",
+   "d": 2,
+   "lv": 22,
+   "name": {
+    "pt": "Sprint do Porto",
+    "en": "Harbor Sprint"
+   },
+   "start": [
+    5,
+    7
+   ],
+   "cps": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "time": 60,
+   "reward": 180
+  },
+  {
+   "id": "t_docks",
+   "d": 3,
+   "lv": 32,
+   "name": {
+    "pt": "Rali da Chuva",
+    "en": "Rain Rally"
+   },
+   "start": [
+    9,
+    7
+   ],
+   "cps": [
+    [
+     11,
+     7
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     6
+    ]
+   ],
+   "time": 60,
+   "reward": 200
+  },
+  {
+   "id": "t_city",
+   "d": 4,
+   "lv": 42,
+   "name": {
+    "pt": "Grande Prêmio da Cidade",
+    "en": "City Grand Prix"
+   },
+   "start": [
+    7,
+    3
+   ],
+   "cps": [
+    [
+     11,
+     3
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     3
+    ]
+   ],
+   "time": 120,
+   "reward": 350
+  }
+ ],
+ "quests": [
+  {
+   "id": "q_fish",
+   "d": 0,
+   "npc": "f1",
+   "spot": "park",
+   "name": {
+    "pt": "Laranjinha",
+    "en": "Tangerine"
+   },
+   "text": {
+    "pt": "Tô com uma fome! Come 12 petiscos por mim?",
+    "en": "I'm starving! Eat 12 treats for me?"
+   },
+   "type": "eat",
+   "n": 12,
+   "reward": 120
+  },
+  {
+   "id": "q_bully",
+   "d": 1,
+   "npc": "f3",
+   "spot": "plaza2",
+   "name": {
+    "pt": "Sombra",
+    "en": "Shadow"
+   },
+   "text": {
+    "pt": "Uns vira-latas não me deixam dormir. Nocauteia 8?",
+    "en": "Some mutts won't let me sleep. Knock out 8?"
+   },
+   "type": "ko",
+   "n": 8,
+   "reward": 200
+  },
+  {
+   "id": "q_thief",
+   "d": 2,
+   "npc": "f2",
+   "spot": "plaza2",
+   "name": {
+    "pt": "Floquinho",
+    "en": "Snowflake"
+   },
+   "text": {
+    "pt": "Mortícia, me ensina! Rouba 5 coisas dos cachorros.",
+    "en": "Morticia, teach me! Steal 5 things from the dogs."
+   },
+   "type": "steal",
+   "n": 5,
+   "reward": 250
+  },
+  {
+   "id": "q_cash",
+   "d": 3,
+   "npc": "f0",
+   "spot": "plaza1",
+   "name": {
+    "pt": "Cinzento",
+    "en": "Smokey"
+   },
+   "text": {
+    "pt": "Preciso de grana pro peixe. Junta $300?",
+    "en": "I need fish money. Earn $300?"
+   },
+   "type": "cash",
+   "n": 300,
+   "reward": 300
+  },
+  {
+   "id": "q_heights",
+   "d": 4,
+   "npc": "f1",
+   "spot": "park",
+   "name": {
+    "pt": "Madame Mel",
+    "en": "Madame Honey"
+   },
+   "text": {
+    "pt": "Mostra quem manda: nocauteia 15 cachorros!",
+    "en": "Show them who's boss: knock out 15 dogs!"
+   },
+   "type": "ko",
+   "n": 15,
+   "reward": 400
+  }
+ ]
+}

@@ -4,95 +4,29 @@
 const VP = window.VP, U = VP.U, T = VP.TILE, Game = VP.Game, World = VP.World;
 const M = VP.Missions = {};
 
-// districts: 0-4 story, 5 = VIP marina, 6 = season (Natal Neon)
-M.DIST = [
-  { id: 0, song: 0, from: 1, to: 10 }, { id: 1, song: 1, from: 11, to: 20 }, { id: 2, song: 2, from: 21, to: 30 },
-  { id: 3, song: 3, from: 31, to: 40 }, { id: 4, song: 4, from: 41, to: 50 },
-  { id: 5, song: 2, from: 51, to: 55, grant: 'vip' }, { id: 6, song: 6, from: 61, to: 64, grant: 'season' },
-];
-const BOSS = { 10: 'chief', 20: 'poodle', 30: 'rott', 40: 'pug', 50: 'dogcatcher' };
-// [type, PT name, EN name, params]
-const RAW = {
-  1: ['reach', 'Rolê na Orla', 'Boardwalk Stroll', { cols: 2, rows: 2, groups: 1, tut: 1 }],
-  2: ['waves', 'Vira-latas na Areia', 'Beach Mutts', { cols: 2, rows: 2, waves: [['mutt', 'mutt', 'mutt'], ['mutt', 'mutt', 'chi', 'chi', 'chi'], ['mutt', 'mutt', 'mutt', 'chi', 'chi', 'chi', 'mutt']] }],
-  3: ['eat', 'Rodízio da Mortícia', "Morticia's Buffet", { n: 25, time: 110 }],
-  4: ['rescue', 'Miau por Socorro', 'Meow for Help', { cages: [['fence', 'bite']] }],
-  5: ['truck', 'O Caminhão de Petiscos', 'The Treat Truck', { gate: 'switch', wanted: 1 }],
-  6: ['rescue', 'A Portinha Secreta', 'The Secret Cat Flap', { cages: [['gap', 'link']] }],
-  7: ['race', 'Entrega de Sushi', 'Sushi Delivery', { cps: 4, time: 80 }],
-  8: ['defend', 'Nossa Casinha', 'Home Sweet Home', { waves: 3 }],
-  9: ['escape', 'Fuga da Carrocinha', 'Dodge the Dog Catchers', { wanted: 2, car: 1 }],
-  10: ['boss', 'Delegado Bulldogão', 'Chief Bulldog', {}],
-  11: ['steal', 'Mão Leve', 'Sticky Paws', { n: 5, time: 130 }],
-  12: ['truck', 'A Chave do Baú', 'Key to the Truck', { gate: 'key', wanted: 2 }],
-  13: ['waves', 'Briga no Beco', 'Alley Brawl', { arena: 1, waves: 4 }],
-  14: ['chase', 'Pega a Van!', 'Catch That Van!', { targets: ['van'], time: 90 }],
-  15: ['vault', 'O Cofre de Atum', 'The Tuna Vault', { gate: 'fence', wanted: 2 }],
-  16: ['eat', 'Feira Noturna', 'Night Market', { n: 38, time: 120, hunger: 1.4 }],
-  17: ['rescue', 'Gatinhos do Fliperama', 'Arcade Kittens', { cages: [['switch', 'key'], ['fence', 'bite']] }],
-  18: ['reach', 'Travessia Neon', 'Neon Crossing', { cols: 4, rows: 3, groups: 5, time: 150 }],
-  19: ['escape', 'Sirenes na Avenida', 'Sirens on the Avenue', { wanted: 3, car: 1 }],
-  20: ['boss', 'Madame Poodle', 'Madame Poodle', {}],
-  21: ['race', 'Peixe Fresco Expresso', 'Fresh Fish Express', { cps: 6, time: 100 }],
-  22: ['defend', 'Churrasco no Píer', 'Pier Barbecue', { waves: 4 }],
-  23: ['truck', 'Carga do Cais', 'Dock Cargo', { gate: 'gap', wanted: 2 }],
-  24: ['cash', 'Quebra-Caixotes', 'Crate Cracker', { cash: 260, time: 150 }],
-  25: ['rescue', 'Resgate na Marina', 'Marina Rescue', { cages: [['fence', 'bite'], ['open', 'key'], ['gap', 'link']] }],
-  26: ['waves', 'Maré de Latidos', 'Tide of Barks', { arena: 1, waves: 5 }],
-  27: ['chase', 'A Limusine do Capitão', "The Captain's Limo", { targets: ['limo'], time: 110, drop: 3.5 }],
-  28: ['vault', 'Cofre do Iate Clube', 'Yacht Club Vault', { gate: 'key', wanted: 3 }],
-  29: ['escape', 'Cerco no Porto', 'Harbor Lockdown', { wanted: 3, survive: 50 }],
-  30: ['boss', 'Capitão Rottweiler', 'Captain Rott', {}],
-  31: ['reach', 'Tempestade no Cais', 'Storm on the Docks', { cols: 4, rows: 3, groups: 6, time: 170 }],
-  32: ['truck', 'Contêiner 32', 'Container 32', { gate: 'switch', wanted: 3, heavy: 1 }],
-  33: ['eat', 'Fome de Trovão', 'Thunder Hunger', { n: 48, time: 130, hunger: 1.7 }],
-  34: ['defend', 'O Gerador', 'The Generator', { waves: 5, gen: 1 }],
-  35: ['chase', 'Comboio da Carrocinha', 'Catcher Convoy', { targets: ['van', 'van'], time: 150, drop: 3 }],
-  36: ['rescue', 'Jaulas na Chuva', 'Cages in the Rain', { cages: [['switch', 'link'], ['key', 'bite'], ['fence', 'key']] }],
-  37: ['steal', 'Lanche dos Estivadores', "Dockworkers' Lunch", { n: 9, time: 150 }],
-  38: ['vault', 'Cofre do Contrabando', "Smuggler's Vault", { gate: 'switch', wanted: 3 }],
-  39: ['escape', 'Quatro Estrelas', 'Four Stars', { wanted: 4, car: 1 }],
-  40: ['boss', 'Don Pug', 'Don Pug', {}],
-  41: ['cash', 'Cobertura de Luxo', 'Penthouse Payday', { cash: 600, time: 170 }],
-  42: ['race', 'Corrida das Colinas', 'Hillside Rush', { cps: 8, time: 120, cols: 4 }],
-  43: ['truck', 'O Grande Golpe do Sachê', 'The Great Sachet Heist', { gate: 'key', wanted: 4, heavy: 1 }],
-  44: ['defend', 'Última Trincheira', 'Last Stand', { waves: 6 }],
-  45: ['rescue', 'Ninguém Fica Pra Trás', 'No Cat Left Behind', { cages: [['fence', 'key'], ['switch', 'link'], ['gap', 'link'], ['key', 'bite']] }],
-  46: ['chase', 'Caça ao Caminhão-Jaula', 'Hunt the Cage Truck', { targets: ['van', 'limo'], time: 170, drop: 2.6 }],
-  47: ['waves', 'Tropa de Elite Canina', 'Canine Elite Squad', { arena: 1, waves: 6 }],
-  48: ['vault', 'O Cofre do Rei', "The King's Vault", { gate: 'gap', wanted: 4 }],
-  49: ['escape', 'Cinco Estrelas', 'Five Stars', { wanted: 5, survive: 30, car: 1 }],
-  50: ['boss', 'O Rei da Carrocinha', 'The Dog Catcher King', {}],
-  // VIP bonus district: Marina Dourada
-  51: ['race', 'Volta de Ouro', 'Golden Lap', { cps: 7, time: 110, lv: 12 }],
-  52: ['eat', 'Buffet do Iate', 'Yacht Buffet', { n: 42, time: 125, lv: 16 }],
-  53: ['vault', 'Cofre do Comodoro', "Commodore's Vault", { gate: 'fence', wanted: 2, lv: 20 }],
-  54: ['waves', 'Festa no Convés', 'Deck Party', { arena: 1, waves: 5, lv: 24 }],
-  55: ['chase', 'Regata Dourada', 'Golden Regatta', { targets: ['limo', 'limo'], time: 160, drop: 3, lv: 28 }],
-  // Season: Natal Neon
-  61: ['race', 'Entrega de Presentes', 'Gift Delivery', { cps: 6, time: 100, lv: 10 }],
-  62: ['eat', 'Ceia de Natal', 'Christmas Feast', { n: 36, time: 120, lv: 14 }],
-  63: ['rescue', 'Gatinhos de Natal', 'Christmas Kittens', { cages: [['fence', 'bite'], ['switch', 'link'], ['gap', 'link']], lv: 18 }],
-  64: ['defend', 'A Árvore de Natal', 'The Christmas Tree', { waves: 5, lv: 22 }],
+// Content is data-driven: public/data/missions.json + activities.json (see DESIGN.md for the schema).
+M.DIST = []; M.list = []; M.side = [];
+M.load = function (data, act) {
+  M.DIST = data.districts.map(d => Object.assign({}, d));
+  for (const d of M.DIST) VP.L['d' + d.id] = [d.name.pt, d.name.en];
+  M.list = data.missions.map(r => {
+    const d = M.DIST.find(x => r.n >= x.from && r.n <= x.to);
+    return { n: r.n, geo: d.geo, d: d.id, type: r.type, name: [r.name.pt, r.name.en], p: r.params || {}, lv: r.lv || r.n, par: r.par, hunger: (r.params && r.params.hunger) || 1, boss: r.boss || null, bonus: !!d.grant };
+  }).filter(m => TYPES[m.type]);
+  M.act = act || { trials: [], quests: [], pawsPerDistrict: 0 };
+  // time trials become side missions (n >= 100)
+  M.side = (M.act.trials || []).map((t, i) => ({ n: 100 + i, id: t.id, geo: t.d, d: t.d, type: 'race', name: [t.name.pt, t.name.en], p: { route: t.cps, time: t.time, cps: t.cps.length, start: t.start, reward: t.reward || 100 }, lv: t.lv || 5, par: Math.round(t.time * 0.8), hunger: 1, boss: null, bonus: true, side: true }));
 };
-M.list = [];
-for (const k in RAW) {
-  const n = +k, r = RAW[k], d = M.DIST.find(x => n >= x.from && n <= x.to);
-  M.list.push({ n, geo: [0, 1, 2, 3, 4, 2, 1][d.id], d: d.id, type: r[0], name: [r[1], r[2]], p: r[3], lv: r[3].lv || n, hunger: r[3].hunger || 1, boss: BOSS[n] || null, bonus: d.id > 4 });
-}
-M.get = n => M.list.find(m => m.n === n);
+M.get = n => M.list.find(m => m.n === n) || M.side.find(m => m.n === n);
 M.next = n => { const i = M.list.findIndex(m => m.n === n); const nx = M.list[i + 1]; return nx && nx.d === M.list[i].d ? nx : (n === 50 ? null : (nx && n < 50 ? nx : null)); };
 M.unlocked = m => {
+  if (m.side) return true;
   if (!m.bonus) return m.n <= VP.S.unlocked;
   const d = M.DIST[m.d];
   if (!VP.Shop || !VP.Shop.has(d.grant)) return false;
   return m.n === d.from || !!VP.S.stars[m.n - 1];
 };
-M.par = m => {
-  const p = m.p;
-  if (p.time) return Math.round(p.time * 0.72);
-  return { reach: 60, waves: 45 + (Array.isArray(p.waves) ? p.waves.length : p.waves) * 22, rescue: 60 + p.cages ? 50 + p.cages.length * 45 : 90, truck: 110, defend: 40 + p.waves * 30, escape: 80 + (p.survive || 0), boss: 150, vault: 150 }[m.type] || 120;
-};
+M.par = m => m.par || (m.p.time ? Math.round(m.p.time * 0.72) : 120);
 
 // ---------- builder helpers ----------
 function pack(B, n) {
@@ -323,13 +257,15 @@ const TYPES = {
   race: {
     setup(B) {
       const p = B.p, G = B.G;
-      const sp = B.ix(1, B.rows - 1, 60, 48);
+      const sp = p.start ? { x: B.W.RX[p.start[0]] + 60, y: B.W.RY[p.start[1]] + 48 } : B.ix(1, B.rows - 1, 60, 48);
       B.begin(sp);
       const car = Game.addCar(B.getaway(), sp.x, sp.y, 0); Game.enterCar(car);
       G.noHeat = true; G.mtimer = p.time;
       const W = B.W; let i = B.D.c0 + 1, j = B.D.r0 + B.rows - 1;
       for (let k = 0; k < p.cps; k++) {
         let ni = i, nj = j;
+        if (p.route) { ni = p.route[k][0]; nj = p.route[k][1]; }
+        else
         for (let t = 0; t < 40 && (Math.abs(ni - i) + Math.abs(nj - j) < 2 || Math.abs(ni - i) + Math.abs(nj - j) > 4); t++) { ni = U.clamp(i + B.rng.int(-3, 3), 0, W.cols); nj = U.clamp(j + B.rng.int(-3, 3), 0, W.rows); }
         i = ni; j = nj; const pt = { x: W.RX[i], y: W.RY[j] };
         B.step({ txt: 'o_checkpoint', args: [k + 1, p.cps], car: true, at: () => pt, done: () => !!G.car && U.d2(G.car.x, G.car.y, pt.x, pt.y) < 100 * 100, enter() { if (k) { G.mtimer += 2; VP.Audio.sfx('cash'); G.stat.cash += 40; } }, fail: () => (!G.car && car.dead) ? 'car' : null });
@@ -403,8 +339,16 @@ M.startFree = function (pos, opts) {
   const G = Game.create(W, m);
   const B = mk({ m, p: {}, lv: m.lv, geo: 0, rng: U.rng(99), W, G });
   const sp = pos && W.clear(pos.x, pos.y) ? pos : W.front(W.roles[0].arena, 's');
-  B.begin(sp, { paws: 4 });
-  G.free = true; G.steps = []; G.markers = [];
+  B.begin(sp, { paws: 2 });
+  G.free = true; G.steps = []; G.markers = []; G.npcs = [];
+  const S = VP.S; S.paws = S.paws || {}; S.quests = S.quests || {};
+  // collectible golden paws (counted per district)
+  for (let d = 0; d < 5; d++) { const r = U.rng(500 + d * 17); for (let i = 0; i < (M.act.pawsPerDistrict || 0); i++) { const q = W.randWalkD(d, r), id = d + '_' + i; if (!S.paws[id]) { const it = Game.addItem('gpaw', q.x, q.y); it.pid = id; } } }
+  // time trials + NPC side quests
+  if (!opts.trial) {
+    for (const m of M.side) { const st = m.p.start || [1, 1]; G.markers.push({ x: W.RX[st[0]] + 150, y: W.RY[st[1]] + 130, k: 'race', n: m.n, col: '#2de2e6', label: VP.mname(m) }); }
+    for (const q of M.act.quests || []) { if (S.quests[q.id]) continue; const lot = W.roles[q.d][q.spot] || W.roles[q.d].plaza1, pt = W.front(lot, 'e'); const f = Game.addFriend(pt.x, pt.y, q.npc); f.stay = true; G.markers.push({ x: pt.x, y: pt.y, k: 'npc', q, col: '#7CFF6B', label: q.name[VP.lang() === 'pt' ? 'pt' : 'en'], thin: true }); }
+  }
   for (let d = 0; d < 5; d++) {
     const R = M.DIST[d]; let nx = null;
     for (let n = R.from; n <= R.to; n++) if (n <= VP.S.unlocked && !VP.S.stars[n]) { nx = n; break; }
@@ -454,6 +398,7 @@ M.update = function (G, dt) {
 };
 // what the HUD shows
 M.objective = function (G) {
+  if (G.free && G.quest) { const q = G.quest, cur = Math.min(q.def.n, Math.round(G.stat[q.key] - q.base)), done = cur >= q.def.n; return { txt: done ? VP.t('q_return', q.def.name[VP.lang() === 'pt' ? 'pt' : 'en']) : VP.t('q_' + q.def.type, q.def.n), prog: [cur, q.def.n], at: done ? q.mk : null, cat: null, free: true }; }
   if (G.free) { let b = null, bd = 1e12; const a = G.cats[G.active]; for (const mk of G.markers) if (mk.k === 'mission') { const d = U.d2(a.x, a.y, mk.x, mk.y); if (d < bd) { bd = d; b = mk; } } return { txt: VP.t(G.trial ? 'o_trial' : 'o_free'), at: b, cat: null, free: true }; }
   const st = G.steps[G.step];
   if (!st) return { txt: G.needRevive ? VP.t('o_reviveAll') : VP.t('o_done'), at: G.needRevive ? G.cats.find(c => c.down) : null, cat: null };

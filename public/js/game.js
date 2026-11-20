@@ -311,10 +311,10 @@ function eat(c, kind, big) {
   const m = G.cats[2];
   G.stat.eaten++;
   c.mouth = 1; sfx('eat', 0.06);
-  const amt = big ? 20 : 9;
-  m.belly = Math.min(100, m.belly + amt);
-  healTeam(big ? 10 : 4);
-  G.stat.cash += big ? 15 : 5;
+  const F = VP.DATA && VP.DATA.items && VP.DATA.items.food[big && kind === 'treat' ? 'bone' : kind];
+  m.belly = Math.min(100, m.belly + (F ? F.belly : big ? 20 : 9));
+  healTeam(F ? F.heal : big ? 10 : 4);
+  G.stat.cash += F ? F.coins : big ? 15 : 5;
   burst(c.x + c.face * 8, c.y - 22, 4, ['#ffb347', '#fff3a8'], 90, 'dot', 4);
   void kind;
 }
@@ -743,6 +743,12 @@ function collect(c, it) {
     if (m.energy > 92 && c.name !== 'mimo') return false;
     m.energy = Math.min(100, m.energy + 60); m.exhausted = false; sfx('coffee'); text(m.x, m.y - 50, tr('coffee'), '#c9a27e', 15); part({ x: m.x, y: m.y - 16, k: 'ring', col: '#c9a27e', size: 10, life: 0.4 });
   } else if (k === 'paw') { VP.S.lives = Math.max(VP.S.lives, Math.min(9, VP.S.lives + 1)); VP.persist(); sfx('paw'); text(it.x, it.y - 24, tr('life1'), '#ffd23f', 17); burst(it.x, it.y, 12, '#ffd23f', 160, 'star', 7, 0.7); }
+  else if (k === 'gpaw') {
+    const S = VP.S; S.paws = S.paws || {}; S.paws[it.pid] = 1; S.cash += 50; sfx('paw'); burst(it.x, it.y, 14, '#ffd23f', 170, 'star', 7, 0.8);
+    const d = it.pid.split('_')[0], per = (VP.Missions.act && VP.Missions.act.pawsPerDistrict) || 5; let n = 0; for (const key in S.paws) if (key.split('_')[0] === d) n++;
+    if (n >= per) { S.lives = Math.max(S.lives, Math.min(9, S.lives + 1)); say(tr('pawsAll'), '#ffd23f', 3.5); } else say(tr('pawFound', n, per), '#ffd23f', 2.2);
+    VP.persist();
+  }
   else if (k === 'cash') { G.stat.cash += 25; sfx('cash', 0.05); text(it.x, it.y - 20, '+$25', '#7CFF6B', 13); }
   else if (k === 'catnip') { G.catnip = 7; sfx('paw'); say(tr('catnip'), '#7CFF6B', 2); for (const k2 of G.cats) k2.root = 0; }
   else if (k === 'milk') { let need = false; for (const k2 of G.cats) if (!k2.down && k2.hp < k2.max) need = true; if (!need) return false; healTeam(35); sfx('coffee'); }
@@ -996,7 +1002,7 @@ Game.update = function (dt) {
   for (const c of G.cats) updCat(c, dt);
   // friends follow
   for (const f of G.friends) {
-    f.t += dt; f.walk = 0; const a = active(); const d = Math.hypot(a.x - f.x, a.y - f.y);
+    f.t += dt; f.walk = 0; if (f.stay) continue; const a = active(); const d = Math.hypot(a.x - f.x, a.y - f.y);
     if (d > 70) { if (d > 620 && !onScreen(f.x, f.y, 60)) { const p = nearFree(a.x, a.y, 60, 0); if (p) { f.x = p.x; f.y = p.y; } } else moveToward(f, a.x, a.y, 185, dt, G.field, 0); }
   }
   for (const e of G.dogs) updDog(e, sdt);

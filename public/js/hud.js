@@ -90,6 +90,7 @@ H.draw = function (G, dt) {
   const ly = H.top + 92 * k;
   Art.icon(c, 'heart', 16 * k, ly, 9 * k); txt('×' + VP.S.lives, 28 * k, ly + 1, 14 * k, VP.S.lives ? '#fff' : '#ff6b6b', 'left');
   Art.icon(c, 'cash', 74 * k, ly, 8 * k); txt('' + ((G.free ? VP.S.cash : 0) + G.stat.cash - (G.free ? (G.bank || 0) : 0)), 86 * k, ly + 1, 14 * k, '#7CFF6B', 'left');
+  if (G.free && VP.S.paws) { Art.icon(c, 'paw', 148 * k, ly, 8 * k); txt(Object.keys(VP.S.paws).length + '/' + ((VP.Missions.act.pawsPerDistrict || 5) * 5), 160 * k, ly + 1, 13 * k, GOLD, 'left'); }
   if (G.keys > 0) { Art.icon(c, 'key', 148 * k, ly, 8 * k); txt('×' + G.keys, 162 * k, ly + 1, 13 * k, GOLD, 'left'); }
   // ---- objective ----
   const ob = H.ob = VP.Missions.objective(G);

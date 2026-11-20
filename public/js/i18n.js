@@ -98,6 +98,13 @@ const L = {
   mural: ['Mural de apoiadores', "Supporters' wall"], muralEmpty: ['Seu nome aparece aqui quando você apoia os gatos.', 'Your name shows up here when you support the cats.'], thanks: ['MIAU-TO OBRIGADO!', 'THANK MEOW!'], thanksSub: ['Mimo, Mimosa e Mortícia agradecem de coração.', 'Mimo, Mimosa and Morticia thank you from the heart.'],
   supporter: ['Apoiador', 'Supporter'], trialEnd: ['Fim da volta de teste!', 'Test lap over!'], tryTitle: ['Provador VIP', 'VIP fitting room'],
   xmasOn: ['Decoração de Natal', 'Christmas decorations'],
+  pawFound: ['Patinha dourada {0}/{1} neste bairro!', 'Golden paw {0}/{1} in this district!'], pawsAll: ['Todas as patinhas do bairro! +1 vida', 'All paws in this district! +1 life'], pawsLbl: ['Patinhas', 'Paws'],
+  q_eat: ['Missão do bairro: coma {0} petiscos', 'Side quest: eat {0} treats'], q_ko: ['Missão do bairro: nocauteie {0} cachorros', 'Side quest: knock out {0} dogs'], q_steal: ['Missão do bairro: roube {0} coisas', 'Side quest: steal {0} things'], q_cash: ['Missão do bairro: junte ${0}', 'Side quest: earn ${0}'],
+  q_return: ['Pronto! Volte e fale com {0}', 'Done! Go back and talk to {0}'], q_accept: ['Aceitar', 'Accept'], q_later: ['Depois', 'Later'], q_done: ['Missão do bairro completa! +{0} moedas', 'Side quest complete! +{0} coins'], q_busy: ['Termine a outra missão do bairro primeiro.', 'Finish your other side quest first.'],
+  trial: ['CONTRA O RELÓGIO', 'TIME TRIAL'], b_trial: ['Corrida contra o relógio pelos checkpoints. Recompensa em moedas!', 'Race the clock through the checkpoints. Coin reward!'],
+  wd_sub: ['Vista os gatos! Itens se compram com moedas das missões; os dourados vêm da Loja.', 'Dress the cats! Items cost coins from missions; golden ones come from the Shop.'],
+  slot_head: ['Cabeça', 'Head'], slot_eyes: ['Olhos', 'Eyes'], slot_neck: ['Pescoço', 'Neck'], slot_body: ['Roupa', 'Body'], slot_back: ['Costas', 'Back'], slot_trail: ['Rastro', 'Trail'],
+  wd_none: ['Nada', 'None'], wd_equipped: ['Usando', 'Wearing'], wd_free: ['Grátis', 'Free'], wd_bought: ['Comprado!', 'Bought!'], wd_poor: ['Faltam {0} moedas. Jogue missões!', 'You need {0} more coins. Play missions!'], wd_shop: ['Item da Loja', 'Shop item'],
 };
 let lang = 'en';
 try { const s = VP.ls.get('vp_lang'); lang = s === 'pt' || s === 'en' ? s : (/^pt/i.test(navigator.language || '') ? 'pt' : 'en'); } catch (e) { lang = 'en'; }

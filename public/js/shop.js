@@ -25,6 +25,7 @@ Shop.apply = function (id, product, grants) {
     if (g === 'season') { VP.S.xmas = true; VP.persist(); }
   }
   save();
+  if (VP.Wardrobe && VP.Wardrobe.data) for (const g of grants || []) if (g === 'vip' || g === 'season') VP.Wardrobe.equipSet(g);
   if (VP.R3 && VP.R3.refreshCats) VP.R3.refreshCats();
   return true;
 };

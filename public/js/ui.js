@@ -116,12 +116,12 @@ SCREENS.brief = {
   cls: 'glass', hideHud: true,
   html: n => {
     const m = M.get(n), D = M.DIST[m.d];
-    let need = NEED[m.type]; if (need === 'gate') need = [GATECAT[m.p.gate]]; if (need === 'all') need = ['mimo', 'mimosa', 'morticia'];
+    let need = m.side ? null : NEED[m.type]; if (need === 'gate') need = [GATECAT[m.p.gate]]; if (need === 'all') need = ['mimo', 'mimosa', 'morticia'];
     const hero = m.boss ? (art('boss_' + (m.d + 1)) || art('title_bg')) : m.d === 6 ? art('shop_season') : m.d === 5 ? art('shop_vip') : art('title_bg');
     const best = VP.S.best[n];
     return `${corner(G ? 'closeBrief' : 'map')}<div class="wrap narrow" style="margin-top:46px">
-      <div class="hero" style="background-image:url('${hero}');${m.boss ? 'box-shadow:inset 0 0 0 3px #ffd23f,0 0 30px #ffd23f66' : ''}"><div class="cap"><span>${m.boss ? '👑 ' + t('bossM') + ' · ' : ''}${t('d' + m.d).toUpperCase()} · ${t('mission').toUpperCase()} ${m.bonus ? '★' + (m.n - D.from + 1) : m.n}</span><b>${esc(VP.mname(m))}</b></div></div>
-      <div class="panel"><p>${t('b_' + m.type)}</p>${m.boss ? `<p class="small">💡 ${t('bossTip')}</p>` : ''}
+      <div class="hero" style="background-image:url('${hero}');${m.boss ? 'box-shadow:inset 0 0 0 3px #ffd23f,0 0 30px #ffd23f66' : ''}"><div class="cap"><span>${m.boss ? '👑 ' + t('bossM') + ' · ' : ''}${t('d' + m.d).toUpperCase()} · ${m.side ? '🏁 ' + t('trial') : t('mission').toUpperCase() + ' ' + (m.bonus ? '★' + (m.n - D.from + 1) : m.n)}</span><b>${esc(VP.mname(m))}</b></div></div>
+      <div class="panel"><p>${t(m.side ? 'b_trial' : 'b_' + m.type)}</p>${m.boss ? `<p class="small">💡 ${t('bossTip')}</p>` : ''}
         ${need ? `<div class="need">${need.map(c => `<img src="${art('portrait_' + c)}" alt="">`).join('')}<div><b>${need.length === 3 ? t('need_all') : need.map(c => t('need_' + c)).join(' · ')}</b></div></div>` : ''}
         <p class="small">⏱ ${t('par')}: ${U.fmtTime(M.par(m))}${m.p.time ? ' · ⌛ ' + U.fmtTime(m.p.time) : ''} ${best ? ' · ' + t('best') + ': ' + best : ''} ${VP.S.stars[n] ? ' · ' + stars(VP.S.stars[n]) : ''}</p></div>
       <button class="btn big" data-act="start" data-n="${n}">▶ ${t('start')}</button>
@@ -167,7 +167,7 @@ SCREENS.result = {
   },
 };
 ACT.noVip = el => { const c = el.closest('.vipcard'); if (c) c.remove(); };
-function nextOf(m) { const nx = M.list[M.list.indexOf(m) + 1]; return nx && nx.d === m.d && M.unlocked(nx) ? nx : (nx && !m.bonus && !nx.bonus && M.unlocked(nx) ? nx : null); }
+function nextOf(m) { if (m.side) return null; const nx = M.list[M.list.indexOf(m) + 1]; return nx && nx.d === m.d && M.unlocked(nx) ? nx : (nx && !m.bonus && !nx.bonus && M.unlocked(nx) ? nx : null); }
 UI.result = function (win, why) {
   if (!G) return;
   const m = G.m;
@@ -176,14 +176,14 @@ UI.result = function (win, why) {
   if (win) {
     r.noFaint = G.stat.downs === 0; r.underPar = G.time <= r.par;
     r.stars = 1 + (r.noFaint ? 1 : 0) + (r.underPar ? 1 : 0);
-    r.cash = Math.round(G.stat.cash);
+    r.cash = Math.round(G.stat.cash) + (m.side ? Math.round(m.p.reward * (VP.S.stars[m.n] ? 0.25 : 1)) : 0);
     r.score = Math.min(24000, Math.round(G.stat.cash + r.stars * 1000 + Math.min(3000, Math.max(0, r.par * 1.5 - G.time) * 12)));
     const S = VP.S, old = S.stars[m.n] || 0;
     if (r.stars === 3 && old < 3) { S.lives = Math.max(S.lives, Math.min(9, S.lives + 1)); r.rewards.push(t('lifeReward')); }
     if (m.boss && !old) { S.lives = Math.max(S.lives, Math.min(9, S.lives + 1)); r.rewards.push(t('lifeBoss')); }
     S.stars[m.n] = Math.max(old, r.stars); S.best[m.n] = Math.max(S.best[m.n] || 0, r.score); S.cash += r.cash;
     if (!m.bonus && m.n === S.unlocked && S.unlocked < 50) S.unlocked++; else if (!m.bonus && m.n === 50) S.unlocked = 51;
-    r.districtClear = !!m.boss || (m.bonus && m.n === M.DIST[m.d].to);
+    r.districtClear = !!m.boss || (m.bonus && !m.side && m.n === M.DIST[m.d].to);
     VP.persist();
     if (VP.onProgress) VP.onProgress(r);
   }
@@ -257,9 +257,22 @@ UI.startMission = function (n) {
 };
 UI.marker = function (mk) {
   if (mk.k === 'shop') { UI.paused = true; VP.Shop.open(); return; }
-  if (mk.k === 'mission') { UI.paused = true; UI.show('brief', mk.n); return; }
+  if (mk.k === 'mission' || mk.k === 'race') { UI.paused = true; UI.show('brief', mk.n); return; }
+  if (mk.k === 'npc') { UI.quest(mk); return; }
   if (mk.act) mk.act(mk);
 };
+UI.quest = function (mk) {
+  const q = mk.q, L = VP.lang() === 'pt' ? 'pt' : 'en';
+  if (G.quest && G.quest.def === q) {
+    if (G.stat[G.quest.key] - G.quest.base < q.n) return;
+    VP.S.quests[q.id] = 1; VP.S.cash += q.reward; VP.persist(); G.quest = null; G.markers.splice(G.markers.indexOf(mk), 1);
+    UI.confetti(); VP.Audio.sfx('win'); Game.fx.say(t('q_done', q.reward), '#7CFF6B', 3.5); return;
+  }
+  if (G.quest) { UI.toast(t('q_busy')); return; }
+  UI.paused = true; UI.show('quest', mk);
+};
+SCREENS.quest = { cls: 'glass center', hideHud: true, html: mk => { const q = mk.q, L = VP.lang() === 'pt' ? 'pt' : 'en'; return `<div class="wrap narrow"><h2 class="teal">💬 ${esc(q.name[L])}</h2><div class="panel t"><p>“${esc(q.text[L])}”</p><p class="small">🎁 ${q.reward} ${t('coins')}</p></div><div class="row"><button class="btn ghost" data-act="resume">${t('q_later')}</button><button class="btn" data-act="qAccept">${t('q_accept')}</button></div></div>`; } };
+ACT.qAccept = () => { const mk = UI.arg, q = mk.q, key = { eat: 'eaten', ko: 'ko', steal: 'stolen', cash: 'cash' }[q.type]; G.quest = { def: q, key, base: G.stat[key], mk }; ACT.resume(); };
 UI.trialEnd = function () { UI.toast(t('trialEnd')); endGame(); VP.Shop.open(); };
 UI.pause = function () { if (UI.state !== 'play' || UI.screen) return; UI.paused = true; VP.Audio.pause(true); UI.show('pause'); };
 
@@ -279,7 +292,16 @@ function frame(ts) {
   VP.HUD.draw(G && UI.state === 'play' ? G : null, dt);
 }
 
+VP.DATA = {};
 UI.boot = function () {
+  const files = ['missions', 'items', 'outfits', 'activities'];
+  Promise.all(files.map(f => fetch('data/' + f + '.json').then(r => r.json()))).then(d => {
+    files.forEach((f, i) => { VP.DATA[f] = d[i]; });
+    M.load(d[0], d[3]); if (VP.Wardrobe) VP.Wardrobe.load(d[2]);
+    boot2();
+  }).catch(e => { console.error('data', e); document.getElementById('ui').innerHTML = '<div class="screen on center"><p>😿 Não deu para carregar o jogo. Recarregue a página.<br>Could not load the game. Please reload.</p></div>'; });
+};
+function boot2() {
   root = document.getElementById('ui');
   root.addEventListener('click', onClick);
   document.addEventListener('gesturestart', e => e.preventDefault());
@@ -294,8 +316,9 @@ UI.boot = function () {
   UI.show('title');
   const startGfx = () => { if (VP.R3 && !VP.R3.ok && !UI.gfxTried) { UI.gfxTried = true; let ok = false; try { ok = VP.R3.init(document.getElementById('gl')); } catch (e) { ok = false; console.warn('gfx', e); } if (!ok) UI.noGfx = true; } };
   if (VP.R3) startGfx(); else addEventListener('vp-gfx', startGfx);
+  UI.ready = true;
   requestAnimationFrame(frame);
-};
+}
 // ---------- test hooks ----------
 window.__vp = {
   VP, get G() { return G; }, start: n => UI.startMission(n), free: p => UI.free(p), win: () => Game.win(), fail: w => Game.fail(w || 'time'),

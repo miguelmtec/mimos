@@ -1,0 +1,59 @@
+{
+ "version": 1,
+ "food": {
+  "treat": {
+   "belly": 9,
+   "heal": 4,
+   "coins": 5
+  },
+  "bone": {
+   "belly": 20,
+   "heal": 10,
+   "coins": 15
+  },
+  "donut": {
+   "belly": 20,
+   "heal": 10,
+   "coins": 15
+  },
+  "steak": {
+   "belly": 26,
+   "heal": 14,
+   "coins": 20
+  },
+  "sushi": {
+   "belly": 20,
+   "heal": 10,
+   "coins": 15
+  },
+  "hotdog": {
+   "belly": 20,
+   "heal": 10,
+   "coins": 15
+  }
+ },
+ "pickups": {
+  "coffee": {
+   "energy": 60
+  },
+  "milk": {
+   "heal": 35
+  },
+  "catnip": {
+   "seconds": 7
+  },
+  "cash": {
+   "coins": 25
+  },
+  "paw": {
+   "lives": 1
+  },
+  "gpaw": {
+   "coins": 50
+  }
+ },
+ "spawn": {
+  "coffee": 16,
+  "paws": 4
+ }
+}

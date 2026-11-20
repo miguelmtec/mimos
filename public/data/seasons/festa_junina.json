@@ -1,0 +1,28 @@
+{
+ "_doc": "Esqueleto: só datas e tema. Conteúdo (decoração, missões, trilha) entra depois, no mesmo formato de natal.json.",
+ "id": "festa_junina",
+ "year": 2027,
+ "icon": "🌽",
+ "name": {
+  "pt": "Arraiá Neon",
+  "en": "Neon June Festival"
+ },
+ "theme": {
+  "pt": "Bandeirinhas, quadrilha, pescaria e correio elegante.",
+  "en": "Bunting, square dancing, a fishing game and friendly notes."
+ },
+ "start": "2027-06-01",
+ "end": "2027-06-30",
+ "colors": [
+  "#ff8a3d",
+  "#ffd23f",
+  "#e01e37",
+  "#2a6bff"
+ ],
+ "skeleton": true,
+ "decor": {},
+ "track": null,
+ "pass": null,
+ "items": [],
+ "missions": []
+}

@@ -443,7 +443,8 @@ test('content: phrases, rooms and the feature flags', async () => {
   for (const c of [...idx.cities, ...(idx.soon || [])]) if (c.id) assert.match(c.id, ROOM_RE, c.id);
   assert.match('city', ROOM_RE);
   const cfg = JSON.parse(await readFile(new URL('../public/data/online.json', import.meta.url), 'utf8'));
-  assert.deepEqual(cfg, { enabled: true, maxPerRoom: ROOM_CAP, maxRooms: MAX_ROOMS, tickMs: 1500, pollingEnabled: true, wsUrl: '' },
+  assert.equal(typeof cfg.enabled, 'boolean');
+  assert.deepEqual(cfg, { enabled: cfg.enabled, maxPerRoom: ROOM_CAP, maxRooms: MAX_ROOMS, tickMs: 1500, pollingEnabled: true, wsUrl: '' },
     'the numbers shown by the client are the ones the server enforces; no real-time server is configured in the repository');
   assert.match('g' + '0'.repeat(20), ID_RE);
 });

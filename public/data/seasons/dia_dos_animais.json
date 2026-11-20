@@ -1,0 +1,27 @@
+{
+ "_doc": "Esqueleto: só datas e tema. Conteúdo (decoração, missões, trilha) entra depois, no mesmo formato de natal.json.",
+ "id": "dia_dos_animais",
+ "year": 2027,
+ "icon": "🐾",
+ "name": {
+  "pt": "Dia dos Animais",
+  "en": "World Animal Day"
+ },
+ "theme": {
+  "pt": "4 de outubro: semana da adoção e dos cuidados na Clínica Patinhas.",
+  "en": "October 4th: a week about adoption and care at the Little Paws Clinic."
+ },
+ "start": "2027-10-01",
+ "end": "2027-10-10",
+ "colors": [
+  "#7CFF6B",
+  "#2de2e6",
+  "#ffd23f"
+ ],
+ "skeleton": true,
+ "decor": {},
+ "track": null,
+ "pass": null,
+ "items": [],
+ "missions": []
+}

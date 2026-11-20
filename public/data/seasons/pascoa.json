@@ -1,0 +1,28 @@
+{
+ "_doc": "Esqueleto: só datas e tema. Conteúdo (decoração, missões, trilha) entra depois, no mesmo formato de natal.json.",
+ "id": "pascoa",
+ "year": 2027,
+ "icon": "🐣",
+ "name": {
+  "pt": "Páscoa dos Mimos",
+  "en": "Mimos' Easter"
+ },
+ "theme": {
+  "pt": "Caça aos ovos pela cidade (ovos de brinquedo: chocolate faz mal para gatos).",
+  "en": "An egg hunt around town (toy eggs: chocolate is bad for cats)."
+ },
+ "start": "2027-03-20",
+ "end": "2027-04-04",
+ "colors": [
+  "#bff4ff",
+  "#ffd9f0",
+  "#fff3a8",
+  "#b9f7c8"
+ ],
+ "skeleton": true,
+ "decor": {},
+ "track": null,
+ "pass": null,
+ "items": [],
+ "missions": []
+}

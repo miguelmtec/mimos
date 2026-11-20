@@ -1,0 +1,79 @@
+{
+  "_doc": "Bicharada: novos inimigos (desenho animado, sem violência gráfica). Ver DESIGN.md §10. Derrotados viram confete ou fogem.",
+  "version": 1,
+  "cap": { "total": 30, "awake": 14, "shots": 48, "ambientGroupsPerDistrict": 2, "respawnSeconds": 25 },
+  "scaling": { "maxLevel": 40, "hpPerLevel": 0.045, "dmgPerLevel": 0.025, "spdPerLevel": 0.003, "coinsPerLevel": 0.03, "groupEvery": 14 },
+  "debuffs": {
+    "itch": { "seconds": 2.6, "slow": 0.6 },
+    "wet": { "seconds": 4.5, "slow": 0.75, "attackSlow": 1.4 },
+    "scare": { "seconds": 1.2 }
+  },
+  "abilities": {
+    "bolt": { "cat": "mimo", "note": { "pt": "Tiros do Mimo: acertam quem voa (Pombo) e quem está longe (Pepino).", "en": "Mimo's shots: hit flyers (Pigeon) and far targets (Cucumber)." } },
+    "bite": { "cat": "mimosa", "note": { "pt": "Mordida da Mimosa: quebra a carcaça do Aspirador e dá curto no Robô.", "en": "Mimosa's bite: cracks the Vacuum's shell and shorts the Robot." } },
+    "roar": { "cat": "mimosa", "note": { "pt": "Rosnado da Mimosa: atordoa todos, espanta as Pulgas e quebra o Aspirador.", "en": "Mimosa's roar: stuns everyone, scatters Fleas and breaks the Vacuum." } },
+    "snatch": { "cat": "morticia", "note": { "pt": "Roubo da Mortícia: pega de volta o que o Pombo levou e come o queijo dos Ratos.", "en": "Morticia's steal: takes back what the Pigeon took and eats the Rats' cheese." } }
+  },
+  "enemies": {
+    "pulga": {
+      "name": { "pt": "Pulgas Gigantes", "en": "Giant Fleas" }, "icon": "🦟",
+      "behavior": "swarm", "hp": 12, "spd": 150, "dmg": 2, "r": 7, "coins": 3,
+      "group": [4, 6], "minLevel": 1, "districts": [0, 2, 3], "aggro": 260,
+      "weak": { "roar": 3 }, "defeat": "confetti",
+      "params": { "hop": 260, "rest": [0.15, 0.45] },
+      "tip": { "pt": "Elas pulam em cima e dão coceira: você fica lento. Rosne ou atire!", "en": "They jump on you and make you itchy and slow. Roar or shoot!" }
+    },
+    "pepino": {
+      "name": { "pt": "Pepino Assustador", "en": "Scary Cucumber" }, "icon": "🥒",
+      "behavior": "ambush", "hp": 26, "spd": 120, "dmg": 0, "r": 10, "coins": 10,
+      "group": [1, 2], "minLevel": 2, "districts": [0, 1, 4], "aggro": 330,
+      "weak": { "bolt": 1.5 }, "defeat": "confetti",
+      "params": { "trigger": 110, "behind": 0.9, "cooldown": 5 },
+      "tip": { "pt": "Ele chega por trás. Se você virar e der de cara, leva um susto! Acerte de longe.", "en": "It sneaks up behind you. Turn around into it and you jump! Hit it from afar." }
+    },
+    "pombo": {
+      "name": { "pt": "Pombo Ladrão", "en": "Thief Pigeon" }, "icon": "🐦",
+      "behavior": "thief", "hp": 30, "spd": 172, "dmg": 0, "r": 10, "coins": 12,
+      "group": [1, 2], "minLevel": 3, "districts": [0, 1, 2, 3, 4], "aggro": 300,
+      "weak": { "bolt": 1.3 }, "defeat": "flee",
+      "params": { "steal": 40, "flyZ": 62, "swoop": 270, "flight": 3.4, "rest": 2.3, "escape": 30 },
+      "tip": { "pt": "Dá um rasante e leva suas moedas. Corra atrás: ele cansa e pousa. A Mortícia pega tudo de volta!", "en": "It swoops and takes your coins. Chase it: it gets tired and lands. Morticia takes it all back!" }
+    },
+    "rato": {
+      "name": { "pt": "Ratos Ninjas", "en": "Ninja Rats" }, "icon": "🐭",
+      "behavior": "ninja", "hp": 34, "spd": 185, "dmg": 6, "r": 9, "coins": 14,
+      "group": [2, 3], "minLevel": 6, "districts": [1, 3], "aggro": 300,
+      "weak": { "roar": 1.5 }, "defeat": "flee", "carry": "cheese",
+      "params": { "keep": [150, 215], "throwEvery": 1.9, "starSpeed": 300, "dodge": 0.65, "dodgeEvery": 1.4 },
+      "tip": { "pt": "Rápidos, desviam dos tiros e jogam estrelas de queijo. A Mortícia come o queijo e eles vão embora!", "en": "Fast, they dodge shots and throw cheese stars. Morticia eats the cheese and they leave!" }
+    },
+    "robo": {
+      "name": { "pt": "Robô do Banho", "en": "Bath Robot" }, "icon": "🚿",
+      "behavior": "sprayer", "hp": 80, "spd": 70, "dmg": 4, "r": 14, "coins": 22,
+      "group": [1, 1], "minLevel": 9, "districts": [2, 4], "aggro": 300,
+      "weak": { "bite": 1.6 }, "defeat": "confetti",
+      "params": { "range": 250, "windup": 0.8, "spray": 1.0, "every": 3.2, "dropSpeed": 330 },
+      "tip": { "pt": "Joga água! Gato molhado fica lento e ataca devagar. Saia da frente do jato e morda.", "en": "It sprays water! A wet cat is slow and attacks slowly. Step out of the jet and bite." }
+    },
+    "aspirador": {
+      "name": { "pt": "Aspirador Monstro", "en": "Monster Vacuum" }, "icon": "🌀",
+      "behavior": "vacuum", "hp": 120, "armor": 70, "spd": 104, "dmg": 3, "r": 16, "coins": 30,
+      "group": [1, 1], "minLevel": 12, "districts": [1, 3, 4], "aggro": 320,
+      "weak": { "bite": 1.3 }, "defeat": "confetti",
+      "params": { "range": 150, "pull": 120, "mash": 8, "autoEscape": 2, "cooldown": 4 },
+      "tip": { "pt": "Te puxa e te suga! Aperte ATACAR várias vezes para escapar. Só a Mimosa quebra ele.", "en": "It pulls you in! Mash ATTACK to escape. Only Mimosa can break it." }
+    }
+  },
+  "bosses": {
+    "carrocinha": {
+      "name": { "pt": "Dr. Carrocinha", "en": "Dr. Dogcatcher" },
+      "hp": 2400, "r": 34, "dmg": 12, "coins": 400, "hpPerLevel": 0.03, "exposeSeconds": 6,
+      "phases": [
+        { "id": "truck", "until": 0.66, "armor": 260, "speed": 1, "moves": ["charge", "nets", "charge"], "label": { "pt": "Fase 1: Caminhão-Rede", "en": "Phase 1: Net Truck" } },
+        { "id": "gadgets", "until": 0.33, "armor": 0, "speed": 0.6, "moves": ["summon", "netRing", "spray"], "minions": [["pulga", 4], ["rato", 2], ["pombo", 1], ["aspirador", 1]], "shieldWhileMinions": true, "label": { "pt": "Fase 2: Bugigangas", "en": "Phase 2: Gadgets" } },
+        { "id": "turbo", "until": 0, "armor": 180, "speed": 1.35, "moves": ["charge", "netRain", "charge", "spray"], "label": { "pt": "Fase 3: Turbo!", "en": "Phase 3: Turbo!" } }
+      ],
+      "defeat": "flee"
+    }
+  }
+}

@@ -27,7 +27,9 @@ const DOG = Game.DOG = {
   pug: { hp: 6400, spd: 92, dmg: 23, r: 30, armor: 360, boss: { moves: ['suck', 'spray', 'charge', 'barrels', 'summon'], minion: ['chi', 'shooter', 'heavy'], snack: 'donut' } },
   dogcatcher: { hp: 7200, spd: 96, dmg: 20, r: 31, armor: 400, boss: { moves: ['nets', 'charge', 'barrels', 'summon', 'slam', 'spray', 'suck'], minion: ['catcher', 'cop', 'heavy', 'shooter'], snack: 'steak' } },
 };
-const CARSTAT = { gold: [100, 345], pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
+// Difficulty curve: mission levels above 22 keep growing, but at roughly half the pace (smoother late game).
+Game.eff = lv => { lv = lv || 1; return lv <= 22 ? lv : 22 + (lv - 22) * 0.55; };
+const CARSTAT = { pickup: [150, 300],  gold: [100, 345], pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
 
 // ---------- helpers ----------
 function step(e, dx, dy, mode) {
@@ -54,13 +56,13 @@ const tr = k => VP.t(k);
 Game.create = function (world, mission) {
   W = world;
   G = Game.G = {
-    W: world, m: mission, n: mission.lv || 1, id: mission.n, d: mission.d, time: 0, real: 0, over: false, paused: false,
+    W: world, m: mission, n: Game.eff(mission.lv), id: mission.n, d: mission.d, time: 0, real: 0, over: false, paused: false,
     cats: [], active: 0, dogs: [], bullets: [], items: [], props: [], cars: [], parts: [], texts: [], teles: [], friends: [],
     cam: { x: 0, y: 0 }, mtimer: null, shake: 0, hitstop: 0, nap: 0, catnip: 0, feast: 0, banner: null,
     heat: 0, wanted: 0, minWanted: 0, calm: 0, copT: 2, car: null, ctx: null, revive: 0, keys: 0,
-    stat: { ko: 0, eaten: 0, freed: 0, cash: 0, downs: 0, stolen: 0, dmg: 0 }, flags: {},
+    stat: { ko: 0, eaten: 0, freed: 0, cash: 0, downs: 0, stolen: 0, dmg: 0, kites: 0, coins: 0, woke: 0, pts: 0 }, flags: {}, solo: null, mini: null,
     steps: [], step: 0, stepT: 0, timer: null, fieldT: 0, field: null, fieldM: null, houseField: null, house: null,
-    hpMul: 1 + (mission.lv || 1) * 0.016, dmgMul: 1 + (mission.lv || 1) * 0.007, pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
+    hpMul: 1 + Game.eff(mission.lv) * 0.016, dmgMul: 1 + Game.eff(mission.lv) * 0.007, pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
   };
   return G;
 };
@@ -92,6 +94,8 @@ Game.addDog = function (type, x, y, o) {
     armor: (st.armor || 0) * (1 + G.n * 0.01), carry: null, tag: o.tag || null, police: !!st.police || !!o.police, raid: !!o.raid, home: { x, y }, aggro: o.aggro || 250,
     disarmed: false, aim: 0, stuck: 0, dead: false, robbed: 0,
   };
+  if (o.sleep) { e.sleep = true; e.wake = o.wake || 62; e.state = 'guard'; e.aggro = 0; }
+  if (o.big) { e.big = o.big; e.r *= 1.25; e.dmg *= 1.15; e.elite = true; }
   e.max = e.hp; e.maxArmor = e.armor;
   if (o.carry !== undefined) e.carry = o.carry;
   else if (st.carry && Math.random() < st.carry[1]) e.carry = st.carry[0];
@@ -122,7 +126,7 @@ Game.addCar = function (type, x, y, a, o) {
   if (['sedan', 'sport'].includes(type) && !c.col) c.col = VP.Art.carColor((Math.random() * 7) | 0);
   G.cars.push(c); return c;
 };
-Game.addFriend = function (x, y, skin) { const f = { kind: 'friend', name: skin, x, y, r: 9, t: Math.random() * 4, walk: 0, face: 1 }; G.friends.push(f); return f; };
+Game.addFriend = function (x, y, skin) { const f = { kind: 'friend', name: skin, x, y, r: 9, t: Math.random() * 4, walk: 0, face: 1, spd: 185 }; G.friends.push(f); return f; };
 // instantiate what the world generator asked for
 Game.populate = function (o) {
   o = o || {};
@@ -205,6 +209,7 @@ function downCat(c) {
   c.hp = 0; c.down = true; c.root = 0; c.dashT = 0; G.stat.downs++;
   sfx('down'); shake(10); poof(c.x, c.y - 14, 8);
   say(tr(c.name).toUpperCase() + ' ' + tr('fainted'), '#ff6b6b', 3);
+  if (G.solo !== null && c.idx === G.solo) return Game.fail('caught');
   if (c.idx === G.active) { const n = G.cats.find(k => !k.down); if (n) switchTo(n.idx, true); }
   if (!alive().length) Game.fail('allDown');
 }
@@ -224,13 +229,15 @@ function hurtDog(e, dmg, src, fx, fy, kb) {
   } else if (exposed) shown = dmg * 1.25;
   shown = Math.max(1, Math.round(shown));
   e.hp -= shown; e.flash = 0.12;
+  if (e.sleep) wakeDog(e);
   if (e.state === 'guard') { e.state = 'chase'; alertPack(e); }
   if (kb && !e.isBoss) { const a = Math.atan2(e.y - fy, e.x - fx); e.kx += Math.cos(a) * kb; e.ky += Math.sin(a) * kb; }
   text(e.x, e.y - 40 - e.r, tink ? tr('tink') : '' + shown, tink ? '#c0c7d1' : (src === 'bite' ? '#ff7ac0' : src === 'bolt' ? '#8ff3ff' : '#fff'), tink ? 12 : 15);
   if (tink) sfx('tink', 0.08);
   if (e.hp <= 0) koDog(e);
 }
-function alertPack(e) { for (const o of G.dogs) if (o !== e && o.state === 'guard' && U.d2(o.x, o.y, e.x, e.y) < 300 * 300) o.state = 'chase'; }
+function wakeDog(e) { e.sleep = false; e.state = 'chase'; e.hunt = true; e.aggro = 250; G.stat.woke++; part({ x: e.x, y: e.y - 56, k: 'txt', txt: '!', col: '#ff4f5e', size: 22, life: 0.6, vy: -20 }); sfx('alarm', 0.3); }
+function alertPack(e) { for (const o of G.dogs) if (o !== e && !o.sleep && o.state === 'guard' && U.d2(o.x, o.y, e.x, e.y) < 300 * 300) o.state = 'chase'; }
 function koDog(e) {
   e.dead = true; G.stat.ko++;
   poof(e.x, e.y - 14, e.isBoss ? 30 : 9); burst(e.x, e.y - 18, e.isBoss ? 24 : 6, ['#ffd23f', '#fff'], 190, 'star', 8, 0.7);
@@ -248,6 +255,9 @@ function koDog(e) {
 function damageCar(car, dmg) {
   if (car.dead) return;
   car.hp -= dmg; car.flash = 0.1;
+  if (car.hp <= 0 && car.capture) { // heist target: it stops instead of blowing up, ready to be boarded
+    car.capture = false; car.captured = true; car.ai = 'parked'; car.spd = 0; car.hp = car.max = 380; car.drop = 0; poof(car.x, car.y, 14, '#fff'); sfx('crash'); shake(10); G.stat.cash += 100; return;
+  }
   if (car.hp <= 0) {
     car.dead = true; poof(car.x, car.y, 18, '#bbb'); burst(car.x, car.y, 14, ['#ffd23f', '#fff', '#888'], 220, 'dot', 7, 0.7); sfx('crash'); shake(14);
     if (G.car === car) { exitCar(true); for (const c of G.cats) if (!c.down) { c.inv = 0; hurtCat(c, 15, car.x, car.y); c.inv = 1.5; } }
@@ -260,6 +270,7 @@ function damageCar(car, dmg) {
 function switchTo(i, silent) {
   const c = G.cats[i];
   if (!c || c.down || i === G.active) { if (c && c.down && !silent) say(tr('isDown'), '#ff6b6b', 1.5); return; }
+  if (G.solo !== null) { if (!silent) say(tr('soloOnly'), '#ffd23f', 1.6); return; }
   if (G.car) { G.active = i; return; }
   G.active = i; G.fieldT = 0; refreshFields(true);
   if (!silent) sfx('sw');
@@ -464,8 +475,10 @@ function updCat(c, dt) {
   if (G.catnip > 0) pace *= 1.2;
   let spd = c.spd * pace * (c.exhausted ? 0.62 : 1) * (c.root > 0 ? 0 : 1);
   if (c.name === 'morticia' && c.belly <= 0) spd *= 0.8;
+  if (c.hopT > 0) c.hopT -= dt;
   if (isA) {
     const m = Math.hypot(I.mx, I.my);
+    if (m > 0.12 && spd > 0) spd *= slopeMul(c.x, c.y, I.mx / m, I.my / m);
     if (m > 0.12 && spd > 0) { step(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); c.walk = 1; if (!I.attack && Math.abs(I.mx) > 0.15) c.face = I.mx > 0 ? 1 : -1; if (Math.random() < dt * 9) part({ x: c.x - I.mx * 8, y: c.y - 1, k: 'puff', size: 5, life: 0.3, col: 'rgba(255,255,255,.5)' }); }
     // aim
     const range = c.name === 'mimo' ? 520 : 120, kind = c.name === 'mimo' ? 'bolt' : c.name === 'mimosa' ? 'bite' : 'snatch';
@@ -474,7 +487,7 @@ function updCat(c, dt) {
     else if (I.useMouse && !I.touch && I.mw) ang = Math.atan2(I.mw.y - c.y, I.mw.x - c.x);
     else { ang = autoAim(c, range, kind); if (ang === null && m > 0.12) ang = Math.atan2(I.my, I.mx); }
     if (ang !== null) c.aim = ang;
-    if (I.attack && !(G.ctx && G.ctx.k === 'revive' && I.ctxHeld)) doAttack(c, c.aim, false);
+    if (I.attack && !(G.ctx && G.ctx.k === 'revive' && I.ctxHeld) && !(G.mini && G.mini.quiet)) doAttack(c, c.aim, false);
   } else updFollower(c, dt, spd);
 }
 function feastTick(c, dt) {
@@ -496,7 +509,11 @@ function feastTick(c, dt) {
     for (const p of G.props) if (p.k === 'stand' && p.left > 0 && U.d2(p.x, p.y, c.x, c.y) < R * R) { p.left--; eat(c, p.food, true); part({ x: p.x, y: p.y - 14, k: 'fly', icon: p.food, tx: c, life: 0.3, size: 11 }); break; }
   }
 }
+// walking speed on real-city terrain: uphill is slower, downhill a touch faster (W.slope = rise per px along the direction)
+function slopeMul(x, y, dx, dy) { if (!W.hpx) return 1; const g = (W.hpx(x + dx * 30, y + dy * 30) - W.hpx(x, y)) / 1.25; return U.clamp(1 - g * 1.5, 0.55, 1.15); }
+Game.slopeMul = slopeMul;
 function updFollower(c, dt, spd) {
+  if (G.solo !== null) return; // solo stealth: the other two wait where they are
   const a = active(), isM = c.name === 'morticia', mode = isM ? 1 : 0, field = isM ? G.fieldM : G.field;
   const da = Math.hypot(a.x - c.x, a.y - c.y);
   c.aiT -= dt;
@@ -551,6 +568,7 @@ function pickTarget(e) {
   for (const c of G.cats) {
     if (c.down || c.invis > 0) continue;
     if (G.car && c.idx !== G.active) continue;
+    if (G.solo !== null && c.idx !== G.solo) continue;
     let d = Math.hypot(c.x - e.x, c.y - e.y);
     let l = lim; if (c.name === 'morticia' && e.state === 'guard') l *= 0.55;
     if (d > l) continue;
@@ -580,6 +598,11 @@ function updDog(e, dt) {
   if (e.kx || e.ky) { step(e, e.kx * dt, e.ky * dt, 0); const f = Math.pow(0.001, dt); e.kx *= f; e.ky *= f; if (Math.abs(e.kx) + Math.abs(e.ky) < 6) e.kx = e.ky = 0; }
   if (e.stun > 0) { e.stun -= dt; e.wind = 0; if (e.state === 'wind') e.state = 'chase'; if (Math.random() < dt * 5) part({ x: e.x + U.rand(-10, 10), y: e.y - 46 - e.r, k: 'star', size: 5, life: 0.4, col: '#ffd23f', vy: -20 }); return; }
   if (e.isBoss) return updBoss(e, dt);
+  if (e.sleep) { // snoring: the ring shows how close a cat may get before the dog wakes up
+    e.zt = (e.zt || 0) - dt; if (e.zt <= 0) { e.zt = 1.25; part({ x: e.x, y: e.y - 14, k: 'ring', col: '#8fd0ff', size: e.wake, grow: 0.01, life: 1.25 }); part({ x: e.x + 8, y: e.y - 40, k: 'icon', icon: 'zzz', vy: -26, vx: 10, size: 9, life: 1 }); }
+    for (const c of G.cats) if (!c.down && c.invis <= 0 && (G.solo === null || c.idx === G.solo) && U.d2(c.x, c.y, e.x, e.y) < e.wake * e.wake) { wakeDog(e); break; }
+    return;
+  }
   const st = DOG[e.type];
   e.think -= dt; if (e.think <= 0) { e.think = 0.4; pickTarget(e); }
   const tg = e.target;
@@ -741,9 +764,14 @@ function splash(b) { burst(b.x, b.y, 5, b.k === 'bolt' ? ['#8ff3ff', '#fff'] : b
 // ---------- items ----------
 function updItem(it, dt) {
   it.t += dt;
-  if (it.vz || it.z > 0) { it.z += it.vz * dt; it.vz -= 600 * dt; if (it.z <= 0) { it.z = 0; it.vz = 0; it.vx = it.vy = 0; } }
+  if (it.fl) { // floating things (kites): drift with the wind, sink slowly, vanish a while after landing
+    it.z = Math.max(0, it.z - it.fl * dt); const nx = it.x + (it.wx || 0) * dt, ny = it.y + (it.wy || 0) * dt;
+    if (it.z > 0 && !W.blocked(nx, ny, 10, 0)) { it.x = nx; it.y = ny; } else if (it.z > 0) { it.wx = -(it.wx || 0); it.wy = -(it.wy || 0); }
+    if (it.z <= 0) { it.gt = (it.gt || 0) + dt; if (it.gt > (it.ttl || 8)) { it.dead = true; it.missed = true; return; } }
+  } else if (it.arc) { /* mini-game ball: moved by the mission */ }
+  else if (it.vz || it.z > 0) { it.z += it.vz * dt; it.vz -= 600 * dt; if (it.z <= 0) { it.z = 0; it.vz = 0; it.vx = it.vy = 0; } }
   if (it.vx || it.vy) { const e = { x: it.x, y: it.y, r: 8 }; step(e, it.vx * dt, it.vy * dt, 0); it.x = e.x; it.y = e.y; }
-  if (it.z > 8) return;
+  if (it.z > 8 || it.nopick) return;
   for (const c of G.cats) {
     if (c.down) continue;
     const d = U.d2(c.x, c.y, it.x, it.y);
@@ -770,6 +798,9 @@ function collect(c, it) {
   else if (k === 'cash') { G.stat.cash += 25; sfx('cash', 0.05); text(it.x, it.y - 20, '+$25', '#7CFF6B', 13); }
   else if (k === 'catnip') { G.catnip = 7; sfx('paw'); say(tr('catnip'), '#7CFF6B', 2); for (const k2 of G.cats) k2.root = 0; }
   else if (k === 'milk') { let need = false; for (const k2 of G.cats) if (!k2.down && k2.hp < k2.max) need = true; if (!need) return false; healTeam(35); sfx('coffee'); }
+  else if (k === 'kite') { G.stat.kites++; G.stat.cash += 15; sfx('paw', 0.05); text(it.x, it.y - 24, '🪁 +1', '#ffd23f', 15); burst(it.x, it.y - 10, 8, ['#ff4fb8', '#2de2e6', '#ffd23f'], 150, 'star', 6, 0.5); }
+  else if (k === 'gcoin') { G.stat.coins++; G.stat.cash += 10; sfx('cash', 0.05); burst(it.x, it.y - 10, 6, '#ffd23f', 130, 'star', 6, 0.5); }
+  else if (k === 'bag') { G.flags.bag = (G.flags.bag || 0) + 1; G.stat.cash += 60; sfx('paw'); say(tr('gotBag'), '#ffd23f', 2); burst(it.x, it.y - 10, 12, '#ffd23f', 160, 'star', 7, 0.7); }
   else if (k === 'key') { G.keys++; G.flags.key = (G.flags.key || 0) + 1; sfx('paw'); say(tr('gotKey'), '#ffd23f'); }
   return true;
 }
@@ -808,7 +839,8 @@ function updCar(c, dt, rdt) {
       const turn = 3.4 * (0.35 + Math.min(1, Math.abs(c.spd) / 120) * 0.65);
       c.a += U.clamp(diff, -turn * rdt, turn * rdt);
       const align = Math.max(0.25, Math.cos(diff));
-      c.spd += (c.top * m * align - c.spd) * Math.min(1, rdt * 1.9);
+      const hill = W.hpx ? slopeMul(c.x, c.y, Math.cos(c.a), Math.sin(c.a)) : 1;
+      c.spd += (c.top * m * align * (0.6 + 0.4 * hill) - c.spd) * Math.min(1, rdt * 1.9);
     } else c.spd *= Math.pow(0.25, rdt);
     dt = rdt;
     VP.Audio.engine(c.spd, true);
@@ -1004,7 +1036,7 @@ function updContext(dt) {
   G.revive = 0;
   let car = null; bd = 70 * 70;
   for (const k of G.cars) if (!k.dead && k.ai !== 'cop' && k.ai !== 'target' && !k.locked && !(k.ai === 'path' && Math.abs(k.spd) > 60)) { const d = U.d2(k.x, k.y, c.x, c.y); if (d < bd) { bd = d; car = k; } }
-  if (car) { G.ctx = { k: 'car', car }; if (I.take('ctx')) { if (car.needKey && !G.flags.key) say(tr('needKey'), '#ffd23f', 2); else enterCar(car); } return; }
+  if (car && !G.noCars) { G.ctx = { k: 'car', car }; if (I.take('ctx')) { if (car.needKey && !G.flags.key) say(tr('needKey'), '#ffd23f', 2); else enterCar(car); } return; }
   I.take('ctx');
 }
 function revive(c) {
@@ -1028,7 +1060,7 @@ Game.update = function (dt) {
   if (G.banner) { G.banner.t += dt; if (G.banner.t > G.banner.dur) G.banner = null; }
   // switching
   const sw = I.take('sw'); if (sw >= 0) switchTo(sw);
-  if (I.take('cycle')) { for (let i = 1; i < 3; i++) { const n = (G.active + i) % 3; if (!G.cats[n].down) { switchTo(n); break; } } }
+  if (I.take('cycle') && G.solo === null) { for (let i = 1; i < 3; i++) { const n = (G.active + i) % 3; if (!G.cats[n].down) { switchTo(n); break; } } }
   refreshFields();
   updContext(dt);
   if (I.take('special')) { if (G.car) { sfx(G.car.type === 'gold' ? 'viphorn' : 'honk', 0.6); } else doSpecial(active()); }
@@ -1039,7 +1071,7 @@ Game.update = function (dt) {
     f.t += dt; f.walk = 0;
     if (f.wander) { f.wt = (f.wt || 0) - dt; if (f.wt <= 0) { f.wt = U.rand(2, 6); const an = Math.random() * 6.283, d = U.rand(40, 160); f.gx = f.home.x + Math.cos(an) * d; f.gy = f.home.y + Math.sin(an) * d; } if (f.gx !== undefined && U.d2(f.x, f.y, f.gx, f.gy) > 20 * 20 && f.wt > 1) { const px = f.x, py = f.y; moveToward(f, f.gx, f.gy, 70, dt, null, 0); if (px === f.x && py === f.y) f.wt = 0; } continue; }
     if (f.stay) continue; const a = active(); const d = Math.hypot(a.x - f.x, a.y - f.y);
-    if (d > 70) { if (d > 620 && !onScreen(f.x, f.y, 60)) { const p = nearFree(a.x, a.y, 60, 0); if (p) { f.x = p.x; f.y = p.y; } } else moveToward(f, a.x, a.y, 185, dt, G.field, 0); }
+    if (d > 70) { if (d > 620 && !onScreen(f.x, f.y, 60)) { const p = nearFree(a.x, a.y, 60, 0); if (p) { f.x = p.x; f.y = p.y; } } else moveToward(f, a.x, a.y, f.spd || 185, dt, G.field, 0); }
   }
   for (const e of G.dogs) updDog(e, sdt);
   // soft separation

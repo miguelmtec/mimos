@@ -13,7 +13,7 @@ import { fail } from './http.js';
 import { validateSpec } from './validate.js';
 import {
   ANIMS, CARS, EMOTES, PHRASES, PAWS_PER_ROOM, PAW_SLOT_MS, MAX_COORD, MAX_PLAYERS, MAX_PER_IP, STARS, ID_RE,
-  splitRoom, chooseShard, verifyTicket,
+  ITEM_RE, MAX_WEAR, MAX_LEVEL, splitRoom, chooseShard, verifyTicket, cleanTrade,
 } from './protocol.mjs';
 
 export * from './protocol.mjs';
@@ -51,6 +51,25 @@ export function validateCatLook(v) {
   }
   if (!v || typeof v !== 'object' || Array.isArray(v)) throw invalid('cat');
   return { spec: validateSpec(v) };
+}
+
+/**
+ * What the cat shows besides its body: the outfit (wardrobe item ids, `wear=a,b,c`) and the level badge (`lv`).
+ * Both are the client's word, like the VIP crown of the ranking: cosmetic, bounded, and never text.
+ */
+export function validateExtras(q) {
+  const out = {};
+  if (q.wear != null && q.wear !== '') {
+    const ids = String(q.wear).split(',');
+    if (ids.length > MAX_WEAR || ids.some((id) => !ITEM_RE.test(id))) throw invalid('wear');
+    out.wear = [...new Set(ids)];
+  }
+  if (q.lv != null && q.lv !== '') {
+    const n = Number(q.lv);
+    if (!Number.isInteger(n) || n < 1 || n > MAX_LEVEL) throw invalid('lv');
+    out.lv = n;
+  }
+  return out;
 }
 
 /** Reads the ticket of a request or throws 401 {error: "ticket"}: the client then asks for a new one. */
@@ -117,6 +136,14 @@ export function validateTick(b, now = Date.now()) {
     if (Math.abs(p.s - slot) <= 1 && p.i.length) out.paws = `${p.s}:${[...new Set(p.i)].sort().join(',')}`;
   }
 
+  // trade offer to one cat of the room: "to:st:item" (see cleanTrade; item ids only, never text)
+  out.trade = null;
+  if (b.trade != null) {
+    const tr = cleanTrade(b.trade);
+    if (!tr) throw invalid('trade');
+    out.trade = `${tr.to}:${tr.st}:${tr.give || ''}`;
+  }
+
   out.idle = b.idle === true;          // "nothing changed since my last tick": the server may skip the write
 
   // ids whose name and look the client does not have yet (sent only on request: they never change)
@@ -141,6 +168,7 @@ export function otherJson(r) {
   if (r.phrase != null) { o.phrase = r.phrase; o.ps = r.ps; }
   const paws = parsePaws(r.paws);
   if (paws) o.paws = paws;
+  if (r.trade) { const [to, st, give] = String(r.trade).split(':'); o.trade = { to, st: Number(st), give: give || null }; }
   if (r.cat) { o.name = r.name; o.cat = typeof r.cat === 'string' ? JSON.parse(r.cat) : r.cat; }
   return o;
 }

@@ -1,6 +1,6 @@
 // "Cidade Online": the Vercel side of the shared city.
-//   GET  /api/online/ticket?cat=mimo | catId=<uuid> | spec=<json>   -> {you: {id, name, guest}, ticket, exp}
-//   POST /api/online/tick   {ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, need?}
+//   GET  /api/online/ticket?cat=mimo | catId=<uuid> | spec=<json> [&wear=a,b&lv=12] -> {you: {id, name, guest}, ticket, exp}
+//   POST /api/online/tick   {ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, trade?, need?, idle?}
 //                                                                    -> {you: {id}, room, others: [...], n, ts, paw}
 //   POST /api/online/report {ticket, targetId, reason, room?}        -> {ok, stored}
 //   POST /api/online/leave  {ticket}                                 -> {ok}
@@ -21,7 +21,7 @@ import {
   TICK_MIN_MS, MAX_BODY, MAX_OTHERS, MAX_REPORTS_HOUR, REPORT_REASONS, PAW_SLOT_MS, PAWS_PER_ROOM, ROOM_CAP,
   SWEEP_EVERY_MS, TICKET_MINUTES, TICKET_RENEW_HOURS, ID_RE, NICK_RE,
   nickname, userPublicId, guestPublicId, signTicket, verifyTicket, ticketSecretConfigured,
-  requireTicket, parseRoom, pickShard, validateTick, validateCatLook, otherJson,
+  requireTicket, parseRoom, pickShard, validateTick, validateCatLook, validateExtras, otherJson,
 } from '../_lib/online.js';
 
 // Best-effort memory of this warm instance: it saves a database round trip for most too-fast ticks.
@@ -66,6 +66,7 @@ async function ticket(req) {
   } else {
     look = validateCatLook(q.cat == null ? 'mimo' : String(one(q.cat)));
   }
+  Object.assign(look, validateExtras({ wear: one(q.wear), lv: one(q.lv) }));
 
   let you;
   if (user) {
@@ -113,7 +114,9 @@ async function tick({ req, sql, body }) {
   }
 
   const read = (r) => ({
-    you: { id: me.id }, room, others: r.filter((o) => o.id).map((o) => ({ ...otherJson(o), cv: o.cv })), n: r.filter((o) => o.id).length + 1,
+    you: { id: me.id }, room,
+    // a trade offer is only shown to the cat it is addressed to
+    others: r.filter((o) => o.id).map((o) => ({ ...otherJson({ ...o, trade: o.trade && o.trade.startsWith(me.id + ':') ? o.trade : null }), cv: o.cv })), n: r.filter((o) => o.id).length + 1,
     cap: ROOM_CAP, ts: now, paw: { slot: Math.floor(now / PAW_SLOT_MS), ms: PAW_SLOT_MS, n: PAWS_PER_ROOM },
   });
 
@@ -124,7 +127,7 @@ async function tick({ req, sql, body }) {
         update vp_presence set updated_at = now()
         where id = ${me.id}::text and room = ${room}::text and updated_at <= now() - interval '5 seconds' returning id
       )
-      select s.id as self, o.id, o.name, o.x, o.z, o.ry, o.anim, o.car, o.cv, o.emote, o.es, o.phrase, o.ps, o.paws,
+      select s.id as self, o.id, o.name, o.x, o.z, o.ry, o.anim, o.car, o.cv, o.emote, o.es, o.phrase, o.ps, o.paws, o.trade,
              (extract(epoch from (now() - o.updated_at)) * 1000)::int as age,
              case when o.id = any(string_to_array(${t.need}::text, ',')) then o.cat end as cat,
              (select count(*) from touch)::int as touched
@@ -138,18 +141,18 @@ async function tick({ req, sql, body }) {
   // Upsert + read in one statement. The upsert refuses to touch a row younger than 0.8 s, so the
   // rate limit holds even when two function instances serve the same player.
   const rows = await sql`with me as (
-      insert into vp_presence as p (id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, ip_hash, user_id)
+      insert into vp_presence as p (id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, trade, ip_hash, user_id)
       values (${me.id}::text, ${room}::text, ${t.x}::int, ${t.z}::int, ${t.ry}::real, ${t.anim}::text, ${t.car}::text,
               ${me.name}::text, ${cat}::jsonb, ${cv}::text, ${t.emote}::text, ${t.es}::smallint, ${t.phrase}::smallint,
-              ${t.ps}::smallint, ${t.paws}::text, ${ip}::text, ${me.userId}::uuid)
+              ${t.ps}::smallint, ${t.paws}::text, ${t.trade}::text, ${ip}::text, ${me.userId}::uuid)
       on conflict (id) do update set room = excluded.room, x = excluded.x, z = excluded.z, ry = excluded.ry,
         anim = excluded.anim, car = excluded.car, name = excluded.name, cat = excluded.cat, cv = excluded.cv,
-        emote = excluded.emote, es = excluded.es, phrase = excluded.phrase, ps = excluded.ps, paws = excluded.paws,
+        emote = excluded.emote, es = excluded.es, phrase = excluded.phrase, ps = excluded.ps, paws = excluded.paws, trade = excluded.trade,
         ip_hash = excluded.ip_hash, user_id = excluded.user_id, updated_at = now()
         where p.updated_at <= now() - interval '800 milliseconds'
       returning p.id, p.room
     )
-    select me.id as self, o.id, o.name, o.x, o.z, o.ry, o.anim, o.car, o.cv, o.emote, o.es, o.phrase, o.ps, o.paws,
+    select me.id as self, o.id, o.name, o.x, o.z, o.ry, o.anim, o.car, o.cv, o.emote, o.es, o.phrase, o.ps, o.paws, o.trade,
            (extract(epoch from (now() - o.updated_at)) * 1000)::int as age,
            case when o.id = any(string_to_array(${t.need}::text, ',')) then o.cat end as cat
     from me left join vp_presence o

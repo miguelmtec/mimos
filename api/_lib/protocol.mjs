@@ -23,6 +23,15 @@ export const TICKET_MINUTES = 10;      // a ticket opens a connection (or polls)
 export const TICKET_RENEW_HOURS = 24;  // an expired ticket still proves "same guest" for this long (keeps id + nickname)
 
 export const ID_RE = /^[ug][0-9a-f]{20}$/;
+export const ITEM_RE = /^[a-z0-9_]{1,24}$/;   // an id of data/outfits.json; clients ignore ids they do not know
+export const MAX_WEAR = 6;             // one item per wardrobe slot
+export const MAX_LEVEL = 100;
+/** A trade offer {to, give, st} or null. give = one wardrobe item id (or null: a gift is fine); st 0 offer, 1 confirmed, 2 done. */
+export function cleanTrade(v) {
+  if (!v || typeof v !== 'object' || !ID_RE.test(v.to) || ![0, 1, 2].includes(v.st)) return null;
+  if (v.give != null && (typeof v.give !== 'string' || !ITEM_RE.test(v.give))) return null;
+  return { to: v.to, give: v.give ?? null, st: v.st };
+}
 // One room per map: "city" (the neon home city) or the id of a real city (data/cities/index.json).
 // New maps arrive all the time, so the id is checked by shape and the number of live rooms is capped.
 export const ROOM_RE = /^([a-z][a-z0-9_]{1,23})(?:#([1-9]\d?))?$/;

@@ -159,6 +159,18 @@ test('emotes and quick phrases are fixed lists; text never travels', { skip }, a
   await a.end(); await b.end();
 });
 
+test('trade offers reach only the addressed cat, as item ids', { skip }, async () => {
+  const a = await join('Gato Veloz 70', 'recife'), b = await join('Gato Veloz 71', 'recife'), c = await join('Gato Veloz 72', 'recife');
+  await sleep(100);
+  a.send({ t: 'tr', to: b.welcome.you.id, give: 'cap_teal', st: 0 });
+  assert.deepEqual(await b.wait((m) => m.t === 'tr'), { t: 'tr', k: a.welcome.you.k, to: b.welcome.you.id, give: 'cap_teal', st: 0 });
+  a.send({ t: 'tr', to: b.welcome.you.id, give: 'me chama no zap', st: 0 }); a.send({ t: 'tr', to: 'nobody', give: 'cap_teal', st: 0 });
+  await sleep(200);
+  assert.equal(b.msgs.filter((m) => m.t === 'tr').length, 1);
+  assert.equal(c.msgs.filter((m) => m.t === 'tr').length, 0);
+  await a.end(); await b.end(); await c.end();
+});
+
 test('golden paws are shared: the first cat gets it, the room sees it gone, a new slot brings them back', { skip }, async () => {
   const a = await join('Gato Veloz 40', 'miami'), b = await join('Gato Veloz 41', 'miami');
   assert.deepEqual(a.welcome.paw, { slot: Math.floor((Date.now() + clock) / PAW_SLOT_MS), ms: PAW_SLOT_MS, n: 6, taken: [] });

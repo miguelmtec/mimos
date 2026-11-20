@@ -112,6 +112,7 @@ export function ensureOnlineSchema(sql) {
     phrase smallint,
     ps smallint not null default 0,
     paws text,
+    trade text,
     ip_hash text not null default '',
     user_id uuid,
     updated_at timestamptz not null default now())`;
@@ -132,6 +133,7 @@ export function ensureOnlineSchema(sql) {
     phrase smallint,
     ps smallint not null default 0,
     paws text,
+    trade text,
     ip_hash text not null default '',
     user_id uuid,
     updated_at timestamptz not null default now())`;

@@ -17,6 +17,7 @@
 //   client -> {t:"e", k:"dance"}     server -> {t:"e", k:<player>, e:"dance"}
 //   client -> {t:"p", i:3}           server -> {t:"p", k:<player>, i:3}
 //   client -> {t:"paw", i:2, s:slot}       server -> {t:"pawok", i, slot} to the winner, {t:"paw", slot, taken:[...]} to the room
+//   client -> {t:"tr", to, give, st} | {t:"tr", off:1}   server -> the same, with k, to the addressed cat only (trade offer)
 //   client -> {t:"report", id, reason}   server -> {t:"reported", ok:true}
 //   server -> {t:"error", error:"ticket"|"room"|"busy"|"too-many"|"replaced"|"rate"|"idle"} and the socket closes
 import http from 'node:http';
@@ -26,7 +27,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { WebSocketServer } from 'ws';
 import {
   ANIMS, CARS, EMOTES, PHRASES, REPORT_REASONS, PAWS_PER_ROOM, PAW_SLOT_MS, ROOM_CAP, MAX_PLAYERS, MAX_PER_IP,
-  MAX_COORD, MAX_SPEED, ID_RE, splitRoom, chooseShard, verifyTicket,
+  MAX_COORD, MAX_SPEED, ID_RE, splitRoom, chooseShard, verifyTicket, cleanTrade,
 } from './lib/protocol.mjs';
 
 export const SNAPSHOT_HZ = 10;
@@ -210,6 +211,13 @@ export function createOnlineServer(opts = {}) {
       if (!Number.isInteger(m.i) || m.i < 0 || m.i >= PHRASES || t - p.phraseAt < PHRASE_MS || !p.placed) return;
       p.phraseAt = t;
       cast(p.room, { t: 'p', k: p.k, i: m.i }, p);
+    },
+    // trade offer: relayed only to the cat it is addressed to, and only inside the same room (item ids, never text)
+    tr(p, m) {
+      if (m.off) { for (const o of p.room.players.values()) if (o !== p) send(o.ws, { t: 'tr', k: p.k, off: 1 }); return; }
+      const tr = cleanTrade(m), target = tr && byId.get(tr.to);
+      if (!target || target.room !== p.room || target === p) return;
+      send(target.ws, { t: 'tr', k: p.k, to: tr.to, give: tr.give, st: tr.st });
     },
     paw(p, m) {
       const paws = p.room.paws;

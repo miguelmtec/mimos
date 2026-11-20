@@ -203,7 +203,7 @@ test('tick: two players in the same map land in the same instance and see each o
   assert.equal(again.body.others[0].name, a.you.name);
   assert.deepEqual(again.body.others[0].cat, { star: 'mimo' });
   // only whitelisted fields ever leave the server
-  for (const k of Object.keys(again.body.others[0])) assert.ok(['id', 'name', 'x', 'z', 'ry', 'anim', 'car', 'cv', 'emote', 'es', 'phrase', 'ps', 'paws', 'age', 'cat'].includes(k), k);
+  for (const k of Object.keys(again.body.others[0])) assert.ok(['id', 'name', 'x', 'z', 'ry', 'anim', 'car', 'cv', 'emote', 'es', 'phrase', 'ps', 'paws', 'age', 'cat', 'trade'].includes(k), k);
   const row = (await db.rows('vp_presence')).find((r) => r.id === b.you.id);
   assert.equal(row.x, 1300);
   assert.equal(row.z, 901);
@@ -363,6 +363,33 @@ test('tick: an idle player reads the room without writing; the row is only re-st
   const back = await tick(a, { room, idle: true, x: 4321 });
   assert.equal(back.status, 200);
   assert.equal((await db.rows('vp_presence')).find((r) => r.id === a.you.id).x, 4321);
+});
+
+test('ticket: outfit and level badge travel inside the look; both are bounded and never text', async () => {
+  const t = await guest('?cat=mimosa&wear=cap_teal,sailor,cap_teal&lv=12');
+  assert.deepEqual(t.cat, { star: 'mimosa', wear: ['cap_teal', 'sailor'], lv: 12 });
+  assert.deepEqual(verifyTicket(t.ticket).cat, t.cat);
+  for (const q of ['?wear=a,b,c,d,e,f,g', '?wear=Oi%20tudo%20bem', '?wear=%3Cb%3E', '?lv=0', '?lv=101', '?lv=1.5', '?lv=abc']) assert.equal((await ticketReq(q)).status, 400, q);
+});
+
+test('trade: an offer is an item id addressed to one cat, and only that cat sees it', async () => {
+  const a = await guest(), b = await guest(), c = await guest();
+  const room = (await tick(a)).body.room;
+  await tick(b, { room }); await tick(c, { room });
+  await settle();
+  assert.equal((await tick(a, { room, trade: { to: b.you.id, give: 'cap_teal', st: 0 } })).status, 200);
+  const seenByB = (await tick(b, { room })).body.others.find((o) => o.id === a.you.id);
+  assert.deepEqual(seenByB.trade, { to: b.you.id, st: 0, give: 'cap_teal' });
+  const seenByC = (await tick(c, { room })).body.others.find((o) => o.id === a.you.id);
+  assert.equal(seenByC.trade, undefined);
+  await settle();
+  assert.equal((await tick(a, { room, trade: { to: b.you.id, give: null, st: 1 } })).status, 200, 'a gift (nothing asked back) is fine');
+  assert.deepEqual((await tick(b, { room, idle: true })).body.others.find((o) => o.id === a.you.id).trade, { to: b.you.id, st: 1, give: null });
+  for (const bad of [{ to: b.you.id, give: 'me passa seu zap', st: 0 }, { to: 'x', give: 'cap_teal', st: 0 }, { to: b.you.id, give: 'cap_teal', st: 7 }, 'trade', { to: b.you.id, give: { id: 1 }, st: 0 }]) {
+    await settle();
+    const r = await tick(a, { room, trade: bad });
+    assert.equal(r.status, 400, JSON.stringify(bad)); assert.equal(r.body.field, 'trade');
+  }
 });
 
 // ---------- report / leave ----------

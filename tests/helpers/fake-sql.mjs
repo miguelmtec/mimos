@@ -131,18 +131,18 @@ export function createFakeBackend() {
       }
       return [...by.values()];
     }],
-    [/^with me as \( insert into vp_presence as p \(id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, ip_hash, user_id\) values .* on conflict \(id\) do update set .* where p\.updated_at <= now\(\) - interval '800 milliseconds' returning p\.id, p\.room \) select me\.id as self, o\.id, .* from me left join vp_presence o on o\.room = me\.room and o\.id <> me\.id and o\.updated_at > now\(\) - interval '10 seconds' order by o\.updated_at desc nulls last limit \?::int$/, (p) => {
-      const [id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, ip_hash, user_id, need, limit] = p;
+    [/^with me as \( insert into vp_presence as p \(id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, trade, ip_hash, user_id\) values .* on conflict \(id\) do update set .* where p\.updated_at <= now\(\) - interval '800 milliseconds' returning p\.id, p\.room \) select me\.id as self, o\.id, .* from me left join vp_presence o on o\.room = me\.room and o\.id <> me\.id and o\.updated_at > now\(\) - interval '10 seconds' order by o\.updated_at desc nulls last limit \?::int$/, (p) => {
+      const [id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, trade, ip_hash, user_id, need, limit] = p;
       const at = Date.now();
       let row = t.presence.find((r) => r.id === id);
       if (row && row.updated_at > at - 800) return [];                 // the rate limit of the upsert
       if (!row) { row = { id }; t.presence.push(row); }
-      Object.assign(row, { room, x, z, ry, anim, car, name, cat: JSON.parse(cat), cv, emote, es, phrase, ps, paws, ip_hash, user_id, updated_at: at });
+      Object.assign(row, { room, x, z, ry, anim, car, name, cat: JSON.parse(cat), cv, emote, es, phrase, ps, paws, trade, ip_hash, user_id, updated_at: at });
       const wanted = String(need || '').split(',');
       const others = t.presence.filter((o) => o.room === room && o.id !== id && o.updated_at > at - 10e3)
         .sort((a, b) => b.updated_at - a.updated_at).slice(0, limit)
         .map((o) => ({ self: id, id: o.id, name: o.name, x: o.x, z: o.z, ry: o.ry, anim: o.anim, car: o.car, cv: o.cv, emote: o.emote, es: o.es,
-          phrase: o.phrase, ps: o.ps, paws: o.paws, age: Math.round(at - o.updated_at), cat: wanted.includes(o.id) ? structuredClone(o.cat) : null }));
+          phrase: o.phrase, ps: o.ps, paws: o.paws, trade: o.trade, age: Math.round(at - o.updated_at), cat: wanted.includes(o.id) ? structuredClone(o.cat) : null }));
       return others.length ? others : [{ self: id, id: null }];
     }],
     [/^with touch as \( update vp_presence set updated_at = now\(\) where id = \?::text and room = \?::text and updated_at <= now\(\) - interval '5 seconds' returning id \) select s\.id as self, o\.id, .* from vp_presence s left join vp_presence o on o\.room = s\.room and o\.id <> s\.id and o\.updated_at > now\(\) - interval '10 seconds' where s\.id = \?::text and s\.room = \?::text and s\.updated_at > now\(\) - interval '30 seconds' order by o\.updated_at desc nulls last limit \?::int$/, (p) => {
@@ -156,7 +156,7 @@ export function createFakeBackend() {
       const others = t.presence.filter((o) => o.room === room && o.id !== id && o.updated_at > at - 10e3)
         .sort((a, b) => b.updated_at - a.updated_at).slice(0, limit)
         .map((o) => ({ self: id, id: o.id, name: o.name, x: o.x, z: o.z, ry: o.ry, anim: o.anim, car: o.car, cv: o.cv, emote: o.emote, es: o.es,
-          phrase: o.phrase, ps: o.ps, paws: o.paws, age: Math.round(at - o.updated_at), cat: wanted.includes(o.id) ? structuredClone(o.cat) : null, touched }));
+          phrase: o.phrase, ps: o.ps, paws: o.paws, trade: o.trade, age: Math.round(at - o.updated_at), cat: wanted.includes(o.id) ? structuredClone(o.cat) : null, touched }));
       if (touched) self.updated_at = at;
       return others.length ? others : [{ self: id, id: null, touched }];
     }],

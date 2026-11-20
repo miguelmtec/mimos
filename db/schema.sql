@@ -97,6 +97,7 @@ create unlogged table if not exists vp_presence (
     phrase smallint,
     ps smallint not null default 0,
     paws text,
+    trade text,
     ip_hash text not null default '',
     user_id uuid,
     updated_at timestamptz not null default now());

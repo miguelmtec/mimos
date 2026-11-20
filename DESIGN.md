@@ -24,13 +24,15 @@ public/
   js/wardrobe.js  Guarda-roupa por slots
   js/accounts.js  login por código, Meus gatos (criador), save na nuvem, galeria
   js/tour.js      Volta ao Mundo: mapa (Brasil/mundo), alfinetes, cartões por país com progresso, voo animado
+  js/online.js    Cidade Online: OnlineTransport (polling / WebSocket), gatos remotos interpolados, frases prontas, silenciar/denunciar (ver §10)
   js/share.js     cartão PNG 1080×1350 para compartilhar e links "Desafie um amigo"
   js/gfx/models.js   modelos low-poly paramétricos (buildCat(spec), cachorros, carros, props) em geometria mesclada
   js/gfx/city.js     cidade 3D estática (chão, prédios, neon, palmeiras, céu, água)
   js/gfx/realcity.js cidade real 3D (terreno com elevação, vias, prédios extrudados, marcos)
   js/gfx/lod.js      blocos espaciais com frustum culling, corte por distância e LOD de instâncias
   js/gfx/render.js   renderizador: sincroniza a simulação com a cena, câmera, partículas, qualidade automática
-api/              funções Vercel: scores, pix/*, auth, me, cats, save (ver docs/ACCOUNTS.md)
+api/              funções Vercel: scores, pix/*, auth, me, cats, save (ver docs/ACCOUNTS.md), online (tíquete + polling, §10)
+server/           servidor em tempo real opcional da Cidade Online (Node + ws) e kit de instalação em server/deploy/
 tools/build-cities.mjs  copia os extratos OSM e gera data/cities/index.json
 tools/city-meta.mjs     visual de cada cidade (META) e destinos previstos (PLANNED); usado pelo build e pelos testes
 tools/gen-missions.mjs  tabelas dos 15 capítulos -> data/missions.json (calibra o tempo-alvo com os resultados do bot)
@@ -228,3 +230,89 @@ Chefões: 10 **Delegado Bulldogão** (investida, pancada, redes, reforços) · 2
 ## 9. Testes
 
 Scripts Playwright em `tests/e2e/` (ver README): bot que joga todas as missões de forma acelerada (`missions.cjs`), testes de controles (teclado/mouse/toque), loja e contas com API simulada, `expansion.cjs` (modelos novos, diário/semanal, treino no toque, relevo e regras de comunidade com um mapa sintético de `tests/helpers/elev-fixture.cjs` servido por rota sem tocar no arquivo real, Rio Verde com mapa substituto, cartão de compartilhar, pacotes, orçamento de triângulos), `perf.cjs` e `shots.cjs`. `npm test` também valida o conteúdo (`tests/data.test.mjs`): 200+ missões, capítulos, catálogo da loja x preços do cliente, guarda-roupa, pacotes de cidade e eventos. `expansion2.cjs` cobre a expansão 2 (preenchimento procedural determinístico e sem cobrir ruas, estilos por país, horizonte do Rio, mapa-múndi no toque e no desktop, ranking, galeria, emotes, vibração, parkour de telhado, HUD no celular e o peso da primeira carga, abaixo de 2,5 MB sem baixar cidade nenhuma); `packs.cjs` joga todos os pacotes de cidade; `tests/score.test.mjs` valida as regras do ranking.
+
+## 10. Cidade Online
+
+Modo de passeio livre **separado** das missões: os gatos de vários jogadores aparecem na mesma cidade (a cidade neon ou qualquer cidade real aberta). Dá para andar, dirigir, usar emotes, falar por **frases prontas** e pegar **patinhas douradas compartilhadas**. Missões, cachorros, polícia e procurado não existem nesse modo; iniciar uma missão sai da sala. Entra-se pelo menu, pela pausa da cidade livre e pela tela Volta ao Mundo.
+
+### Transporte atrás de uma interface
+
+O jogo só conversa com um `OnlineTransport` (`public/js/online.js`); nada em `game.js`, `hud.js` ou `render.js` sabe de rede.
+
+```
+OnlineTransport {
+  name, delay                       // 'poll' | 'ws'; atraso (s) com que os gatos remotos são desenhados
+  connect({room, ticket, renew, state}) -> {you, room, paw}
+  state({x, z, ry, a, car})         // chamado todo quadro; o transporte decide quando envia
+  emote(k)  phrase(i)  paw(i, slot)  report(id, reason)  close()
+  on: { join, leave, state, emote, phrase, paws, pawOk, down }   // eventos entregues ao VP.Online
+}
+```
+
+- **`PollingTransport` (em uso):** Vercel + Neon, sem servidor dedicado. A cada `tickMs` (1,5 s) manda o estado e recebe os outros num único `POST /api/online/tick`.
+- **`WebSocketTransport` (opcional, futuro):** fala com `server/index.mjs` quando `wsUrl` está preenchido em `data/online.json`; se a conexão falhar, cai para o polling. Trocar de transporte não toca em código de jogo: os dois entregam os mesmos eventos.
+
+`public/data/online.json` é o painel do dono: `{"enabled": true, "maxPerRoom": 30, "maxRooms": 20, "tickMs": 1500, "pollingEnabled": true, "wsUrl": ""}`. `enabled: false` desliga o modo no cliente; `ONLINE_ENABLED=false` nas variáveis da Vercel desliga no servidor na hora (503 sem tocar no banco). Os limites valem de verdade no servidor (`api/_lib/protocol.mjs`; um teste garante que o JSON mostra os mesmos números).
+
+### Identidade: o tíquete
+
+`GET /api/online/ticket?cat=mimo|mimosa|morticia` (ou `catId=<uuid>` de um gato cadastrado, ou `spec=<json>` de um gato feito no aparelho) devolve `{you: {id, name, guest}, cat, ticket, exp}`. O tíquete é um HMAC de 10 minutos com id público, nome e aparência; é o único lugar em que o cookie de sessão é lido.
+
+- **Com conta e gato cadastrado:** nome e aparência vêm do banco (o nome já passou pelo filtro de palavrões).
+- **Convidado (ou conta sem gato escolhido):** apelido sorteado de listas seguras ("Gato Veloz 123"). Não existe campo de texto. Convidado funciona sem banco; renovar com o tíquete antigo (cabeçalho `x-vp-ticket`) mantém id e apelido por 24 h.
+- O id público (`u…`/`g…`) não é o id da conta. O e-mail nunca sai do servidor.
+
+### Polling: `POST /api/online/tick`
+
+```
+{ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, trade?, need?, idle?}
+ -> {you: {id}, room: "rio#1", others: [{id, x, z, ry, anim, car?, cv, emote?, es?, phrase?, ps?, paws?, trade?, age, name?, cat?}], n, cap, ts, paw: {slot, ms, n}}
+```
+
+- **Salas:** uma por mapa (`city` ou o id da cidade), em instâncias de 30 (`rio#1`, `rio#2`…). O primeiro tick manda `room: "rio"` e recebe a instância; no máximo 8 instâncias por mapa, 20 salas e 300 jogadores no total (`503 busy` → "Cidade cheia, tente já já"), 8 presenças por endereço (hash).
+- **Tabela `vp_presence`** (unlogged, criada sob demanda, separada do esquema das contas): um upsert por jogador, índice `(room, updated_at)`, `others` = estados dos últimos 10 s, linhas com mais de 30 s apagadas por uma limpeza que roda no máximo a cada 20 s por instância da função.
+- **Uma consulta por tick:** upsert + leitura da sala no mesmo comando. O `where` do upsert recusa mexer numa linha com menos de 0,8 s: é o limite de taxa (1 tick / 0,8 s), válido mesmo com várias instâncias (`429`), além de um mapa em memória que evita a ida ao banco.
+- **Orçamento de escrita:** parado, o cliente manda `idle: true` e o servidor só lê (re-carimba a linha a cada 5 s para o gato continuar visível). Sozinho na sala, o ritmo cai para a metade. Aba escondida não faz requisição nenhuma; 5 min sem se mexer tira o jogador do modo. **Nenhum timer ou cron** toca o banco: sem jogadores, o Neon dorme.
+- **Nome e aparência sob demanda:** `others` traz só posição e `cv`; o cliente pede `need: [ids]` uma vez por gato novo.
+- **Validação:** corpo de até 2 KB, sala por formato, coordenadas limitadas, `anim`/`car`/`emote` de listas, `phrase` inteiro de 0 a 11, origem conferida como nas outras APIs. `name` e `cat` enviados no corpo são ignorados: valem os do tíquete.
+- `POST /api/online/report {ticket, targetId, reason: name|behavior|cheat|other, room?}` grava em `vp_online_reports` (nome, aparência e conta do denunciado copiados da presença; 10 por hora, 1 por alvo). `POST /api/online/leave {ticket}` apaga a presença na hora.
+
+**Carga estimada por jogador ativo (polling):** andando, ~40 requisições/min (1 consulta pequena cada, ~1 ms no banco, ~200 B por outro gato na resposta); parado, as mesmas leituras e 12 escritas mínimas/min; sozinho, 20 requisições/min; aba escondida, zero. Dez jogadores juntos por uma hora ≈ 24 mil invocações de função e 24 mil consultas. O custo do Neon é sobretudo o tempo com o banco acordado (0,25 CU basta para centenas de consultas por segundo desse tamanho); o da Vercel é a contagem de invocações.
+
+### No cliente
+
+- Gatos remotos são `G.friends` com `remote: true`, montados com o mesmo `buildCat(spec)`; `render.js` (`syncRemote`) só lê posição, direção, carro e emote.
+- **Interpolação:** cada gato guarda as últimas amostras com o relógio do servidor; desenha-se o instante `agora − delay` (polling ~1,95 s, WebSocket 0,16 s) interpolando entre duas amostras, com extrapolação curta (0,7 s / 0,25 s) quando a próxima atrasa e suavização para as correções não darem tranco.
+- **HUD:** etiqueta com o nome, balão de fala por 4 s, linha do objetivo com sala e contagem (tocar abre a lista), pontos no radar, seta para o gato mais próximo, botão 💬 (tecla T) com as 12 frases.
+- **Patinhas compartilhadas:** 6 por sala a cada 2 min; os lugares saem de `rng(hash(sala + slot))`, iguais para todos sem o servidor conhecer os mapas. Quem pega avisa a sala; +10 moedas (só enfeite).
+- **Falhas:** tíquete ou tick com 503/erro → "Cidade Online indisponível agora" e passeio solo no mesmo mapa; queda no meio da sessão tenta reconectar uma vez e depois faz o mesmo.
+
+### Segurança (o público inclui crianças)
+
+- **Não existe texto livre em lugar nenhum do protocolo.** Frases são um índice de uma lista fixa (`on_p0`…`on_p11` em `i18n.js`, cada um lê no seu idioma); o servidor recusa qualquer coisa que não seja um inteiro de 0 a 11.
+- **Trocas** só de roupas de moedas, com confirmação dos dois lados (acima). Nada de valor real muda de mão.
+- **Silenciar** (toque no gato ou na lista) esconde o gato e as frases dele só para quem silenciou. **Denunciar** pede um de 4 motivos fixos, grava para revisão e silencia.
+- Só aparecem o gato, o nome do gato ou o apelido sorteado. Presença some em 10 s e é apagada em 30 s. Nota de privacidade: `public/privacy.html#online`.
+
+### Nível, roupa e troca segura
+
+- **Roupa e nível:** o tíquete aceita `wear=a,b,c` (até 6 ids de `outfits.json`, do gato estrela escolhido) e `lv=1..100`; os dois ficam dentro da aparência assinada (`cat: {star, wear, lv}`), então valem igual no polling e no WebSocket. O cliente monta o gato remoto com `Wardrobe.specOf(star, wear)` (ids desconhecidos são ignorados) e desenha a etiqueta `Nv 8 · nome`. São dados de enfeite declarados pelo cliente, como a coroa VIP do ranking; o nível vem do sistema de progressão quando ele existe (`VP.Prog.level`), senão 1 nível a cada 5 estrelas.
+- **Troca (`O.trade*` em `online.js`):** só mudam de mão **roupas compradas com moedas** (nunca moedas, nunca itens VIP, de temporada ou de pacotes Pix), uma por uma ou como presente. Fluxo: tocar no gato → "Trocar roupa" → escolher o que dá; o outro recebe um convite que pode recusar ("Agora não" silencia convites daquele gato por 1 min); os dois veem os dois lados e **os dois confirmam**; qualquer mudança desfaz a confirmação do outro e trava o botão por 3 s; item que você já tem ou que não é trocável bloqueia a confirmação; 5 trocas por dia; gato silenciado não consegue convidar.
+- No fio é `trade: {to, give, st}` no tick (coluna `vp_presence.trade`, entregue só ao destinatário) ou `{t:"tr"}` no WebSocket: um id de item validado por formato, nunca texto. O inventário mora no aparelho (como todo o progresso), então o servidor só repassa a oferta; cada cliente aplica a troca uma vez quando vê as duas confirmações do mesmo par.
+
+### Servidor em tempo real (pronto, opcional)
+
+`server/index.mjs` (Node 20 + `ws`, sem banco): salas por mapa em instâncias de 30, snapshots a 10 Hz só com quem mudou (quadro completo a cada 2 s), posição limitada e velocidade máxima validadas no servidor (quem "teleporta" é mostrado alcançando a 620 px/s), emotes, frases por índice, patinhas com dono decidido pelo servidor, limites (20 msg/s por conexão, 8 conexões por endereço, origem conferida), denúncias na tabela do Neon se houver `DATABASE_URL` ou num arquivo JSON, `/health` só com números. Autenticação pelo mesmo tíquete, verificado com `ONLINE_TICKET_SECRET`; a VM nunca vê cookie, e-mail ou contas. Kit de instalação (cloud-init para Ubuntu 22.04 com Caddy e TLS automático em `<ip>.sslip.io`) em `server/deploy/`.
+
+**Próximos passos quando o servidor dedicado entrar:** (1) subir a VM e preencher `wsUrl`; (2) posições autoritativas de verdade (o servidor conhecendo a grade de colisão de cada mapa, hoje ele só limita velocidade e área); (3) mini-jogos sincronizados (corrida entre jogadores, pega-pega) como mensagens novas do mesmo protocolo; (4) se um dia houver chat, só com moderação: lista de frases ampliada e traduzida primeiro, texto livre apenas para contas de responsáveis verificados, filtro no servidor, fila de revisão e bloqueio por conta; (5) Colyseus ou outro framework só se as salas precisarem de estado mais rico: o protocolo atual cabe em ~250 linhas e não justifica a dependência.
+
+## 11. Bicharada, Clínica Patinhas e temporadas (feat/enemies-season)
+
+Tudo em arquivos novos, ligados por 8 ganchos de uma linha marcados com `[hook:ext]` (`index.html`, `game.js` ×3, `gfx/render.js` ×2, `hud.js`, `ui.js`). `enemies.js` cria o `VP.Ext`, um barramento que qualquer módulo pode usar: `init(G)`, `update(G, dt, sdt)`, `render(G, dt, gfx)`, `hud(G, api)`, `aim(...)`, `foe(type, G)`, `clinic(evento)`, `addSlot('title', fn)`, `addMissions({districts, missions})` (o id do distrito é dado na carga) e `whenData(cb)`.
+
+- **Inimigos** (`data/enemies.json`, `js/enemies.js`): Pulgas Gigantes (enxame que pula e dá coceira = lento), Aspirador Monstro (puxa e suga; apertar ATACAR solta; só a Mimosa quebra), Pombo Ladrão (rasante, leva moedas, cansa e pousa), Ratos Ninjas (desviam, jogam estrelas de queijo), Robô do Banho (jato de água = molhado), Pepino Assustador (chega por trás; virar de cara = susto). Ninguém morre: viram confete ou fogem. Atributos escalam com `E.stats(tipo, nível)`; no mundo livre o nível vem de `VP.Progress.level()` quando existir (feat/progression) ou do progresso da história. Limites: 30 inimigos, 14 acordados, 48 projéteis; objetos em pool; um `InstancedMesh` por peça de modelo. Os golpes dos gatos são lidos do estado da simulação (tiros do Mimo em `G.bullets`, mordida/rosnado da Mimosa, roubo da Mortícia), sem mexer no combate existente.
+- **Chefão reutilizável** (`js/boss.js`): `VP.Boss.start(G, 'carrocinha', {x, y, lv, arena, onPhase, onDefeat})` devolve o chefão (`.phase`, `.done`). Fases e golpes vêm de `enemies.json → bosses`; golpes novos entram em `VP.Boss.MOVES`. Tipo de missão `foe_boss {boss}`. Sem texto de história aqui.
+- **Missões**: `data/missions_enemies.json` (400-419, dois capítulos) com os tipos `foe_hunt`, `foe_waves`, `foe_recover {loot: cash|cheese|gift}`, `foe_survive`, `foe_boss`, `clinic_visit`.
+- **Clínica Patinhas** (`data/clinic.json`, `js/clinic.js`): prédio no parque de Sunset Beach (colisão entra no mapa-base), curar corações, check-up (bônus por 5 min), vacina (ficar parado no 3-2-1), dicas de saúde. Espaço de patrocinador em `sponsor` (desligado; `?sponsor=preview` mostra a placa). Para os gatos do abrigo: `VP.Clinic.treat(catId, {vaccine})`, `vaccinate`, `isTreated`, `record`, `onTreat[]`.
+- **Temporadas** (`data/seasons/index.json` + um arquivo por temporada, `js/season.js`): datas locais inclusivas, decoração (luzinhas, árvores, neve), Papai Noel Gato, missões 500-549 (`gift_run`, `collect`, `runway` + tipos da bicharada), enfeites e trilha grátis por pontos (só jogando, sem sorteio). O Passe é um gancho: `pass.price = null` e `awaitingOwnerApproval = true`; nada é vendido até o dono aprovar e os produtos entrarem em `api/pix/_products.js`. Teste: `?season=natal`, `?season=off`, `?seasondate=AAAA-MM-DD`.
+- Testes: `tests/enemies-season.test.mjs` (dados, datas, trilha) e `node tests/e2e/enemies-season.cjs [smoke|bot|shots|all]`.

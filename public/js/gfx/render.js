@@ -47,6 +47,7 @@ R.init = function (cv) {
   R.ok = true; R.resize();
   addEventListener('resize', R.resize); addEventListener('orientationchange', () => setTimeout(R.resize, 250));
   R.three = { THREE, scene, camera, renderer }; R.SPECS = CAT_SPECS;
+  R.gfx = { THREE, GB, MAT, glow, shadow, pt, hAt, buildCat, animCat, CAT_SPECS }; // [hook:ext] drawing kit for VP.Ext modules
   return true;
 };
 R.pixelRatio = () => Math.min(window.devicePixelRatio || 1, mobile ? [1, 1.25, 1.5][R.quality] : [1, 1.5, 2][R.quality]);
@@ -174,6 +175,24 @@ function syncCat(c, G, dt, near) {
   if (c.root > 0) { const n = obj(c.netKey || (c.netKey = { kind: 'net' }), () => new THREE.Mesh(fx.bubbleGeo, fx.netMat)); n.position.set(o.position.x, o.position.y + 0.7, o.position.z); n.scale.setScalar(0.95); n.rotation.y = G.real * 2; }
   const tr = ud.spec && ud.spec.trail; if (tr && c.walk && !c.down && Math.random() < dt * 14) VP.Game.fx.part({ x: c.x + U.rand(-8, 8), y: c.y + U.rand(-8, 8), k: tr.shape || 'star', col: tr.col || '#ffd23f', size: 5, life: 0.5, vy: -10 });
   void near;
+}
+// another player's cat (Cidade Online): position, heading, car and emote come from the network (js/online.js)
+function syncRemote(f, dt) {
+  if (f.car) {
+    let key = f.carKey; if (!key || key.type !== f.car) key = f.carKey = { kind: 'rcar', type: f.car };
+    const K = VP.Art.CARS[f.car] || VP.Art.CARS.sedan, o = obj(key, () => buildCar(K === VP.Art.CARS[f.car] ? f.car : 'sedan', K, null));
+    o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); o.rotation.y = Math.PI / 2 - f.ry; if (o.userData.heads) o.userData.heads.visible = false;
+    if (!K.conv) return;                                   // closed cars hide the driver; in a convertible the cat rides in the open
+  }
+  const o = obj(f, () => buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0));
+  turn(o, f.ry || 0, f.car ? 1 : dt * 12);
+  o.position.set(f.x * S, hAt(f.x, f.y) + (f.car ? 0.42 : 0), f.y * S);
+  if (f.car) { const st = o.userData.st || (o.userData.st = {}); st.t = f.t; st.walk = 0; st.hop = 0; st.spin = 0; st.sit = 1; st.wave = 0; st.mouth = 0; animCat(o, st); return; }
+  { const dx = o.position.x - camera.position.x, dz = o.position.z - camera.position.z; o.visible = dx * dx + dz * dz > 6.2; }
+  const st = o.userData.st || (o.userData.st = {}); st.t = f.t; st.walk = f.walk; st.hop = 0; st.spin = 0; st.sit = 0; st.wave = 0; st.mouth = 0;
+  if (f.em) { const k = f.em.k, et = f.t; if (k === 'dance') { st.walk = 1; st.hop = Math.abs(Math.sin(et * 8)) * 0.38; st.spin = Math.sin(et * 4.5) * 1.1; } else if (k === 'sit') st.sit = 1; else if (k === 'wave') { st.wave = 1; st.hop = Math.abs(Math.sin(et * 6)) * 0.08; } else st.mouth = 0.8; }
+  animCat(o, st);
+  shadow(o.position.x, o.position.z, o.position.y, 0.4, 0.4);
 }
 function syncDog(e, G, dt) {
   const D = VP.Art.DOGS[e.type];
@@ -380,7 +399,7 @@ R.render = function (G, dt) {
   updateCamera(G, dt);
   const a = G.car || G.cats[G.active], near = R.quality === 0 ? 1250 * 1250 : 1900 * 1900, nearItem = R.quality === 0 ? 900 * 900 : 1300 * 1300;
   for (const c of G.cats) syncCat(c, G, dt);
-  for (const f of G.friends) { const o = obj(f, () => { const g = buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); { const dx = o.position.x - camera.position.x, dz = o.position.z - camera.position.z; o.visible = dx * dx + dz * dz > 6.2; } animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
+  for (const f of G.friends) { if (f.remote) { syncRemote(f, dt); continue; } const o = obj(f, () => { const g = buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); { const dx = o.position.x - camera.position.x, dz = o.position.z - camera.position.z; o.visible = dx * dx + dz * dz > 6.2; } animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
   for (const e of G.dogs) if (U.d2(e.x, e.y, a.x, a.y) < near) syncDog(e, G, dt);
   for (const c of G.cars) if (!c.dead && U.d2(c.x, c.y, a.x, a.y) < near * 1.6) syncCar(c, G);
   for (const it of G.items) if (U.d2(it.x, it.y, a.x, a.y) < nearItem) syncItem(it);
@@ -402,6 +421,7 @@ R.render = function (G, dt) {
   if (m === 3) { R.flash = Math.max(0, (R.flash || 0) - dt * 3); if (Math.random() < dt * 0.09) { R.flash = 1; VP.Audio.sfx('thunder', 3); } } else R.flash = 0;
   applyMood(m, dt); setXmas(m === 6 && !W.real);
   for (; rn < fx.rings.length; rn++) fx.rings[rn].visible = false;
+  if (VP.Ext) VP.Ext.draw(G, dt, R.gfx); // [hook:ext] enemies, boss, clinic, season decoration
   if (city.chunks && (frame & 3) === 0) updateChunks(city, camera.position, R.quality, scene.fog.far);
   flush();
   city.waterTex.offset.x = G.real * 0.004; city.waterTex.offset.y = G.real * 0.006;

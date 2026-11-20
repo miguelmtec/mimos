@@ -29,30 +29,31 @@ const cfg = loadConfig();
 const one = (tier) => ({ ...cfg, items: cfg.items.filter((i) => i.tier === tier).slice(0, 1), caches: [{ id: 'x', tier }], limits: { ...cfg.limits, claimsPerDay: 1000 } });
 const win = (n) => ({ source: 'mission', n, stars: 3, downs: 0, time: 40, gold: true });
 
-test('cap = ceil(active / ratio): 10 players -> 1 rare', () => {
+test('cap = ceil(active / ratio)', () => {
   const r = cfg.ratios;
-  assert.equal(capFor('raro', 10, r), 1);
-  assert.equal(capFor('raro', 11, r), 2);
-  assert.equal(capFor('raro', 1, r), 1);
+  assert.equal(capFor('lendario', 200, r), 1);   // the owner's example: 200 players -> 1 given item per season
+  assert.equal(capFor('lendario', 201, r), 2);
+  assert.equal(capFor('lendario', 10, r), 1);
+  assert.equal(capFor('raro', 50, r), 1);
+  assert.equal(capFor('raro', 51, r), 2);
   assert.equal(capFor('raro', 0, r), 0);
-  assert.equal(capFor('raro', 230, r), 23);
-  assert.equal(capFor('epico', 230, r), 5);
-  assert.equal(capFor('lendario', 230, r), 2);
-  assert.equal(capFor('lendario', 200, r), 1);
+  assert.equal(capFor('raro', 230, r), 5);
+  assert.equal(capFor('epico', 230, r), 3);
+  assert.equal(capFor('raro', 10, { raro: 10 }), 1);   // ratios are data: 1:10 gives 1 for 10 players
   assert.equal(capFor('unico', 100000, r), 1);
   assert.equal(capFor('nope', 100, r), 0);
-  assert.deepEqual(r, { raro: 10, epico: 50, lendario: 200 });
+  assert.deepEqual(r, { raro: 50, epico: 100, lendario: 200 });
 });
 
 test('data: every item has a tier, caches are valid, 25 Natal gifts', () => {
-  for (const i of cfg.items) assert.ok(['raro', 'epico', 'lendario', 'unico'].includes(i.tier) && i.name.pt && i.name.en);
+  for (const i of cfg.items) assert.ok(['raro', 'epico', 'lendario', 'unico'].includes(i.tier) && i.name.pt && i.name.en && i.edition && /Edição|Edition/.test(i.name.pt));
   assert.equal(cfg.caches.filter((c) => c.month === 12).length, 25);
   assert.ok(cfg.caches.some((c) => c.premium));
   assert.equal(new Set(cfg.caches.map((c) => c.id)).size, cfg.caches.length);
 });
 
-test('claim race: 200 players, 37 active -> exactly 4 copies, serials 1..4, the rest get a consolation', async () => {
-  const store = memStore(37), c = one('raro');
+test('claim race: 200 claims at once, 170 active players -> exactly 4 copies, serials 1..4, the rest get a consolation', async () => {
+  const store = memStore(170), c = one('raro');
   const res = await Promise.all(Array.from({ length: 200 }, (_, i) => claim(store, c, { id: 'u' + i }, { source: 'cache', id: 'x' }, { random: () => 0 })));
   const got = res.filter((r) => r.item);
   assert.equal(got.length, 4);

@@ -24,6 +24,18 @@ Wd.spec = function (name, forceVip) {
   for (const sl of D.slots) { const it = byId[w[sl]]; if (!it) continue; if (it.acc) Object.assign(out.acc, it.acc); if (it.trail) out.trail = it.trail; if (it.grant === 'vip' && sl === 'body') out.shiny = 1; }
   return out;
 };
+Wd.item = id => byId[id] || null;
+// Cidade Online: the spec of one of the three stars wearing a list of item ids (another player's outfit; unknown ids are ignored)
+Wd.specOf = function (name, ids) {
+  const base = VP.R3.SPECS[name] || VP.R3.SPECS.mimo, out = Object.assign({}, base, { acc: {} });
+  for (const id of ids || []) { const it = byId[id]; if (!it || (it.cats && !it.cats.includes(name))) continue; if (it.acc) Object.assign(out.acc, it.acc); if (it.trail) out.trail = it.trail; }
+  return out;
+};
+// items that can change hands in a trade: bought with coins in the wardrobe (never free, VIP, season or Pix-pack items)
+Wd.tradable = it => !!it && !!it.price && !it.grant && !it.free;
+Wd.give = function (id) { const s = S(), i = s.owned.indexOf(id); if (i < 0) return false; s.owned.splice(i, 1); for (const n of NAMES) for (const sl in s.wear[n] || {}) if (s.wear[n][sl] === id) s.wear[n][sl] = null; return true; };
+Wd.take = function (id) { const s = S(); if (!Wd.tradable(byId[id]) || s.owned.includes(id)) return false; s.owned.push(id); return true; };
+Wd.ownedTradable = () => D.items.filter(it => Wd.tradable(it) && S().owned.includes(it.id));
 Wd.equipSet = function (set) { const s = S(); for (const n of NAMES) s.wear[n] = Object.assign({}, s.wear[n], D.sets[set][n]); VP.persist(); if (VP.R3.refreshCats) VP.R3.refreshCats(); };
 
 const packOf = it => (D.packs && D.packs[it.grant]) || null;

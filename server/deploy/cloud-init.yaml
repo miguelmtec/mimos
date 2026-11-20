@@ -1,0 +1,107 @@
+#cloud-config
+# Vice Paws — Cidade Online real-time server on Ubuntu 22.04 (AWS Lightsail 1 GB is plenty).
+# OPTIONAL: the game runs online on Vercel + Neon (polling) without this. Use it only when you
+# decide to move to the real-time server. Steps and firewall rules: server/deploy/README.md
+#
+# Before pasting this as the instance's launch script / user data, set the two values below.
+write_files:
+  - path: /etc/vice-paws-online.env
+    permissions: '0600'
+    content: |
+      # The SAME value as ONLINE_TICKET_SECRET in the Vercel project (Settings -> Environment Variables).
+      ONLINE_TICKET_SECRET=CHANGE_ME_TO_THE_SAME_SECRET_AS_VERCEL
+      PORT=8080
+      HOST=127.0.0.1
+      # Optional: the Neon connection string, so reports land in the vp_online_reports table.
+      # Without it they are appended to /var/lib/vice-paws-online/reports.jsonl
+      #DATABASE_URL=
+      REPORTS_FILE=/var/lib/vice-paws-online/reports.jsonl
+      # Optional: extra allowed origins (custom domain), comma separated.
+      #ALLOWED_ORIGINS=https://example.com
+  - path: /etc/vice-paws-online.repo
+    permissions: '0644'
+    content: |
+      REPO=https://github.com/miguelmtec/mimos.git
+      BRANCH=main
+  - path: /etc/systemd/system/vice-paws-online.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Vice Paws - Cidade Online (WebSocket rooms)
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      User=vicepaws
+      Group=vicepaws
+      WorkingDirectory=/opt/vice-paws/server
+      EnvironmentFile=/etc/vice-paws-online.env
+      ExecStart=/usr/bin/node index.mjs
+      Restart=always
+      RestartSec=2
+      MemoryMax=600M
+      NoNewPrivileges=true
+      ProtectSystem=strict
+      ProtectHome=true
+      PrivateTmp=true
+      ReadWritePaths=/var/lib/vice-paws-online
+      LimitNOFILE=8192
+
+      [Install]
+      WantedBy=multi-user.target
+  - path: /usr/local/sbin/vice-paws-setup.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Idempotent: run it again to update the server to the latest commit of the branch.
+      set -euo pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      . /etc/vice-paws-online.repo
+
+      if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+        apt-get install -y nodejs
+      fi
+      if ! command -v caddy >/dev/null; then
+        apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl gnupg
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
+        apt-get update
+        apt-get install -y caddy
+      fi
+      apt-get install -y git
+
+      id vicepaws >/dev/null 2>&1 || useradd --system --home /opt/vice-paws --shell /usr/sbin/nologin vicepaws
+      mkdir -p /var/lib/vice-paws-online && chown vicepaws:vicepaws /var/lib/vice-paws-online
+
+      # The code. (No git access from the VM? Copy the repository's server/ and api/ folders into /opt/vice-paws
+      # with scp instead and run this script again: the clone is skipped when server/ is already there.)
+      if [ -d /opt/vice-paws/.git ]; then
+        git -C /opt/vice-paws fetch --depth 1 origin "$BRANCH" && git -C /opt/vice-paws reset --hard FETCH_HEAD
+      elif [ ! -d /opt/vice-paws/server ]; then
+        git clone --depth 1 --branch "$BRANCH" "$REPO" /opt/vice-paws
+      fi
+      cd /opt/vice-paws/server
+      npm install --omit=dev --no-audit --no-fund
+      chown -R vicepaws:vicepaws /opt/vice-paws
+
+      # TLS: Caddy gets a certificate by itself for <public-ip-with-dashes>.sslip.io (a name that
+      # resolves to this machine without buying a domain) and proxies wss:// to the Node port.
+      IP=$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')
+      NAME="$(echo "$IP" | tr . -).sslip.io"
+      cat > /etc/caddy/Caddyfile <<CADDY
+      $NAME {
+        encode zstd gzip
+        reverse_proxy 127.0.0.1:8080
+      }
+      CADDY
+      systemctl daemon-reload
+      systemctl enable --now vice-paws-online
+      systemctl restart vice-paws-online
+      systemctl enable caddy
+      systemctl reload caddy || systemctl restart caddy
+      echo "wss://$NAME" > /etc/vice-paws-online.url
+      echo "Cidade Online server: wss://$NAME   health: https://$NAME/health"
+runcmd:
+  - [ bash, -c, "ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw --force enable" ]
+  - [ bash, /usr/local/sbin/vice-paws-setup.sh ]

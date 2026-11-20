@@ -68,3 +68,55 @@ create index if not exists vp_cats_public_idx on vp_cats (created_at desc) where
 -- Deleting an account (DELETE /api/me) removes the vp_users row; sessions, cats
 -- and saves follow through `on delete cascade`, and the API also deletes the
 -- player's rows in vp_login_codes.
+
+
+-- ---------------------------------------------------------------------------
+-- Cidade Online (api/online, polling fallback). Created lazily by
+-- ensureOnlineSchema() in api/_lib/db.js, apart from the account tables.
+-- ---------------------------------------------------------------------------
+
+-- Who is in the shared city right now: one row per player, rewritten by every
+-- tick and deleted 30 s after the last one. UNLOGGED: throwaway data, no WAL.
+-- No personal data: `id` is a public id (never the account id), `name` is a
+-- registered cat name or a generated nickname, `cat` the whitelisted look,
+-- `ip_hash` a keyed hash used only to cap presences per address. `user_id`
+-- (accounts only) never leaves the server: it is copied into a report.
+create unlogged table if not exists vp_presence (
+    id text primary key,
+    room text not null,
+    x integer not null,
+    z integer not null,
+    ry real not null default 0,
+    anim text not null default 'idle',
+    car text,
+    name text not null,
+    cat jsonb not null,
+    cv text not null,
+    emote text,
+    es smallint not null default 0,
+    phrase smallint,
+    ps smallint not null default 0,
+    paws text,
+    trade text,
+    ip_hash text not null default '',
+    user_id uuid,
+    updated_at timestamptz not null default now());
+
+-- Reports ("Denunciar") for review. Written by the polling API (source 'poll')
+-- and by the real-time server (source 'ws', when it has DATABASE_URL).
+--   select created_at, reason, target_name, target_id, target_user_id, room
+--     from vp_online_reports order by created_at desc limit 50;
+create table if not exists vp_online_reports (
+    id bigserial primary key,
+    reporter_id text not null,
+    target_id text not null,
+    target_name text not null default '',
+    target_cat jsonb,
+    target_user_id uuid,
+    room text not null default '',
+    reason text not null,              -- name | behavior | cheat | other
+    source text not null default 'poll',
+    created_at timestamptz not null default now());
+
+create index if not exists vp_presence_room_idx on vp_presence (room, updated_at);
+create index if not exists vp_online_reports_reporter_idx on vp_online_reports (reporter_id, created_at desc);

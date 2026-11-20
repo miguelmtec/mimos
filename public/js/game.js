@@ -851,7 +851,9 @@ function collect(c, it) {
     if (m.energy > 92 && c.name !== 'mimo') return false;
     m.energy = Math.min(100, m.energy + 60); m.exhausted = false; sfx('coffee'); text(m.x, m.y - 50, tr('coffee'), '#c9a27e', 15); part({ x: m.x, y: m.y - 16, k: 'ring', col: '#c9a27e', size: 10, life: 0.4 });
   } else if (k === 'paw') { VP.S.lives = Math.max(VP.S.lives, Math.min(9, VP.S.lives + 1)); VP.persist(); sfx('paw'); text(it.x, it.y - 24, tr('life1'), '#ffd23f', 17); burst(it.x, it.y, 12, '#ffd23f', 160, 'star', 7, 0.7); }
-  else if (k === 'gpaw') {
+  else if (k === 'gpaw' && it.online !== undefined) { // a shared paw of Cidade Online: the room decides who got it
+    if (VP.Online) VP.Online.pawPicked(it); burst(it.x, it.y, 14, '#ffd23f', 170, 'star', 7, 0.8);
+  } else if (k === 'gpaw') {
     const S = VP.S; S.paws = S.paws || {}; S.paws[it.pid] = 1; S.cash += 50; sfx('paw'); burst(it.x, it.y, 14, '#ffd23f', 170, 'star', 7, 0.8);
     const d = it.pid.split('_')[0], per = (VP.Missions.act && VP.Missions.act.pawsPerDistrict) || 5; let n = 0; for (const key in S.paws) if (key.split('_')[0] === d) n++;
     if (n >= per) { S.lives = Math.max(S.lives, Math.min(9, S.lives + 1)); say(tr('pawsAll'), '#ffd23f', 3.5); } else say(tr('pawFound', n, per), '#ffd23f', 2.2);

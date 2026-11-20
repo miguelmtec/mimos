@@ -77,6 +77,7 @@ UI.SCREENS.world = {
     if (!M.cities.some(c => isBR(c)) && Tour.view === 'br') Tour.view = 'world';
     return `<div class="corner l"><button class="chip" data-act="back">‹ ${t('back')}</button></div><div class="wrap wtour" style="margin-top:46px"><h2 class="teal">✈ ${t('world')}</h2>
     <p class="small">⭐ ${tot} · ${t('wt_open', open, M.cities.length)}${next ? ' · ' + t('wt_next', esc(next.name.split(' — ')[0]), Math.max(0, next.stars - tot)) : ''}</p>
+    <button class="btn teal sm" data-act="online">🌐 ${t('on_title')} · ${t('on_meet')}</button>
     <div class="seg"><button class="${Tour.view === 'br' ? 'on' : ''}" data-act="wview" data-v="br">🇧🇷 ${t('wt_br')}</button><button class="${Tour.view === 'world' ? 'on' : ''}" data-act="wview" data-v="world">🌎 ${t('wt_world')}</button></div>
     <div class="mapbox">${mapSvg(Tour.view)}<span class="legend"><i class="l1"></i>${t('wt_l_open')} <i class="l2"></i>${t('wt_l_lock')}${soon.length ? ` <i class="l3"></i>${t('wt_l_soon')}` : ''}</span></div>
     ${gs.filter(g => Tour.view === 'world' || g.br).map(g => { const st = g.cs.reduce((a, c) => a + Tour.progress(c).stars, 0); return `<h3 class="ctry">${g.flag} ${esc(g.country)} <small>${g.cs.filter(Tour.unlocked).length}/${g.cs.length} · ⭐ ${st}/${g.cs.length * 30}</small></h3><div class="citylist">${g.cs.map(card).join('')}</div>`; }).join('')}

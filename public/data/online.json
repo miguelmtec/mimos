@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "maxPerRoom": 30,
+  "maxRooms": 20,
+  "tickMs": 1500,
+  "pollingEnabled": true,
+  "wsUrl": ""
+}

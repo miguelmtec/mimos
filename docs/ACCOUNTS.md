@@ -198,6 +198,23 @@ async function photoToDataUrl(file) {
 ```
 `data` must be a JSON object of at most 64KB (UTF-8 bytes of its JSON). **Last write wins**: the server overwrites and stamps `updatedAt`. Suggested client flow: keep `updatedAt` next to the local save; on login `GET /api/save` and, if the cloud copy is newer than what this device last synced, load it (or ask the player); afterwards `PUT` on mission end, debounced.
 
+## Cidade Online (`api/online/[action].js`)
+
+Shared presence for the online free-roam mode. Design, limits and cost notes: `DESIGN.md` §10.
+
+| Route | Body / query | Answer |
+|---|---|---|
+| `GET /api/online/ticket` | `?cat=mimo\|mimosa\|morticia`, or `?catId=<uuid>` (own registered cat, needs login), or `?spec=<json Spec>`; optional `&wear=a,b` (outfit item ids, max 6) and `&lv=1..100` (level badge); optional header `x-vp-ticket: <previous ticket>` keeps a guest's id and nickname | `{you: {id, name, guest}, cat, ticket, exp, ttl}` |
+| `POST /api/online/tick` | `{ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, trade?: {to, give, st}, need?, idle?}` | `{you: {id}, room, others: [...], n, cap, ts, paw}` |
+| `POST /api/online/report` | `{ticket, targetId, reason, room?}` | `{ok, stored}` |
+| `POST /api/online/leave` | `{ticket}` | `{ok}` |
+
+Errors: `401 ticket` (ask for a new ticket), `429 rate-limit` (more than one tick per 0.8 s) or `429 too-many` (presences per address), `503 busy` (city full), `503 offline` (no database, or `ONLINE_ENABLED=false`), `413 too-large`, `400 invalid` + `field`.
+
+- `ONLINE_ENABLED=false` turns the whole mode off at once. `ONLINE_TICKET_SECRET` is only needed with the optional real-time server (it must be the same on the VM); without it the ticket key is derived from `AUTH_SECRET` / `DATABASE_URL`.
+- Function count: this is the 10th function of the deployment (the Hobby plan allows 12).
+- Review reports with `select created_at, reason, target_name, target_id, target_user_id, room, source from vp_online_reports order by created_at desc limit 50;`
+
 ## Typical client flow
 
 ```js
@@ -227,6 +244,8 @@ await api('/api/save', 'PUT', { data: progress });
 | `api/_lib/mail.js` | Resend + PT/EN e-mail |
 | `api/_lib/validate.js`, `profanity.js` | whitelists and moderation |
 | `api/_lib/colors.js` | PNG reader + k-means |
+| `api/online/[action].js`, `api/_lib/online.js` | Cidade Online: ticket, polling tick, report, leave |
+| `api/_lib/protocol.mjs` | lists, limits and the ticket shared with the optional real-time server |
 | `db/schema.sql` | schema reference |
 | `public-docs-privacy.md` | privacy note (PT) to show in the game |
 | `tests/accounts.test.mjs` | handler tests |

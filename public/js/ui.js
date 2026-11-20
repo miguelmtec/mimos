@@ -54,6 +54,7 @@ SCREENS.title = {
       <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="rank">🏆 ${t('ranking')}</button>
       <button class="btn ghost sm" data-act="account">👤 ${VP.Acct && VP.Acct.status === 'in' ? t('ac_mycats') : t('account')}</button><button class="btn ghost sm" data-act="world">✈ ${t('world')}</button>
       <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button>
+      <button class="btn teal sm wide" data-act="online">🌐 ${t('on_title')} <small class="newtag">${t('on_new')}</small></button>
       <button class="btn ghost sm wide" data-act="catcity">🐱 ${t('gc_title')}</button></div>
       ${foot()}</div>`,
 };
@@ -168,9 +169,9 @@ ACT.start = el => UI.startMission(+el.dataset.n);
 SCREENS.pause = {
   cls: 'glass center', hideHud: true,
   html: () => `${corner()}<div class="wrap narrow"><h2>${t('paused')}</h2>
-    ${G && !G.free ? `<p><b>${esc(VP.mname(G.m))}</b><br><span class="small">${esc(M.objective(G).txt)}</span></p>` : `<p class="small">${t('o_free')}</p>`}
+    ${G && !G.free ? `<p><b>${esc(VP.mname(G.m))}</b><br><span class="small">${esc(M.objective(G).txt)}</span></p>` : `<p class="small">${G && G.online ? esc(M.objective(G).txt) : t('o_free')}</p>`}
     <button class="btn big" data-act="resume">▶ ${t('resume')}</button>
-    <div class="grid2">${G && !G.free ? `<button class="btn ghost sm" data-act="restart">↻ ${t('restart')}</button><button class="btn ghost sm" data-act="quit">🌴 ${t('quit')}</button>` : `<button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>`}
+    <div class="grid2">${G && G.online ? `<button class="btn ghost sm wide" data-act="onLeave">🚪 ${t('on_leave')}</button>` : G && G.free && VP.Online ? `<button class="btn teal sm wide" data-act="online">🌐 ${t('on_title')}</button>` : ''}${G && !G.free ? `<button class="btn ghost sm" data-act="restart">↻ ${t('restart')}</button><button class="btn ghost sm" data-act="quit">🌴 ${t('quit')}</button>` : `<button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>`}
     <button class="btn ghost sm" data-act="world">✈ ${t('world')}</button><button class="btn ghost sm" data-act="account">👤 ${t('account')}</button>
     <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button>
     <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="title">🏠 Menu</button></div></div>`,
@@ -268,12 +269,13 @@ ACT.sendScore = () => {
 SCREENS.nowebgl = { cls: 'center', hideHud: true, html: () => `<div class="wrap narrow"><h1 class="logo">VICE<span>PAWS</span></h1><div class="panel" style="margin-top:20px;text-align:center"><p>😿 ${t('noWebgl')}</p><p class="small">${t('openOut')}</p></div><a class="btn" href="${IG}" target="_blank" rel="noopener">📸 ${t('follow')}</a>${foot()}</div>` };
 
 // ---------- game flow ----------
-function endGame() { tutSkip(false); if (G) { Game.end(); G = null; } UI.state = 'menu'; UI.paused = false; }
+function endGame() { tutSkip(false); if (VP.Online) VP.Online.left(); if (G) { Game.end(); G = null; } UI.state = 'menu'; UI.paused = false; }
 function begin(g) {
   G = g; UI.state = 'play'; UI.paused = false; UI.hide();
   if (VP.R3 && VP.R3.ok) { VP.R3.attach(G); VP.R3.snapCamera(-Math.PI / 2); }
   I.reset(); I.enabled = true; VP.Audio.unlock(); VP.Audio.pause(false);
 }
+UI.begin = function (make) { endGame(); begin(make()); };   // for modes that build their own world (Cidade Online): end first, then build
 UI.free = function (pos, keep, opts) {
   if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
   const p = pos || (G && !G.trial && G.cats && !G.W.real ? { x: G.cats[G.active].x, y: G.cats[G.active].y } : VP.S.pos);
@@ -336,6 +338,7 @@ function frame(ts) {
     }
     if (G && G.over) { G.real += dt; for (const c of G.cats) c.t += dt; }
   }
+  if (VP.Online) VP.Online.update(dt); // remote cats keep moving while a menu is open
   if (R3 && R3.ok) { const full = UI.screen && SCREENS[UI.screen] && SCREENS[UI.screen].hideHud && !SCREENS[UI.screen].cls && R3.mode !== 'stage'; if (!full || R3.mode === 'stage') R3.render(G, dt); }
   VP.HUD.draw(G && UI.state === 'play' ? G : null, dt);
 }

@@ -473,6 +473,7 @@ M.update = function (G, dt) {
 };
 // what the HUD shows
 M.objective = function (G) {
+  if (G.online && VP.Online) return VP.Online.objective(G);
   if (G.free && G.quest) { const q = G.quest, cur = Math.min(q.def.n, Math.round(G.stat[q.key] - q.base)), done = cur >= q.def.n; return { txt: done ? VP.t('q_return', q.def.name[VP.lang() === 'pt' ? 'pt' : 'en']) : VP.t('q_' + q.def.type, q.def.n), prog: [cur, q.def.n], at: done ? q.mk : null, cat: null, free: true }; }
   if (G.free) { let b = null, bd = 1e12; const a = G.cats[G.active]; for (const mk of G.markers) if (mk.k === 'mission') { const d = U.d2(a.x, a.y, mk.x, mk.y); if (d < bd) { bd = d; b = mk; } } return { txt: G.tour ? VP.t('o_tour', G.W.real.name) : VP.t(G.trial ? 'o_trial' : 'o_free'), at: b, cat: null, free: true }; }
   const st = G.steps[G.step];

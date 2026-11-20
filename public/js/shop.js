@@ -5,7 +5,7 @@ const VP = window.VP, UI = VP.UI, t = (...a) => VP.t(...a);
 const Shop = VP.Shop = {};
 const PKEY = 'vp_purchases';
 // display prices only: the server (api/pix/_products.js) always decides what is charged
-const PRICE = { vip: '4,90', lives10: '1,99', season: '2,90', apoio5: '5,00', apoio10: '10,00', apoio20: '20,00', supporter_small: '0,99', skin_praia: '0,99', skin_agro: '0,99', skin_festa: '1,99', skin_natal: '1,99' };
+const PRICE = { vip: '4,90', lives10: '1,99', season: '2,90', apoio5: '5,00', apoio10: '10,00', apoio20: '20,00', supporter_small: '0,99', skin_praia: '0,99', skin_agro: '0,99', skin_festa: '1,99', skin_natal: '1,99', season_natal: '4,90', season_natal_plus: '9,90' };
 const PACKS = [['skin_praia', 'pack_praia', '🏄', 'linear-gradient(135deg,#2de2e6,#ff8a5c)'], ['skin_agro', 'pack_agro', '🤠', 'linear-gradient(135deg,#c98f4b,#5c3a18)'], ['skin_festa', 'pack_festa', '🎉', 'linear-gradient(135deg,#b967ff,#ff4fb8)'], ['skin_natal', 'pack_natal', '🎄', 'linear-gradient(135deg,#1f8f5a,#e01e37)']];
 Shop.PRICE = PRICE; Shop.PACKS = PACKS;
 let P = null;

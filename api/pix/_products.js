@@ -12,6 +12,9 @@ export const PRODUCTS = {
   skin_agro:  { title: 'Vice Paws — Pacote de visual Agro (Rio Verde)', price: 0.99, grants: ['pack_agro'] },
   skin_festa: { title: 'Vice Paws — Pacote de visual Festa', price: 1.99, grants: ['pack_festa'] },
   skin_natal: { title: 'Vice Paws — Pacote de visual Natal', price: 1.99, grants: ['pack_natal'] },
+  // Passe da Temporada Natal Neon (aprovado pelo dono em 20/11/2026): só visual, sem sorteio
+  season_natal:      { title: 'Vice Paws — Passe Natal Neon', price: 4.90, grants: ['pass_natal'] },
+  season_natal_plus: { title: 'Vice Paws — Passe Natal Neon + Pacote', price: 9.90, grants: ['pass_natal', 'pass_natal_plus'] },
 };
 export const MP = 'https://api.mercadopago.com';
 export const token = () => process.env.MP_ACCESS_TOKEN || '';

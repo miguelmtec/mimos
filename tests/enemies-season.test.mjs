@@ -144,11 +144,13 @@ test('Natal Neon: 10+ missions on 500-549, free track with the four cosmetics, n
   assert.equal(S.claimable(d, { pts: 99999, f: {}, p: {} }, { pass: true, plus: true }).length, free.length + prem.length);
 });
 
-test('season pass: a hook only, with no price until the owner approves', async () => {
+test('season pass: owner-approved prices (4,90 / 9,90), cosmetic only, server catalogue is the source', async () => {
   const d = await json('seasons/natal.json'), p = d.pass, shop = await readFile(new URL('../public/js/shop.js', import.meta.url), 'utf8'), js = await readFile(new URL('../public/js/season.js', import.meta.url), 'utf8');
-  assert.equal(p.price, null); assert.equal(p.plusPrice, null); assert.equal(p.awaitingOwnerApproval, true); assert.equal(p.cosmeticOnly, true);
-  assert.ok(!/R\$\s*\d/.test(JSON.stringify(d)), 'no price anywhere in the season file');
-  for (const id of [p.product, p.plusProduct]) { assert.ok(id && !PRODUCTS[id], id + ' is not for sale yet'); assert.ok(!shop.includes(id), id + ' has no client price'); }
+  assert.equal(p.awaitingOwnerApproval, false); assert.equal(p.cosmeticOnly, true);
+  assert.equal(PRODUCTS[p.product].price, 4.90); assert.deepEqual(PRODUCTS[p.product].grants, [p.grant]);
+  assert.equal(PRODUCTS[p.plusProduct].price, 9.90); assert.deepEqual(PRODUCTS[p.plusProduct].grants, [p.grant, p.plusGrant]);
+  assert.equal(p.price, PRODUCTS[p.product].price); assert.equal(p.plusPrice, PRODUCTS[p.plusProduct].price);
+  assert.ok(shop.includes("season_natal: '4,90'") && shop.includes("season_natal_plus: '9,90'"), 'client shows the same prices');
   assert.ok(!/grants\[[^\]]*\]\s*=|P\.grants/.test(js), 'season.js never grants an entitlement by itself');
   for (const f of await Promise.all(['carnaval', 'pascoa', 'festa_junina', 'halloween', 'dia_dos_animais'].map(id => json('seasons/' + id + '.json')))) assert.ok(!/R\$|price/i.test(JSON.stringify(f)));
 });

@@ -29,7 +29,7 @@ test('difficulty curve is smooth inside every chapter', async () => {
 });
 
 test('shop catalogue: fixed small prices, cosmetics and support only', async () => {
-  const allowed = new Set(['vip', 'lives10', 'season', 'supporter', 'pack_praia', 'pack_agro', 'pack_festa', 'pack_natal']);
+  const allowed = new Set(['vip', 'lives10', 'season', 'supporter', 'pack_praia', 'pack_agro', 'pack_festa', 'pack_natal', 'pass_natal', 'pass_natal_plus']);
   for (const [id, p] of Object.entries(PRODUCTS)) {
     assert.ok(typeof p.price === 'number' && p.price >= 0.5 && p.price <= 20, id + ' price');
     assert.ok(p.title && Array.isArray(p.grants) && p.grants.every(g => allowed.has(g)), id + ' grants');

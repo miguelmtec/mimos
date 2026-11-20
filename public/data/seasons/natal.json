@@ -166,9 +166,9 @@
   ]
  },
  "pass": {
-  "_doc": "Passe da Temporada (gancho, ainda NÃO está à venda). Nenhum preço aqui: quando o dono aprovar, os produtos 'product' e 'plusProduct' entram em api/pix/_products.js (o valor cobrado vale sempre de lá) e em PRICE de shop.js; aí o botão de compra aparece sozinho na tela da temporada. Só enfeite.",
-  "price": null, "plusPrice": null,
-  "awaitingOwnerApproval": true,
+  "_doc": "Passe da Temporada, preços aprovados pelo dono em 20/11/2026 (R$ 4,90 e R$ 9,90). O valor cobrado vale sempre de api/pix/_products.js; os produtos 'product' e 'plusProduct' entram em api/pix/_products.js (o valor cobrado vale sempre de lá) e em PRICE de shop.js; aí o botão de compra aparece sozinho na tela da temporada. Só enfeite.",
+  "price": 4.90, "plusPrice": 9.90,
+  "awaitingOwnerApproval": false,
   "cosmeticOnly": true,
   "product": "season_natal",
   "grant": "pass_natal",

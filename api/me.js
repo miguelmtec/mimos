@@ -7,7 +7,9 @@ import { listCats } from './_lib/cats.js';
 export default endpoint({
   GET: async ({ req, sql }) => {
     const user = await requireUser(sql, req);
-    return { user, cats: await listCats(sql, user.id) };
+    // the owner's account (ADMIN_EMAILS, comma separated) carries the "Edição dos Mimos": the full wardrobe on the three official cats
+    const admin = (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean).includes(String(user.email).toLowerCase());
+    return { user: admin ? { ...user, admin: true } : user, cats: await listCats(sql, user.id) };
   },
   DELETE: async ({ req, res, sql }) => {
     const user = await requireUser(sql, req);

@@ -223,6 +223,7 @@ UI.result = function (win, why) {
     r.districtClear = !!m.boss || (m.bonus && !m.side && m.n === M.DIST[m.d].to);
     const wk = M.weeklyBonus(r); if (wk && wk.coins > 0) { S.cash += wk.coins; r.rewards.push((wk.ev.icon || '🎉') + ' ' + t('wk_bonus', wk.coins)); }
     for (const line of M.dailyCheck(r)) r.rewards.push('🎯 ' + line);
+    if (VP.Prog) VP.Prog.onResult(r, G);
     const ch = UI.challenge; if (ch && ch.n === m.n) { r.chal = { name: ch.name, score: ch.score, won: r.score > ch.score }; if (r.chal.won) UI.challenge = null; }
     VP.persist();
     if (VP.onProgress) VP.onProgress(r);
@@ -283,6 +284,8 @@ UI.free = function (pos, keep, opts) {
   UI.songD = -1;
 };
 UI.tour = function (id) { if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; } if (!VP.CityCache[id]) return; endGame(); begin(M.startTour(id)); if (VP.R3.arrive) VP.R3.arrive(); const meta = VP.CityCache[id].meta; VP.Audio.music(UI.citySong(id)); UI.songD = -2; Game.fx.say(meta.hometown ? '💛 ' + t('wt_homeHello', VP.CityCache[id].real.name.split(' — ')[0]) : '✈ ' + VP.CityCache[id].real.name, '#ffd23f', meta.hometown ? 4.5 : 3); };
+// walking across to a neighbour tile of the same city: no flight, the cats arrive at the matching spot on the other side
+UI.tourTile = function (id, at) { if (!VP.CityCache[id]) return; endGame(); begin(M.startTour(id, { at })); VP.Audio.music(UI.citySong(id)); UI.songD = -2; Game.fx.say('🗺 ' + VP.CityCache[id].real.name, '#ffd23f', 2.4); };
 UI.citySong = id => (id === 'rioverde' ? 7 : [0, 1, 2, 3, 4, 2, 6][(VP.CityCache[id] && VP.CityCache[id].meta.mood) || 0]);
 UI.startMission = function (n) {
   if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
@@ -334,7 +337,7 @@ function frame(ts) {
     if (!UI.paused && !UI.screen) {
       I.poll();
       if (I.take('pause')) UI.pause(); else Game.update(dt);
-      if (G && G.free && !G.tour) { const d = VP.World.distAt(G.W, G.cats[G.active].x, G.cats[G.active].y); if (d !== UI.songD) { UI.songD = d; VP.Audio.music(M.DIST[d].song); } }
+      if (G && G.free && !G.tour) { const d = VP.World.distAt(G.W, G.cats[G.active].x, G.cats[G.active].y); if (d !== UI.songD) { UI.songD = d; VP.Audio.music(M.DIST[VP.World.baseOf(d)].song); } }
     }
     if (G && G.over) { G.real += dt; for (const c of G.cats) c.t += dt; }
   }

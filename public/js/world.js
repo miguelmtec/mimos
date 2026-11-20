@@ -43,62 +43,109 @@ const PAL = World.PAL = [
     roofs: ['#ffffff', '#ffd9ef', '#c9f5f5', '#ffe9a8', '#e6d4ff'], wall: '#2a1238', neon: ['#ff4fb8', '#ffd23f', '#2de2e6'], palmT: '#6a4a3b', palmL: ['#2fd0a0', '#1fa684'],
     tint: 'rgba(160,20,120,.14)', dark: 0.24, border: 'wall', lamp: '#ff9fe0', traffic: 5,
   },
+  // ---- neighbourhoods between the five districts (no story missions of their own; `base` = district whose music plays, `mood` = sky in gfx/city.js) ----
+  { // 5 Calçadão (boardwalk extension along the south shore)
+    road: '#54406a', line: '#ffe9a8', walk: '#f6d7b0', walk2: '#e2b98c', grass: '#62c784', grass2: '#4fb072', sand: '#ffe2ae', sand2: '#f5cc8c',
+    water: '#ff9fb0', water2: '#ffd0b0', plaza: '#ffc9a8', plaza2: '#f5b08c', wood: '#d19a58', lot: '#62507a', floor: '#c9b3d1',
+    roofs: ['#ffb38a', '#8fe3e0', '#ffe08a', '#ff9fb8', '#ffffff'], wall: '#fff1e0', neon: ['#ff4fb8', '#2de2e6', '#ffd23f'], palmT: '#9a6a3b', palmL: ['#2fae7a', '#1f8f6a'],
+    tint: 'rgba(255,140,90,.1)', dark: 0, border: 'water', lamp: '#ffe9a8', traffic: 3, base: 0, mood: 7,
+  },
+  { // 6 Parque da Lagoa (park with a lake)
+    road: '#4f5a66', line: '#f4f0d8', walk: '#e6dcc0', walk2: '#d2c6a4', grass: '#63c66f', grass2: '#4fb25c', sand: '#f0dca6', sand2: '#e2ca8c',
+    water: '#2fb8d8', water2: '#a8f0f5', plaza: '#f2d9a8', plaza2: '#e6c68c', wood: '#b98952', lot: '#6a7480', floor: '#c5ccd9',
+    roofs: ['#ff8a70', '#ffffff', '#ffd27a', '#8fd0a0', '#7fb4ff'], wall: '#fff7ea', neon: ['#ffd23f', '#ff7ac0', '#2de2e6'], palmT: '#8a6a45', palmL: ['#3fc27f', '#2aa368'],
+    tint: 'rgba(200,255,200,.05)', dark: 0, border: 'water', lamp: '#fff6c8', traffic: 2, base: 2, mood: 8,
+  },
+  { // 7 Zona Industrial
+    road: '#2c2f36', line: '#ffb347', walk: '#555a66', walk2: '#454a55', grass: '#4a6a4f', grass2: '#3d5a42', sand: '#6a6458', sand2: '#5a554a',
+    water: '#27455a', water2: '#4c7fa8', plaza: '#5a5360', plaza2: '#4a444f', wood: '#75604c', lot: '#3a3d46', floor: '#5c6270',
+    roofs: ['#8a4a3a', '#4a5a6e', '#6e6a4a', '#5a4a6a', '#3d5e5a'], wall: '#23262d', neon: ['#ffb347', '#ff4f5e', '#4cc9f0'], palmT: '#4a4038', palmL: ['#2f6e4a', '#255a3c'],
+    tint: 'rgba(255,140,40,.1)', dark: 0.18, border: 'wall', lamp: '#ffb347', traffic: 4, base: 3, mood: 9,
+  },
+  { // 8 Morro do Mirante (hillside)
+    road: '#5a4a52', line: '#ffe9a8', walk: '#d9b99a', walk2: '#c4a284', grass: '#58b86a', grass2: '#46a058', sand: '#e6c79a', sand2: '#d4b184',
+    water: '#3ab8d0', water2: '#a8f0f5', plaza: '#f0c49a', plaza2: '#e0ae82', wood: '#b07a48', lot: '#6a5860', floor: '#c9b8a8',
+    roofs: ['#ff7a5c', '#ffd23f', '#5fd0c8', '#ff9fd0', '#7fb4ff', '#b8e986', '#ffb35c'], wall: '#fff3df', neon: ['#ffd23f', '#ff4fb8', '#7CFF6B'], palmT: '#8a6a45', palmL: ['#3fc27f', '#2aa368'],
+    tint: 'rgba(255,200,120,.08)', dark: 0, border: 'wall', lamp: '#ffe9a8', traffic: 2, base: 4, mood: 10,
+  },
 ];
+World.HOODS = 9;
 // building heights (in tiles) per district
-const BH = [[2, 4], [5, 16], [2, 5], [2, 4], [4, 9]];
-// city layout: 12 x 8 blocks. Top: Neon Downtown (6x4) | Vice Heights (6x4). Bottom: Sunset Beach | Palm Harbor | Storm Docks (4x4 each)
-const COLS = 12, ROWS = 8;
+const BH = [[2, 4], [5, 16], [2, 5], [2, 4], [4, 9], [1.5, 3], [1.5, 3], [2, 5], [1, 2.5]];
+// City layout: 18 x 12 blocks (it was 12 x 8). The five story districts keep their size and their inner layout, so every mission
+// plays as before; four neighbourhoods sit between them and a rim of beach, bay, hills and highway closes the map without walls.
+//   north   Neon Downtown (6x4) | Morro do Mirante (6x4) | Vice Heights (6x4)
+//   middle  Parque da Lagoa (9x4)        | Zona Industrial (9x4)
+//   south   Sunset Beach (4x4) | Calçadão (3x4) | Palm Harbor (4x4) | Calçadão (3x4) | Storm Docks (4x4)
+const COLS = 18, ROWS = 12, MG = 9; // MG: tiles of rim around the street grid
+World.COLS = COLS; World.ROWS = ROWS; World.MG = MG;
 const DREG = World.DREG = [
-  { d: 0, c0: 0, r0: 4, cw: 4, rh: 4 }, { d: 1, c0: 0, r0: 0, cw: 6, rh: 4 }, { d: 2, c0: 4, r0: 4, cw: 4, rh: 4 },
-  { d: 3, c0: 8, r0: 4, cw: 4, rh: 4 }, { d: 4, c0: 6, r0: 0, cw: 6, rh: 4 },
+  { d: 0, c0: 0, r0: 8, cw: 4, rh: 4 }, { d: 1, c0: 0, r0: 0, cw: 6, rh: 4 }, { d: 2, c0: 7, r0: 8, cw: 4, rh: 4 },
+  { d: 3, c0: 14, r0: 8, cw: 4, rh: 4 }, { d: 4, c0: 12, r0: 0, cw: 6, rh: 4 },
+  { d: 5, c0: 4, r0: 8, cw: 3, rh: 4 }, { d: 5, c0: 11, r0: 8, cw: 3, rh: 4, alt: 1 }, { d: 6, c0: 0, r0: 4, cw: 9, rh: 4 }, { d: 7, c0: 9, r0: 4, cw: 9, rh: 4 }, { d: 8, c0: 6, r0: 0, cw: 6, rh: 4 },
 ];
+const DMAP = new Uint8Array(COLS * ROWS);
+for (const R of DREG) for (let r = 0; r < R.rh; r++) for (let c = 0; c < R.cw; c++) DMAP[(R.r0 + r) * COLS + R.c0 + c] = R.d;
+// where the story missions that end "at home" drive to: the cottage of a nearby story district (keeps the drive about as long as it was)
+World.HOME = [0, 0, 0, 2, 3]; World.AWAY = [2, 0, 0, 2, 3];
 const TPL = [
   ['bld plaza1 compB bld', 'compA arena house lot', 'park compC plaza2 compD', 'beach beach plaza3 beach'],
   ['bld bld plaza1 bld compB bld', 'bld compA arena house bld lot', 'bld plaza2 bld compC bld bld', 'lot bld compD bld plaza3 park'],
   ['bld plaza1 compB bld', 'compA arena house lot', 'dock compC plaza2 compD', 'dock beach plaza3 dock'],
   ['bld plaza1 compB bld', 'compA arena house lot', 'dock compC plaza2 compD', 'dock dock plaza3 dock'],
   ['pool bld plaza1 pool compB bld', 'bld compA arena house bld pool', 'pool plaza2 bld compC pool bld', 'lot bld compD bld plaza3 park'],
+  ['kiosk1 bld kiosk2', 'bld garden bld', 'volley kiosk3 garden', 'beach beach beach'],
+  ['garden park grove garden kiosk1 grove park garden grove', 'grove lake lake lake garden park garden grove garden', 'garden lake lake lake grove garden park garden kiosk2', 'park garden grove garden garden grove garden lot grove'],
+  ['factory depot bld tanks lot factory depot bld tanks', 'depot bld factory lot depot tanks bld factory lot', 'bld tanks depot factory bld lot kiosk1 depot factory', 'lot factory bld depot tanks bld depot lot bld'],
+  ['hill hill mirante hill hill hill', 'hill bld hill kiosk1 hill garden', 'garden hill hill bld hill hill', 'hill park hill hill lot hill'],
 ];
+const ALT5 = ['bld kiosk1 garden', 'volley bld kiosk2', 'garden bld bld', 'beach beach beach'];
 const SIGNS = World.SIGNS = ['PET SHOP', 'SUSHI', 'MIAU BAR', 'DONUTS', 'HOTEL', 'CAFE', 'PIZZA', 'ARCADE', 'MOTEL', 'SURF', 'CLUB 9', 'PEIXARIA', 'TACOS', 'GELATO', 'VICE', 'NEON'];
 
 World.gen = function (cfg) {
   cfg = cfg || {};
   const cols = COLS, rows = ROWS, rng = U.rng(cfg.seed || 7);
-  const W = cols * 14 + 8, H = rows * 14 + 8;
+  const W = cols * 14 + 4 + MG * 2, H = rows * 14 + 4 + MG * 2;
   const grid = new Uint8Array(W * H), gnd = new Uint8Array(W * H), flap = new Uint8Array(W * H);
   const w = {
     W, H, grid, gnd, flap, cols, rows, pal: PAL[0], pw: W * T, ph: H * T, RX: [], RY: [], lots: [], blds: [], deco: [], palms: [], lamps: [], glows: [],
-    spawn: { stands: [], crates: [], trash: [], parked: [], treats: [], props: [] }, roles: [{}, {}, {}, {}, {}], comps: [],
+    spawn: { stands: [], crates: [], trash: [], parked: [], treats: [], props: [] }, roles: PAL.map(() => ({})), comps: [], trees: [], fish: [], mg: MG,
   };
   const set = w.set = (x, y, t, g) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; grid[i] = t; if (g) gnd[i] = g; };
   for (let i = 0; i < W * H; i++) { grid[i] = WATER; gnd[i] = G_BORDER; }
-  for (let i = 0; i <= cols; i++) w.RX.push((2 + i * 14 + 2) * T);
-  for (let j = 0; j <= rows; j++) w.RY.push((2 + j * 14 + 2) * T);
-  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
-    const rx = (x - 2) % 14 < 4, ry = (y - 2) % 14 < 4;
+  for (let i = 0; i <= cols; i++) w.RX.push((MG + i * 14 + 2) * T);
+  for (let j = 0; j <= rows; j++) w.RY.push((MG + j * 14 + 2) * T);
+  for (let y = MG; y < H - MG; y++) for (let x = MG; x < W - MG; x++) {
+    const rx = (x - MG) % 14 < 4, ry = (y - MG) % 14 < 4;
     if (rx || ry) set(x, y, FLOOR, G_ROAD); else set(x, y, FLOOR, G_WALK);
   }
+  rim(w, set);
   const types = {};
   for (const R of DREG) for (let r = 0; r < R.rh; r++) {
-    const row = TPL[R.d][r].split(' ');
+    const row = (R.alt ? ALT5 : TPL[R.d])[r].split(' ');
     for (let c = 0; c < R.cw; c++) {
       const role = row[c], C = R.c0 + c, RR = R.r0 + r;
-      const type = role.startsWith('comp') ? 'comp' : role.startsWith('plaza') ? 'plaza' : role === 'arena' ? 'arena' : role;
-      const tx = 6 + C * 14 + 1, ty = 6 + RR * 14 + 1;
+      const type = role.startsWith('comp') ? 'comp' : role.startsWith('plaza') || role.startsWith('kiosk') ? 'plaza' : role === 'arena' ? 'arena' : role;
+      const tx = MG + 4 + C * 14 + 1, ty = MG + 4 + RR * 14 + 1;
       const lot = { c: C, r: RR, d: R.d, role, type, tx, ty, tw: 8, th: 8, cx: (tx + 4) * T, cy: (ty + 4) * T, side: 's', stands: 3, pal: PAL[R.d] };
       w.lots.push(lot); types[C + ',' + RR] = lot;
-      if (type !== 'bld' && type !== 'lot' && type !== 'beach' && type !== 'dock' && type !== 'pool') w.roles[R.d][role] = lot;
+      if (R.d > 4 && role.startsWith('kiosk')) lot.stands = 2;
+      if (type !== 'bld' && type !== 'lot' && type !== 'beach' && type !== 'dock' && type !== 'pool' && !(R.alt && w.roles[R.d][role])) w.roles[R.d][role] = lot;
       if (type === 'comp') w.comps.push(lot);
     }
   }
   w.lot = (c, r) => types[c + ',' + r];
   w.setComp = (lot, spec) => setComp(w, lot, spec || {});
-  for (const lot of w.lots) { if (lot.type === 'comp') lot.props = setComp(w, lot, {}); else fillLot(w, lot, rng, set); }
+  // the new neighbourhoods use their own stream of random numbers, so the five story districts are built exactly as before
+  const rng2 = U.rng((cfg.seed || 7) * 131 + 9);
+  for (const lot of w.lots) if (lot.d <= 4) { if (lot.type === 'comp') lot.props = setComp(w, lot, {}); else fillLot(w, lot, rng, set); }
+  for (const lot of w.lots) if (lot.d > 4) fillLot(w, lot, rng2, set);
   // street furniture
   for (const lot of w.lots) {
     const bx = lot.tx - 1, by = lot.ty - 1, d = lot.d;
+    if (lot.type === 'lake') continue;
     w.lamps.push({ x: (bx + 0.3) * T, y: (by + 0.6) * T, d }, { x: (bx + 9.5) * T, y: (by + 9.9) * T, d });
-    if (lot.type === 'arena') continue;
+    if (lot.type === 'arena' || d === 6 || d === 7) continue;
     if (d !== 3 || rng() < 0.4) w.palms.push({ x: (bx + 9.5) * T, y: (by + 0.7) * T, s: 0.95, d }, { x: (bx + 0.4) * T, y: (by + 9.8) * T, s: 0.9, d });
     if (rng() < 0.6 && d !== 3) w.palms.push({ x: (bx + 5) * T, y: (by + 0.55) * T, s: 0.8, d });
   }
@@ -108,7 +155,55 @@ World.gen = function (cfg) {
   w.reset = () => { grid.set(w.pristine); flap.set(w.pristineFlap); for (const l of w.comps) l.props = setComp(w, l, {}); };
   return w;
 };
-World.distAt = (w, px, py) => { if (w.real) return 0; const c = U.clamp(Math.floor((px / T - 2) / 14), 0, COLS - 1), r = U.clamp(Math.floor((py / T - 2) / 14), 0, ROWS - 1); return r >= 4 ? (c < 4 ? 0 : c < 8 ? 2 : 3) : (c < 6 ? 1 : 4); };
+// neighbourhood under a point: 0-4 the story districts, 5 Calçadão, 6 Parque da Lagoa, 7 Zona Industrial, 8 Morro do Mirante
+World.distAt = (w, px, py) => { if (w.real) return 0; const c = U.clamp(Math.floor((px / T - MG - 2) / 14), 0, COLS - 1), r = U.clamp(Math.floor((py / T - MG - 2) / 14), 0, ROWS - 1); return DMAP[r * COLS + c]; };
+World.baseOf = d => (PAL[d] && PAL[d].base !== undefined ? PAL[d].base : d);
+World.hoodKey = d => (d > 4 ? 'hood' + d : 'd' + d);
+// Soft edges: which side of the map the point is leaving through (n/s/e/w), or null well inside it.
+// Home city: the rim beyond the outer ring road. Real cities: the last metres of the extract.
+World.edgeAt = (w, px, py) => {
+  const x = px / T, y = py / T, m = w.real ? 7 : MG + 0.2;
+  if (y < m) return 'n'; if (y > w.H - m) return 's'; if (x < m) return 'w'; if (x > w.W - m) return 'e';
+  return null;
+};
+
+// Natural limits around the street grid: boardwalk, sand and sea to the south, a bay to the west, green hills to the north
+// and the fenced-off highway to the east. Everything walkable here is a dead end by design, never a trap.
+function rim(w, set) {
+  const { W, H } = w, x0 = MG, x1 = W - MG, y0 = MG, y1 = H - MG, r2 = U.rng(4242);
+  const dAt = (x, y) => World.distAt(w, (x + 0.5) * T, (y + 0.5) * T);
+  // south: boardwalk, then beach + sea (Beach, Calçadão) or quay + water with dock fingers (Harbor, Docks)
+  for (let x = 0; x < W; x++) {
+    const d = dAt(U.clamp(x, x0, x1 - 1), y1 - 1), beach = d === 0 || d === 5, cx = x - x0;
+    for (let k = 0; k < MG; k++) { const y = y1 + k; if (x < x0 - 4 || x > x1) set(x, y, x > x1 ? WALL : WATER, x > x1 ? G_GRASS : G_BORDER); else if (k < 2) set(x, y, FLOOR, G_WOOD); else if (beach && k < 6) set(x, y, FLOOR, G_SAND); else set(x, y, WATER, G_BORDER); }
+  }
+  for (let x = x0; x < x1; x++) {
+    const d = dAt(x, y1 - 1), beach = d === 0 || d === 5, cx = x - x0;
+    if (cx % 14 === 8) {
+      const len = beach ? 8 : 6; for (let k = 2; k < len; k++) { set(x, y1 + k, FLOOR, G_WOOD); set(x + 1, y1 + k, FLOOR, G_WOOD); }
+      w.fish.push({ x: (x + 1) * T, y: (y1 + len - 0.5) * T, d });
+      w.deco.push({ k: 'pier', x: x * T, y: (y1 + 2) * T, len: len - 2 });
+    } else if (beach) {
+      if (cx % 14 === 2) w.deco.push({ k: 'umbrella', x: (x + 0.5) * T, y: (y1 + 3.5) * T, col: r2.pick(PAL[d].neon) });
+      if (cx % 14 === 12) w.palms.push({ x: (x + 0.5) * T, y: (y1 + 2.6) * T, s: 1.05 });
+      if (cx % 7 === 5) w.spawn.treats.push({ x: (x + 0.5) * T, y: (y1 + 4.5) * T });
+    }
+  }
+  // north: a strip of grass with trees, then the hills
+  for (let x = 0; x < W; x++) for (let k = 0; k < MG; k++) { const y = y0 - 1 - k; if (k < 3 && x > 0 && x < W - 1) set(x, y, FLOOR, G_GRASS); else set(x, y, WALL, G_GRASS); }
+  for (let x = 2; x < W - 2; x += 5) { w.trees.push({ x: (x + r2.range(0, 3)) * T, y: (y0 - 2.6 - r2.range(0, 0.5)) * T, s: r2.range(0.9, 1.4) }); if (x % 3 === 0) w.spawn.treats.push({ x: (x + 0.5) * T, y: (y0 - 1.5) * T }); }
+  for (let x = -6; x < W + 6; x += 7) w.deco.push({ k: 'hill', x: (x + r2.range(0, 4)) * T, y: (y0 - 6.5 - r2.range(0, 2)) * T, r: r2.range(9, 15), h: r2.range(7, 16) });
+  // west: promenade and the bay
+  for (let y = y0 - 3; y < y1 + 2; y++) for (let k = 0; k < MG; k++) { const x = x0 - 1 - k; if (k < 2) set(x, y, FLOOR, G_WOOD); else if (k < 4 && dAt(x0, U.clamp(y, y0, y1 - 1)) !== 1) set(x, y, FLOOR, y >= y0 + 8 * 14 ? G_SAND : G_GRASS); else set(x, y, WATER, G_BORDER); }
+  for (let y = y0 + 8; y < y1; y += 14) {
+    for (let k = 2; k < 7; k++) { set(x0 - 1 - k, y, FLOOR, G_WOOD); set(x0 - 1 - k, y + 1, FLOOR, G_WOOD); }
+    w.fish.push({ x: (x0 - 6.5) * T, y: (y + 1) * T, d: dAt(x0, y) }); w.deco.push({ k: 'pier', x: (x0 - 7) * T, y: y * T, len: 5, hor: 1 });
+  }
+  // east: sidewalk, guard rail, highway
+  for (let y = y0 - 3; y < y1 + 2; y++) for (let k = 0; k < MG; k++) { const x = x1 + k; if (k < 1) set(x, y, FLOOR, G_WALK); else if (k === 1) set(x, y, FENCE, G_WALK); else if (k < 6) set(x, y, WALL, G_ROAD); else set(x, y, WALL, G_GRASS); }
+  w.deco.push({ k: 'highway', x: (x1 + 1) * T, y: (y0 - 3) * T, len: y1 + 5 - y0 });
+  for (let y = y0; y < y1; y += 9) w.lamps.push({ x: (x1 + 0.5) * T, y: (y + 0.5) * T, d: dAt(x1 - 1, y) });
+}
 
 // compound (fenced yard). spec: {gate:'open'|'fence'|'switch'|'gap'|'key', vault:bool}. Returns its props.
 function setComp(w, lot, spec) {
@@ -212,6 +307,53 @@ function fillLot(w, lot, rng, set) {
     cont(0, 0, 2, 0); cont(5, 1, 7, 1); if (rng() < 0.7) cont(1, 2, 1, 3);
     sp.crates.push({ tx: tx + 4, ty: ty + 3 }, { tx: tx + 6, ty: ty + 4 }, { tx: tx + 3, ty: ty + 0 });
     sp.treats.push({ x: px(3), y: py(2) }, { x: px(6), y: py(6) }); sp.trash.push({ x: px(0), y: py(7) });
+  } else if (type === 'garden' || type === 'grove') {
+    area(0, 0, 7, 7, FLOOR, G_GRASS);
+    const n = type === 'grove' ? 9 : 4, used = [];
+    for (let i = 0; i < n; i++) { let a = 0, b = 0; for (let k = 0; k < 8; k++) { a = rng.int(0, 7); b = rng.int(0, 7); if (!used.some(u => Math.abs(u[0] - a) + Math.abs(u[1] - b) < 3) && !(a >= 3 && a <= 4)) break; } if (a >= 3 && a <= 4) a = a === 3 ? 2 : 5; used.push([a, b]); w.trees.push({ x: px(a), y: py(b), s: rng.range(0.9, 1.35) }); }
+    for (let i = 0; i < (type === 'grove' ? 4 : 10); i++) w.deco.push({ k: 'flower', x: px(rng.range(0.2, 7)), y: py(rng.range(0.2, 7)), col: rng.pick(pal.neon) });
+    for (let y = 0; y < 8; y++) { set(tx + 3, ty + y, FLOOR, G_WALK); set(tx + 4, ty + y, FLOOR, G_WALK); } // footpath through the middle
+    w.deco.push({ k: 'bench', x: px(2.3), y: py(rng.int(1, 6)) }); if (type === 'garden') w.deco.push({ k: 'bench', x: px(5.2), y: py(rng.int(1, 6)) });
+    sp.treats.push({ x: px(3.5), y: py(1) }, { x: px(3.5), y: py(6) }); if (rng() < 0.5) sp.trash.push({ x: px(4.6), y: py(3.5) });
+  } else if (type === 'lake') {
+    // the whole block is water: the streets between two lake blocks become causeways across the lake
+    for (let y = -1; y <= 8; y++) for (let x = -1; x <= 8; x++) set(tx + x, ty + y, WATER, G_WATER);
+    for (let i = 0; i < 5; i++) w.deco.push({ k: 'lily', x: px(rng.range(0, 7)), y: py(rng.range(0, 3)), col: rng.pick(['#ff9fd0', '#ffffff', '#ffd23f']) });
+    if (rng() < 0.7) w.deco.push({ k: 'swan', x: px(rng.range(1, 6)), y: py(rng.range(0, 2.5)), a: rng() * 6.283 });
+    // a fishing pier from the street on the south side
+    const pxi = rng.int(2, 5); for (let k = 8; k >= 4; k--) { set(tx + pxi, ty + k, FLOOR, G_WOOD); set(tx + pxi + 1, ty + k, FLOOR, G_WOOD); }
+    w.fish.push({ x: (tx + pxi + 1) * T, y: (ty + 4.5) * T, d: lot.d }); w.deco.push({ k: 'pier', x: (tx + pxi) * T, y: (ty + 4) * T, len: 5 });
+  } else if (type === 'factory') {
+    area(0, 0, 7, 7, FLOOR, G_LOT); bld(0, 0, 7, 4);
+    w.deco.push({ k: 'chimney', x: px(1.2), y: py(1.2), h: rng.range(9, 13) }, { k: 'chimney', x: px(5.6), y: py(2.4), h: rng.range(7, 11) });
+    sp.crates.push({ tx: tx + rng.int(0, 2), ty: ty + 6 }, { tx: tx + rng.int(5, 7), ty: ty + 6 }); sp.trash.push({ x: px(3.5), y: py(7) }); sp.treats.push({ x: px(3.5), y: py(5.6) });
+  } else if (type === 'depot') {
+    area(0, 0, 7, 7, FLOOR, G_LOT);
+    const cont = (a, b, c2, d2) => { area(a, b, c2, d2, WALL, G_LOT); w.deco.push({ k: 'container', x: (tx + a) * T, y: (ty + b) * T, w: (c2 - a + 1) * T, h: (d2 - b + 1) * T, col: rng.pick(['#e2574c', '#2a9d8f', '#e9c46a', '#577590', '#f28a2e']) }); };
+    cont(0, 0, 2, 0); cont(4, 0, 6, 0); cont(0, 2, 0, 4); cont(5, 3, 7, 3); if (rng() < 0.6) cont(2, 6, 4, 6);
+    sp.crates.push({ tx: tx + 3, ty: ty + 3 }, { tx: tx + 6, ty: ty + 6 }, { tx: tx + 2, ty: ty + 4 }); sp.treats.push({ x: px(3), y: py(1.5) }, { x: px(6.5), y: py(5) });
+  } else if (type === 'tanks') {
+    area(0, 0, 7, 7, FLOOR, G_LOT);
+    for (const [a, b] of [[1, 1], [5, 1], [3, 5]]) { area(a, b, a + 1, b + 1, WALL, G_LOT); w.deco.push({ k: 'silo', x: (tx + a + 1) * T, y: (ty + b + 1) * T, h: rng.range(4.5, 7), col: rng.pick(['#c0c7d1', '#e9c46a', '#8fb8c8']) }); }
+    sp.crates.push({ tx: tx + 0, ty: ty + 6 }); sp.trash.push({ x: px(6.6), y: py(6.6) }); sp.treats.push({ x: px(3.5), y: py(3.4) });
+  } else if (type === 'hill') {
+    // hillside lane: small colourful houses around a stairway cross
+    area(0, 0, 7, 7, FLOOR, G_WALK);
+    for (const [a, b, c2, d2] of [[0, 0, 2, 2], [5, 0, 7, 2], [0, 5, 2, 7], [5, 5, 7, 7]]) if (rng() < 0.9) bld(a, b, c2, d2);
+    if (rng() < 0.5) { area(3, 3, 4, 4, WALL, G_GRASS); w.trees.push({ x: px(3.5), y: py(3.5), s: 1.2 }); } else { w.deco.push({ k: 'planter', x: px(3), y: py(3), col: rng.pick(pal.neon) }); set(tx + 3, ty + 3, WALL, G_WALK); }
+    w.deco.push({ k: 'steps', x: px(3.5), y: py(1) }, { k: 'steps', x: px(3.5), y: py(6) });
+    sp.treats.push({ x: px(3.5), y: py(0.5) }, { x: px(0.5), y: py(3.5) }); if (rng() < 0.4) sp.trash.push({ x: px(6.5), y: py(3.5) });
+  } else if (type === 'mirante') {
+    area(0, 0, 7, 7, FLOOR, G_PLAZA);
+    for (let i = 0; i < 8; i++) if (i !== 3 && i !== 4) set(tx + i, ty, FENCE, G_PLAZA);
+    w.deco.push({ k: 'bench', x: px(1.5), y: py(2) }, { k: 'bench', x: px(6), y: py(2) }, { k: 'scope', x: px(3.5), y: py(1.2) }, { k: 'railrow', x: tx * T, y: (ty + 0.5) * T });
+    w.palms.push({ x: px(0.3), y: py(7), s: 1 }, { x: px(7), y: py(7), s: 1.05 });
+    sp.treats.push({ x: px(3.5), y: py(3) }, { x: px(2), y: py(5) }, { x: px(5), y: py(5) });
+  } else if (type === 'volley') {
+    area(0, 0, 7, 7, FLOOR, G_SAND);
+    w.deco.push({ k: 'net', x: px(3.5), y: py(3.5) }, { k: 'umbrella', x: px(0.6), y: py(0.8), col: rng.pick(pal.neon) }, { k: 'umbrella', x: px(6.6), y: py(6.8), col: rng.pick(pal.neon) });
+    w.palms.push({ x: px(0), y: py(7), s: 1 }, { x: px(7), y: py(0), s: 1 });
+    sp.treats.push({ x: px(1.5), y: py(3.5) }, { x: px(5.5), y: py(3.5) });
   } else if (type === 'pool') {
     area(0, 0, 7, 7, FLOOR, G_PLAZA); bld(0, 0, 7, 2);
     area(2, 4, 5, 6, WATER, G_POOL);
@@ -225,7 +367,8 @@ function fillLot(w, lot, rng, set) {
 function finalize(w) {
   const { W, H, grid } = w;
   w.walkList = [];
-  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) { const i = y * W + x; if (grid[i] === FLOOR && (w.gnd[i] === G_ROAD || w.gnd[i] === G_WALK)) w.walkList.push(i); }
+  const mg = w.real ? 2 : MG;
+  for (let y = mg; y < H - mg; y++) for (let x = mg; x < W - mg; x++) { const i = y * W + x; if (grid[i] === FLOOR && (w.gnd[i] === G_ROAD || w.gnd[i] === G_WALK)) w.walkList.push(i); }
   w.tile = (px, py) => { const x = Math.floor(px / T), y = Math.floor(py / T); return x < 0 || y < 0 || x >= W || y >= H ? WALL : grid[y * W + x]; };
   w.setTile = (tx, ty, t) => { grid[ty * W + tx] = t; };
   w.pass = (px, py, mode) => PASS[mode][w.tile(px, py)] === 1;
@@ -292,7 +435,7 @@ function finalize(w) {
   };
   w.randWalk = (rng) => { const i = w.walkList[Math.floor((rng || Math.random)() * w.walkList.length)]; return { x: (i % W + 0.5) * T, y: (Math.floor(i / W) + 0.5) * T }; };
   w.clear = (px, py) => w.tile(px, py) === FLOOR;
-  w.walkD = [[], [], [], [], []];
+  w.walkD = PAL.map(() => []);
   for (const i of w.walkList) w.walkD[World.distAt(w, (i % W + 0.5) * T, (Math.floor(i / W) + 0.5) * T)].push(i);
   w.randWalkD = (d, rng) => { const L = w.walkD[d], i = L[Math.floor((rng || Math.random)() * L.length)]; return { x: (i % W + 0.5) * T, y: (Math.floor(i / W) + 0.5) * T }; };
   // minimap
@@ -401,7 +544,7 @@ World.fromCity = function (C, meta) {
   const grid = new Uint8Array(W * H), gnd = new Uint8Array(W * H), flap = new Uint8Array(W * H);
   const w = {
     W, H, grid, gnd, flap, cols: 0, rows: 0, pal: PAL[(meta && meta.pal) || 0], pw: W * T, ph: H * T, RX: [], RY: [], lots: [], blds: [], deco: [], palms: [], lamps: [], glows: [],
-    spawn: { stands: [], crates: [], trash: [], parked: [], treats: [], props: [] }, roles: [{}, {}, {}, {}, {}], comps: [], real: C, meta: meta || {}, fieldMax: 120,
+    spawn: { stands: [], crates: [], trash: [], parked: [], treats: [], props: [] }, roles: [{}, {}, {}, {}, {}], comps: [], trees: [], fish: [], real: C, meta: meta || {}, fieldMax: 120,
   };
   const tx = m => (m + half) / MPT, px = m => (m + half) / MPT * T;
   w.px = px; w.set = (x, y, t, g) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; grid[i] = t; if (g) gnd[i] = g; };

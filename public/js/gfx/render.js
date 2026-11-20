@@ -139,7 +139,7 @@ function obj(e, make) {
 }
 function turn(o, target, k) { const cur = o.userData.h === undefined ? target : o.userData.h; o.userData.h = cur + U.angDiff(cur, target) * Math.min(1, k); o.rotation.y = Math.PI / 2 - o.userData.h; }
 R.spec = function (name, vip) { const Wd = VP.Wardrobe; if (Wd) return Wd.spec(name, vip); return CAT_SPECS[vip ? name + '_vip' : name] || CAT_SPECS[name]; };
-R.catSpec = function (name, G) { return R.spec(name, (G && G.forceVip) || (!VP.Wardrobe && VP.Shop && VP.Shop.has('vip'))); };
+R.catSpec = function (name, G) { const ps = VP.Party && !(G && G.forceVip) ? VP.Party.specFor(name) : null; if (ps) return ps; return R.spec(name, (G && G.forceVip) || (!VP.Wardrobe && VP.Shop && VP.Shop.has('vip'))); };
 R.refreshCats = function () { for (const [e, o] of ents) if (e.kind === 'cat') { dyn.remove(o); ents.delete(e); } };
 
 // height of a cat: the ground, or the top of the parkour platform it stands on (with the arcs of hops and jump-pad flights)
@@ -213,22 +213,23 @@ function syncDog(e, G, dt) {
 function syncCar(c, G) {
   const K = VP.Art.CARS[c.type];
   const o = obj(c, () => buildCar(c.type, K, c.col));
-  o.position.set(c.x * S, hAt(c.x, c.y), c.y * S); o.rotation.y = Math.PI / 2 - c.a;
+  o.position.set(c.x * S, c.boat ? -0.42 + Math.sin(c.t * 2.2) * 0.05 : hAt(c.x, c.y) + (c.alt || 0), c.y * S); o.rotation.y = Math.PI / 2 - c.a;
+  if (o.userData.rotor) o.userData.rotor.rotation.y = c.t * (c.alt > 0.2 || G.car === c ? 22 : 1);
   const driven = G.car === c;
   if (o.userData.heads) o.userData.heads.visible = driven;
   o.rotation.z = driven ? U.clamp(-(c.da || 0) * 0.02, -0.06, 0.06) : 0;
   setMat(o, c.flash > 0 ? MAT.white : null);
-  shadow(o.position.x, o.position.z, o.position.y, K.wid * S * 0.62, K.len * S * 0.56, o.rotation.y);
+  if (!c.boat) shadow(o.position.x, o.position.z, o.position.y - (c.alt || 0), K.wid * S * 0.62, K.len * S * 0.56, o.rotation.y);
   if (K.cop) { const b = Math.floor(c.t * 6) % 2; glow(o.position.x, o.position.y + 1.7, o.position.z, b ? '#ff2040' : '#2a6bff', 6); }
   if (c.type === 'gold') glow(o.position.x, o.position.y + 0.25, o.position.z, Math.floor(c.t * 2) % 2 ? '#ff4fb8' : '#2de2e6', 7);
   if (driven) { const fxp = Math.cos(c.a), fyp = Math.sin(c.a); glow(o.position.x + fxp * 3.2, o.position.y + 0.5, o.position.z + fyp * 3.2, '#fff6b0', 5); }
 }
 function syncItem(it) {
-  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k === 'kite' && it.col ? 'kite' + it.col : it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : it.k === 'kite' ? 1.5 : it.k === 'ball' ? 1.6 : it.k === 'bag' ? 1.8 : 1.35); return m; });
+  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k === 'kite' && it.col ? 'kite' + it.col : it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : it.k === 'kite' ? 1.5 : it.k === 'ball' ? 1.6 : it.k === 'bag' ? 1.8 : it.k[1] === '_' ? 1.7 : 1.35); return m; });
   o.position.set(it.x * S, hAt(it.x, it.y) + 0.65 + Math.sin(it.t * 3) * 0.12 + (it.z || 0) * S, it.y * S); o.rotation.y = it.k === 'kite' ? Math.sin(it.t * 1.3) * 0.6 : it.t * 2.2;
   if (it.k === 'kite') { o.rotation.x = -0.5 + Math.sin(it.t * 2) * 0.12; shadow(o.position.x, o.position.z, hAt(it.x, it.y), 0.5, 0.5); } else if (it.k === 'ball') { o.rotation.x = it.t * 3; shadow(o.position.x, o.position.z, hAt(it.x, it.y), 0.34, 0.34); }
   if (it.k === 'bag' || it.k === 'gcoin') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', it.k === 'bag' ? 6 : 3);
-  if (it.k === 'paw' || it.k === 'gpaw') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', 5); else if (it.k === 'coffee' || it.k === 'catnip' || it.k === 'key' || it.k === 'milk') glow(o.position.x, o.position.y, o.position.z, it.k === 'key' ? '#ffd23f' : '#ffffff', 2.4);
+  if (it.k === 'paw' || it.k === 'gpaw') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', 5); else if (it.k === 'coffee' || it.k === 'catnip' || it.k === 'key' || it.k === 'milk' || it.k[1] === '_') glow(o.position.x, o.position.y, o.position.z, it.k === 'key' ? '#ffd23f' : '#ffffff', 2.4);
 }
 const HIDE_DONE = { fgate: 1, crate: 1, laser: 1, vlaser: 1, sdoor: 1 };
 function syncProp(p, G) {
@@ -325,7 +326,7 @@ function applyMood(idx, dt) {
   city.waterMat.color.copy(c.water).multiplyScalar(0.9);
   mood.i = idx;
 }
-R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && (G.m.d === 5 || G.m.d === 6) && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active]; return VP.World.distAt(W, a.x, a.y); };
+R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && (G.m.d === 5 || G.m.d === 6) && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active], d = VP.World.distAt(W, a.x, a.y), P = VP.World.PAL[d]; return P && P.mood !== undefined ? P.mood : d; };
 
 // ---------- Natal Neon: seasonal decorations for the home city (trees, light strings); snow comes from the mood ----------
 let xmas = null;

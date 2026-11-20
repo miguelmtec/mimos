@@ -120,3 +120,20 @@ create table if not exists vp_online_reports (
 
 create index if not exists vp_presence_room_idx on vp_presence (room, updated_at);
 create index if not exists vp_online_reports_reporter_idx on vp_online_reports (reporter_id, created_at desc);
+-- Special rewards with controlled scarcity (api/_lib/rewards.js creates these lazily; ratios live in public/data/rewards.json).
+-- cap of an item = ceil(active players / ratio of its tier); the mint is one atomic `update … where minted < cap returning`.
+create table if not exists vp_item_supply (
+    item_id text not null, season text not null, tier text not null,
+    minted int not null default 0, cap_rule text not null default '',
+    primary key (item_id, season));
+create table if not exists vp_item_owners (
+    item_id text not null, season text not null,
+    user_id uuid not null references vp_users(id) on delete cascade,
+    serial int not null, earned_at timestamptz not null default now(),
+    primary key (item_id, season, user_id), unique (item_id, season, serial));
+create table if not exists vp_reward_claims (
+    user_id uuid not null references vp_users(id) on delete cascade,
+    day int not null, key text not null, created_at timestamptz not null default now(),
+    primary key (user_id, day, key));
+-- "Cofre dos Mimos": one row per paid order (id of the payment), counted by /api/rewards/rarity
+create table if not exists vp_vault_orders (id text primary key, created_at timestamptz not null default now());

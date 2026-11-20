@@ -203,7 +203,7 @@ const TYPES = {
       compGuards(B, lot, gsize(B), p.heavy ? ['heavy'] : []);
       B.dogs({ x: lot.frontX + 120, y: lot.frontY + 30 }, pack(B, 1));
       const gp = gateSteps(B, lot, p.gate);
-      const hl = B.W.roles[0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
+      const hl = B.W.roles[World.HOME[B.geo] || 0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
       B.step({ txt: 'o_enterTruck', act: 'ctx', enter() { truck.locked = false; }, tick() { if (gp && gp.done) truck.locked = false; }, at: () => truck, done: () => G.car === truck });
       B.step({ txt: 'o_driveTruck', car: true, enter() { B.wantedOn(p.wanted); }, at: () => dest, done: () => G.car === truck && U.d2(truck.x, truck.y, dest.x, dest.y) < 110 * 110, fail: () => truck.dead ? 'truck' : null });
       B.step({ txt: 'o_done', enter() { G.minWanted = 0; G.heat = 0; G.noPolice = true; }, done: () => true, at: () => null });
@@ -233,7 +233,7 @@ const TYPES = {
       if (p.survive) B.step({ txt: 'o_survive', t: 0, fight: true, tick(dt) { this.t += dt; }, done() { return this.t >= p.survive; }, prog() { return [Math.floor(this.t), p.survive]; }, at: () => null, roam: true });
       if (p.car) {
         const cp = B.ix(B.cols - 1, B.rows - 1, 48, -120), car = Game.addCar(B.getaway(), cp.x, cp.y, -Math.PI / 2);
-        const hl = W.roles[B.geo === 0 ? 2 : 0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
+        const hl = W.roles[World.AWAY[B.geo] === undefined ? 0 : World.AWAY[B.geo]].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
         B.step({ txt: 'o_enterCar', act: 'ctx', at: () => car, done: () => G.car === car, fail: () => car.dead ? 'car' : null });
         B.step({ txt: 'o_driveSafe', car: true, at: () => dest, done: () => !!G.car && U.d2(G.car.x, G.car.y, dest.x, dest.y) < 110 * 110 });
       } else B.goto(B.corner(B.cols - 1, 0, 's'), 'o_hideout');
@@ -374,6 +374,7 @@ M.startFree = function (pos, opts) {
   if (S.avatar && !opts.trial) { const f = Game.addFriend(sp.x + 30, sp.y + 50, 'avatar'); f.spec = S.avatar; f.label = S.avatar.label || ''; }
   const gal = (VP.Acct && VP.Acct.gallery) || [];
   if (!opts.trial) gal.slice(0, 24).forEach((c, i) => { const d = i % 5, r = U.rng(900 + i * 31), q = W.randWalkD(d, r); const f = Game.addFriend(q.x, q.y, 'f' + (i % 4)); f.spec = VP.Acct.toSpec(c.spec); f.label = c.name + (c.instagram ? ' @' + c.instagram : ''); f.stay = true; f.wander = true; f.home = { x: q.x, y: q.y }; });
+  if (VP.Prog) VP.Prog.freeSetup(G, B, sp, opts);
   if (opts.trial) {
     const cp = { x: sp.x + 40, y: sp.y + 60 }, car = Game.addCar('gold', cp.x, cp.y, 0); Game.enterCar(car);
     G.noHeat = true; G.noPolice = true; G.mtimer = 20; G.trial = true; G.forceVip = true; G.markers = [];
@@ -390,6 +391,7 @@ M.loadPacks = d => { if (d) M.packs = d; };
 const cityHash = id => { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 500; return h; };
 M.tourBase = meta => 1000 + (meta && meta.order !== undefined && meta.order < 400 ? meta.order : 400 + cityHash(meta ? meta.id : 'x')) * 10;
 M.tourMissions = function (id) {
+  if (!M.cities.some(c => c.id === id)) return []; // neighbour tiles of a city are free-roam extensions: the missions live in the main tile
   const ci = M.cities.findIndex(c => c.id === id), meta = M.cities[ci], W = VP.CityCache[id], tags = (W ? W.real.tags : meta.tags) || [], comu = tags.includes('comunidade');
   const pk = M.packs.packs[id];
   let defs = pk && pk.missions && pk.missions.length ? pk.missions : comu ? M.packs.comunidade : M.packs.templates;
@@ -401,7 +403,7 @@ M.tourMissions = function (id) {
   M.tourList = M.tourList.filter(m => m.tourCity !== id).concat(list);
   return list;
 };
-M.startTour = function (id) {
+M.startTour = function (id, opts) {
   const W = VP.CityCache[id], meta = W.meta, C = W.real, comu = (C.tags || []).includes('comunidade'); W.reset();
   const m = { n: 0, d: 0, geo: 0, type: 'free', name: [C.name, C.name], p: {}, lv: Math.max(1, Math.min(30, VP.S.unlocked)), hunger: 0.35, free: true };
   const G = Game.create(W, m);
@@ -414,6 +416,7 @@ M.startTour = function (id) {
     // comunidade: arrive in the middle of the houses (the densest reachable spot), not on the avenue below
     if (comu && W.walkList.length) { const rs = U.rng(77); let bi = -1, bs = -1; for (let k = 0; k < 260; k++) { const i = W.walkList[Math.floor(rs() * W.walkList.length)], x = i % W.W, y = Math.floor(i / W.W); if (x < 12 || y < 12 || x > W.W - 12 || y > W.H - 12) continue; let s = 0; for (let dy = -8; dy <= 8; dy += 2) for (let dx = -8; dx <= 8; dx += 2) if (W.gnd[(y + dy) * W.W + x + dx] === 9) s++; if (s > bs) { bs = s; bi = i; } } if (bi >= 0) { best = { x: (bi % W.W + 0.5) * T, y: (Math.floor(bi / W.W) + 0.5) * T }; W.tourStart = best; } }
     const snapC = (x, y, rmax) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < (rmax || 30); r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W.W - 2 && Y < W.H - 2 && conn[Y * W.W + X] >= 0 && W.gnd[Y * W.W + X] <= 2) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };
+    W.snapConn = snapC;
     W.landmarks = W.landmarks.filter(l => { const q = snapC(l.x, l.y); if (!q) return false; l.gx = q.x; l.gy = q.y; return true; });
     // extra named places of the city pack (lat/lon -> map), used as mission waypoints
     const pk = M.packs.packs[id], C0 = W.real, half = C0.half, MPT = World.MPT;
@@ -421,7 +424,7 @@ M.startTour = function (id) {
     for (const rd of W.roads) rd.pts = rd.pts.filter(q => conn[Math.floor(q.y / T) * W.W + Math.floor(q.x / T)] >= 0);
     W.roads = W.roads.filter(rd => rd.pts.length >= 2);
   }
-  const sp = W.tourStart;
+  const sp = (opts && opts.at && W.snapConn && W.snapConn(opts.at.x, opts.at.y, 40)) || W.tourStart;
   if (comu && !W.pitch && M.helpers) W.pitch = M.helpers.patch(W, sp.x, sp.y, 14, 3, (g, x, y) => (g === 7 || g === 3 ? 120 : 0) - (Math.abs(W.hpx(x + 90, y) - W.hpx(x - 90, y)) + Math.abs(W.hpx(x, y + 60) - W.hpx(x, y - 60))) * 60); // the little football pitch
   B.begin(sp, { paws: 1, traffic: comu ? 0 : (meta.traffic || 10), coffee: 10, parked: comu ? 0 : 14 });
   G.free = true; G.tour = id; G.steps = []; G.markers = []; G.npcs = [];
@@ -434,6 +437,7 @@ M.startTour = function (id) {
   ms.forEach((mm, k) => { let q = null; for (let i = 0; i < 40 && !q; i++) { const c = W.randWalk(r), d = Math.hypot(c.x - sp.x, c.y - sp.y); if (d > 180 + k * 60 && d < 520 + k * 130 && !G.markers.some(o => U.d2(o.x, o.y, c.x, c.y) < 200 * 200)) q = c; } q = q || W.randWalk(r); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: mm.n, col: VP.S.stars[mm.n] ? '#2de2e6' : '#ff4fb8' }); });
   if (S.avatar) { const f = Game.addFriend(sp.x + 30, sp.y + 50, 'avatar'); f.spec = S.avatar; f.label = S.avatar.label || ''; }
   // friendly neighbours: elder cats in the comunidade, farmers at the Rio Verde fair
+  if (VP.Prog) VP.Prog.freeSetup(G, B, sp, { tour: id, comu });
   if (comu || id === 'rioverde') for (let i = 0; i < 4; i++) { const q = Game.nearFree(sp.x, sp.y, 120 + i * 70, 0); if (q) { const f = Game.addFriend(q.x, q.y, id === 'rioverde' ? 'farmer' : i % 2 ? 'elder' : 'f' + i); f.stay = true; f.wander = true; f.home = { x: q.x, y: q.y }; } }
   return G;
 };
@@ -475,6 +479,7 @@ M.update = function (G, dt) {
 M.objective = function (G) {
   if (G.online && VP.Online) return VP.Online.objective(G);
   if (G.free && G.quest) { const q = G.quest, cur = Math.min(q.def.n, Math.round(G.stat[q.key] - q.base)), done = cur >= q.def.n; return { txt: done ? VP.t('q_return', q.def.name[VP.lang() === 'pt' ? 'pt' : 'en']) : VP.t('q_' + q.def.type, q.def.n), prog: [cur, q.def.n], at: done ? q.mk : null, cat: null, free: true }; }
+  if (G.free && G.guide) return { txt: '➡ ' + G.guide.label, at: G.guide, cat: null, free: true };
   if (G.free) { let b = null, bd = 1e12; const a = G.cats[G.active]; for (const mk of G.markers) if (mk.k === 'mission') { const d = U.d2(a.x, a.y, mk.x, mk.y); if (d < bd) { bd = d; b = mk; } } return { txt: G.tour ? VP.t('o_tour', G.W.real.name) : VP.t(G.trial ? 'o_trial' : 'o_free'), at: b, cat: null, free: true }; }
   const st = G.steps[G.step];
   if (!st) return { txt: G.needRevive ? VP.t('o_reviveAll') : VP.t('o_done'), at: G.needRevive ? G.cats.find(c => c.down) : null, cat: null };

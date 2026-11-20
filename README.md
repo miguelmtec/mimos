@@ -35,6 +35,16 @@ Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**,
 - **Ranking** soma todas as missões (história, capítulos e Volta ao Mundo). **Vibração** nos golpes no celular (dá para desligar em Ajustes).
 - PT-BR e inglês, feito primeiro para celular (retrato, navegador do Instagram).
 
+## Novidades da onda "progressão"
+
+- **Cidade 2,25× maior** (18×12 quarteirões): Calçadão, Parque da Lagoa, Zona Industrial e Morro do Mirante entre os bairros; bordas naturais (mar, baía, morros, rodovia) com o aviso "Fim do bairro — viajar para outro lugar?".
+- **História "Abrigo dos Mimos"** em cartões puláveis; o abrigo cresce na cidade a cada capítulo; bairros abrem aos poucos ("Em obras").
+- **Ficar mais forte jogando:** nível 1-100 por gato, melhorias compradas com moedas das missões, itens (ração, ômega 3, sachê, catnip, leite sem lactose) com atalhos no HUD. Nada disso se vende.
+- **O que fazer:** painel 📋 Atividades, patrulhas da carrocinha, pesca, Feira de Petiscos, Missões da Cidade (infinitas), Adote do Abrigo com álbum de 72 gatinhos, 108 conquistas, veículos (carrinho, bike, moto, lancha, helicóptero).
+- **Seu gato no jogo:** criador mais rico (pelagens, cores prontas, comprimento do pelo, orelhas, rabo, olhos bicolores) e "Jogar com meu gato" no papel que você escolher.
+- **Itens especiais raros:** quantidade limitada pelo número de jogadores, com número de série; só se ganham jogando (ver `public/data/rewards.json`).
+- Teclas novas: 4 5 6 itens · B mochila · T atividades.
+
 ## Controles
 
 - **Celular:** analógico esquerdo anda · direito mira e ataca · botões de especial, dash e ação · toque nos retratos troca de gato · 😺 abre os emotes (cidade livre).
@@ -82,6 +92,7 @@ node tests/e2e/packs.cjs [id,id]            # pacotes de cidade: mapa real ou su
 node tests/e2e/perf.cjs 4 [cidade]          # triângulos/draw calls por qualidade e tempo de quadro com CPU 4x mais lenta
 node tests/e2e/shots.cjs [filtro]           # capturas 390x844 (toque) e 1280x800
 node tests/e2e/missions.cjs 1000,1001 miami # missões de viagem
+node tests/e2e/progression.cjs [seção]      # mundo e bordas, progressão, criador, história, longo prazo, veículos, recompensas, peso
 node tests/e2e/controls.cjs                 # teclado, mouse e toque
 node tests/e2e/shop-accounts.cjs            # loja Pix e contas com API simulada
 node tests/e2e/online.cjs [poll|desktop|fallback|ws]  # Cidade Online: dois navegadores na mesma sala contra a API real em memória

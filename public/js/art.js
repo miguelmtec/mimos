@@ -305,6 +305,9 @@ const CARS = Art.CARS = {
   truck: { len: 112, wid: 48, body: '#ffe9a8', body2: '#ff8a3d', truck: 1 },
   limo: { len: 124, wid: 42, body: '#ffd23f', body2: '#b8860b', limo: 1 },
   pickup: { len: 88, wid: 42, body: '#c8102e', body2: '#7a0a1c', pickup: 1 },
+  // vehicles of js/vehicles.js
+  kart: { len: 60, wid: 36, body: '#ff4fb8', body2: '#2de2e6', veh: 'kart' }, moto: { len: 58, wid: 22, body: '#e01e37', body2: '#17101c', veh: 'moto' }, bike: { len: 50, wid: 18, body: '#2de2e6', body2: '#ffd23f', veh: 'bike' },
+  lancha: { len: 76, wid: 34, body: '#ffffff', body2: '#ff4fb8', veh: 'lancha' }, heli: { len: 84, wid: 40, body: '#ffd23f', body2: '#2de2e6', veh: 'heli' },
 };
 const CAR_COLORS = [['#2de2e6', '#168d91'], ['#ffb347', '#c7741a'], ['#9b5de5', '#5f2fa3'], ['#00f5a0', '#0b9e6b'], ['#ff6b6b', '#b23535'], ['#4cc9f0', '#2a7fa3'], ['#f8f9fa', '#9aa0a6']];
 Art.carColor = i => CAR_COLORS[i % CAR_COLORS.length];

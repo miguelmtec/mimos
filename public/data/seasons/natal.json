@@ -658,5 +658,749 @@
     ]
    ]
   }
- ]
+ ],
+ "catalog": {
+  "_doc": "Buyable seasonal catalogue: no cap, cosmetics only. price: null = awaiting the owner's price (shown as 'em breve', not for sale yet); grant = already inside an approved pack of api/pix/_products.js. kind: paint (vehicle paint job) | decor (casinha). The scarce GIVEN versions are the 'Edição Rara' entries of data/rewards.json (edition -> id here).",
+  "items": [
+   {
+    "id": "nt26_gorro_mimo",
+    "slot": "head",
+    "name": {
+     "pt": "Gorro Neon",
+     "en": "Neon Santa Hat"
+    },
+    "acc": {
+     "santa": 1
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ],
+    "grant": "pack_natal"
+   },
+   {
+    "id": "nt26_rena_mimo",
+    "slot": "head",
+    "name": {
+     "pt": "Galhadas de Rena",
+     "en": "Reindeer Antlers"
+    },
+    "acc": {
+     "antlers": "#8a5a2b"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_touca_mimo",
+    "slot": "head",
+    "name": {
+     "pt": "Touca de Neve",
+     "en": "Snow Beanie"
+    },
+    "acc": {
+     "beanie": "#2de2e6",
+     "trim2": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_estrela_mimo",
+    "slot": "head",
+    "name": {
+     "pt": "Estrela de Natal",
+     "en": "Christmas Star"
+    },
+    "acc": {
+     "star": "#ffd23f"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_cachecol_mimo",
+    "slot": "neck",
+    "name": {
+     "pt": "Cachecol de Lã",
+     "en": "Wool Scarf"
+    },
+    "acc": {
+     "scarf": "#2de2e6"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ],
+    "grant": "pack_natal"
+   },
+   {
+    "id": "nt26_guizos_mimo",
+    "slot": "neck",
+    "name": {
+     "pt": "Coleira de Guizos",
+     "en": "Jingle Collar"
+    },
+    "acc": {
+     "bells": "#e01e37"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_sueter_mimo",
+    "slot": "body",
+    "name": {
+     "pt": "Suéter Feio de Natal",
+     "en": "Ugly Christmas Sweater"
+    },
+    "acc": {
+     "shirt": "#0f5f3a",
+     "shirt2": "#2de2e6"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_noel_mimo",
+    "slot": "body",
+    "name": {
+     "pt": "Roupa de Noel Neon",
+     "en": "Neon Santa Suit"
+    },
+    "acc": {
+     "jacket": "#e01e37",
+     "trim": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_presente_mimo",
+    "slot": "back",
+    "name": {
+     "pt": "Presente nas Costas",
+     "en": "Gift on the Back"
+    },
+    "acc": {
+     "gift": "#2de2e6"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_asas_mimo",
+    "slot": "back",
+    "name": {
+     "pt": "Asas de Anjo",
+     "en": "Angel Wings"
+    },
+    "acc": {
+     "wings": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_oculos_mimo",
+    "slot": "eyes",
+    "name": {
+     "pt": "Óculos de Neve",
+     "en": "Snow Goggles"
+    },
+    "acc": {
+     "glasses": "#2de2e6"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ]
+   },
+   {
+    "id": "nt26_gorro_mimosa",
+    "slot": "head",
+    "name": {
+     "pt": "Gorro Neon",
+     "en": "Neon Santa Hat"
+    },
+    "acc": {
+     "santa": 1
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ],
+    "grant": "pack_natal"
+   },
+   {
+    "id": "nt26_rena_mimosa",
+    "slot": "head",
+    "name": {
+     "pt": "Galhadas de Rena",
+     "en": "Reindeer Antlers"
+    },
+    "acc": {
+     "antlers": "#8a5a2b"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_touca_mimosa",
+    "slot": "head",
+    "name": {
+     "pt": "Touca de Neve",
+     "en": "Snow Beanie"
+    },
+    "acc": {
+     "beanie": "#ff4fb8",
+     "trim2": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_estrela_mimosa",
+    "slot": "head",
+    "name": {
+     "pt": "Estrela de Natal",
+     "en": "Christmas Star"
+    },
+    "acc": {
+     "star": "#ffd23f"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_cachecol_mimosa",
+    "slot": "neck",
+    "name": {
+     "pt": "Cachecol de Lã",
+     "en": "Wool Scarf"
+    },
+    "acc": {
+     "scarf": "#ff4fb8"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ],
+    "grant": "pack_natal"
+   },
+   {
+    "id": "nt26_guizos_mimosa",
+    "slot": "neck",
+    "name": {
+     "pt": "Coleira de Guizos",
+     "en": "Jingle Collar"
+    },
+    "acc": {
+     "bells": "#e01e37"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_sueter_mimosa",
+    "slot": "body",
+    "name": {
+     "pt": "Suéter Feio de Natal",
+     "en": "Ugly Christmas Sweater"
+    },
+    "acc": {
+     "shirt": "#0f5f3a",
+     "shirt2": "#ff4fb8"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_noel_mimosa",
+    "slot": "body",
+    "name": {
+     "pt": "Roupa de Noel Neon",
+     "en": "Neon Santa Suit"
+    },
+    "acc": {
+     "jacket": "#e01e37",
+     "trim": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_presente_mimosa",
+    "slot": "back",
+    "name": {
+     "pt": "Presente nas Costas",
+     "en": "Gift on the Back"
+    },
+    "acc": {
+     "gift": "#ff4fb8"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_asas_mimosa",
+    "slot": "back",
+    "name": {
+     "pt": "Asas de Anjo",
+     "en": "Angel Wings"
+    },
+    "acc": {
+     "wings": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_oculos_mimosa",
+    "slot": "eyes",
+    "name": {
+     "pt": "Óculos de Neve",
+     "en": "Snow Goggles"
+    },
+    "acc": {
+     "glasses": "#ff4fb8"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ]
+   },
+   {
+    "id": "nt26_gorro_morticia",
+    "slot": "head",
+    "name": {
+     "pt": "Gorro Neon",
+     "en": "Neon Santa Hat"
+    },
+    "acc": {
+     "santa": 1
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ],
+    "grant": "pack_natal"
+   },
+   {
+    "id": "nt26_rena_morticia",
+    "slot": "head",
+    "name": {
+     "pt": "Galhadas de Rena",
+     "en": "Reindeer Antlers"
+    },
+    "acc": {
+     "antlers": "#8a5a2b"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_touca_morticia",
+    "slot": "head",
+    "name": {
+     "pt": "Touca de Neve",
+     "en": "Snow Beanie"
+    },
+    "acc": {
+     "beanie": "#b967ff",
+     "trim2": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_estrela_morticia",
+    "slot": "head",
+    "name": {
+     "pt": "Estrela de Natal",
+     "en": "Christmas Star"
+    },
+    "acc": {
+     "star": "#ffd23f"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_cachecol_morticia",
+    "slot": "neck",
+    "name": {
+     "pt": "Cachecol de Lã",
+     "en": "Wool Scarf"
+    },
+    "acc": {
+     "scarf": "#b967ff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ],
+    "grant": "pack_natal"
+   },
+   {
+    "id": "nt26_guizos_morticia",
+    "slot": "neck",
+    "name": {
+     "pt": "Coleira de Guizos",
+     "en": "Jingle Collar"
+    },
+    "acc": {
+     "bells": "#e01e37"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_sueter_morticia",
+    "slot": "body",
+    "name": {
+     "pt": "Suéter Feio de Natal",
+     "en": "Ugly Christmas Sweater"
+    },
+    "acc": {
+     "shirt": "#0f5f3a",
+     "shirt2": "#b967ff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_noel_morticia",
+    "slot": "body",
+    "name": {
+     "pt": "Roupa de Noel Neon",
+     "en": "Neon Santa Suit"
+    },
+    "acc": {
+     "jacket": "#e01e37",
+     "trim": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_presente_morticia",
+    "slot": "back",
+    "name": {
+     "pt": "Presente nas Costas",
+     "en": "Gift on the Back"
+    },
+    "acc": {
+     "gift": "#b967ff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_asas_morticia",
+    "slot": "back",
+    "name": {
+     "pt": "Asas de Anjo",
+     "en": "Angel Wings"
+    },
+    "acc": {
+     "wings": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_oculos_morticia",
+    "slot": "eyes",
+    "name": {
+     "pt": "Óculos de Neve",
+     "en": "Snow Goggles"
+    },
+    "acc": {
+     "glasses": "#b967ff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ]
+   },
+   {
+    "id": "nt26_trio_pijama_mimo",
+    "slot": "body",
+    "name": {
+     "pt": "Pijama de Natal do Trio",
+     "en": "Trio Christmas Pyjamas"
+    },
+    "acc": {
+     "shirt": "#e01e37",
+     "shirt2": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ],
+    "set": "pijama_natal"
+   },
+   {
+    "id": "nt26_trio_luzes_mimo",
+    "slot": "neck",
+    "name": {
+     "pt": "Colar de Luzinhas do Trio",
+     "en": "Trio Fairy-Light Necklace"
+    },
+    "acc": {
+     "lei": [
+      "#e01e37",
+      "#7CFF6B",
+      "#ffd23f",
+      "#2de2e6"
+     ]
+    },
+    "price": null,
+    "cats": [
+     "mimo"
+    ],
+    "set": "luzes"
+   },
+   {
+    "id": "nt26_trio_pijama_mimosa",
+    "slot": "body",
+    "name": {
+     "pt": "Pijama de Natal do Trio",
+     "en": "Trio Christmas Pyjamas"
+    },
+    "acc": {
+     "shirt": "#e01e37",
+     "shirt2": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ],
+    "set": "pijama_natal"
+   },
+   {
+    "id": "nt26_trio_luzes_mimosa",
+    "slot": "neck",
+    "name": {
+     "pt": "Colar de Luzinhas do Trio",
+     "en": "Trio Fairy-Light Necklace"
+    },
+    "acc": {
+     "lei": [
+      "#e01e37",
+      "#7CFF6B",
+      "#ffd23f",
+      "#2de2e6"
+     ]
+    },
+    "price": null,
+    "cats": [
+     "mimosa"
+    ],
+    "set": "luzes"
+   },
+   {
+    "id": "nt26_trio_pijama_morticia",
+    "slot": "body",
+    "name": {
+     "pt": "Pijama de Natal do Trio",
+     "en": "Trio Christmas Pyjamas"
+    },
+    "acc": {
+     "shirt": "#e01e37",
+     "shirt2": "#ffffff"
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ],
+    "set": "pijama_natal"
+   },
+   {
+    "id": "nt26_trio_luzes_morticia",
+    "slot": "neck",
+    "name": {
+     "pt": "Colar de Luzinhas do Trio",
+     "en": "Trio Fairy-Light Necklace"
+    },
+    "acc": {
+     "lei": [
+      "#e01e37",
+      "#7CFF6B",
+      "#ffd23f",
+      "#2de2e6"
+     ]
+    },
+    "price": null,
+    "cats": [
+     "morticia"
+    ],
+    "set": "luzes"
+   },
+   {
+    "id": "nt26_paint_kart",
+    "kind": "paint",
+    "vehicle": "kart",
+    "name": {
+     "pt": "Carrinho Trenó",
+     "en": "Sleigh Kart"
+    },
+    "col": [
+     "#e01e37",
+     "#ffffff"
+    ],
+    "price": null
+   },
+   {
+    "id": "nt26_paint_moto",
+    "kind": "paint",
+    "vehicle": "moto",
+    "name": {
+     "pt": "Moto Rena",
+     "en": "Reindeer Bike"
+    },
+    "col": [
+     "#8a5a2b",
+     "#e01e37"
+    ],
+    "price": null
+   },
+   {
+    "id": "nt26_paint_bike",
+    "kind": "paint",
+    "vehicle": "bike",
+    "name": {
+     "pt": "Bicicleta Pinheiro",
+     "en": "Pine Bicycle"
+    },
+    "col": [
+     "#0f5f3a",
+     "#ffd23f"
+    ],
+    "price": null
+   },
+   {
+    "id": "nt26_paint_lancha",
+    "kind": "paint",
+    "vehicle": "lancha",
+    "name": {
+     "pt": "Lancha Polo Norte",
+     "en": "North Pole Boat"
+    },
+    "col": [
+     "#ffffff",
+     "#2de2e6"
+    ],
+    "price": null
+   },
+   {
+    "id": "nt26_paint_heli",
+    "kind": "paint",
+    "vehicle": "heli",
+    "name": {
+     "pt": "Helicóptero do Noel",
+     "en": "Santa Copter"
+    },
+    "col": [
+     "#e01e37",
+     "#ffd23f"
+    ],
+    "price": null
+   },
+   {
+    "id": "nt26_decor_arvore",
+    "kind": "decor",
+    "name": {
+     "pt": "Árvore de Natal da Casinha",
+     "en": "Cottage Christmas Tree"
+    },
+    "price": null
+   },
+   {
+    "id": "nt26_decor_luzes",
+    "kind": "decor",
+    "name": {
+     "pt": "Pisca-pisca da Casinha",
+     "en": "Cottage Fairy Lights"
+    },
+    "price": null
+   },
+   {
+    "id": "nt26_decor_guirlanda",
+    "kind": "decor",
+    "name": {
+     "pt": "Guirlanda da Porta",
+     "en": "Door Wreath"
+    },
+    "price": null
+   },
+   {
+    "id": "nt26_decor_boneco",
+    "kind": "decor",
+    "name": {
+     "pt": "Boneco de Neve",
+     "en": "Snowman"
+    },
+    "price": null
+   },
+   {
+    "id": "nt26_decor_lareira",
+    "kind": "decor",
+    "name": {
+     "pt": "Lareira Neon",
+     "en": "Neon Fireplace"
+    },
+    "price": null
+   }
+  ]
+ }
 }

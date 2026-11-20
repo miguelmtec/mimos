@@ -7,7 +7,10 @@ export const MAX_CATS = 5;
 export const BREEDS = ['persa', 'siames', 'vira-lata', 'srd', 'maine-coon', 'sphynx', 'angora', 'bengal',
   'ragdoll', 'british', 'sem-raca', 'outro'];
 export const FACE_SHAPES = ['round', 'flat', 'wedge', 'square', 'long'];
-export const PATTERNS = ['solid', 'calico', 'tuxedo', 'tabby', 'bicolor', 'pointed'];
+export const PATTERNS = ['solid', 'calico', 'tuxedo', 'tabby', 'bicolor', 'pointed', 'spotted', 'tortie'];
+export const EARS = ['pointy', 'big', 'round', 'fold', 'tuft'];
+export const TAILS = ['long', 'fluffy', 'short', 'bob', 'curl'];
+export const ROLES = ['shooter', 'biter', 'glutton'];
 export const ACCESSORIES = ['collar', 'bell', 'bow', 'bowtie', 'bandana', 'scarf', 'sunglasses', 'glasses',
   'hat', 'cap', 'crown', 'flower', 'chain'];
 export const MAX_PATCH_COLORS = 4;
@@ -51,6 +54,23 @@ export function validateSpec(input) {
   if (input.pattern != null) {
     if (!PATTERNS.includes(input.pattern)) throw invalid('spec.pattern');
     out.pattern = input.pattern;
+  }
+  // optional looks added with the richer creator: only stored when sent
+  if (input.furLength != null) {
+    const n = Number(input.furLength);
+    if (typeof input.furLength !== 'number' || !Number.isFinite(n) || n < 0 || n > 1) throw invalid('spec.furLength');
+    out.furLength = Math.round(n * 100) / 100;
+  }
+  for (const [key, list] of [['ears', EARS], ['tail', TAILS], ['role', ROLES]]) {
+    if (input[key] != null) {
+      if (!list.includes(input[key])) throw invalid(`spec.${key}`);
+      out[key] = input[key];
+    }
+  }
+  if (input.eyeColor2 != null) {
+    const h = hex(input.eyeColor2);
+    if (!h) throw invalid('spec.eyeColor2');
+    out.eyeColor2 = h;
   }
   for (const key of ['furBase', 'eyeColor']) {
     if (input[key] != null) {

@@ -35,6 +35,7 @@ H.hit = function (x, y) {
   const G = VP.Game.G; if (!G) return null;
   if (H.emoOn(G)) { if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; if (U.d2(x, y, b.x, b.y) < (b.r + 4) * (b.r + 4)) return 'em_' + e[0]; } const b = H.btn.emo; if (U.d2(x, y, b.x, b.y) < (b.r + 8) * (b.r + 8)) return 'emo'; }
   if (G.online && VP.Online) { const o = VP.Online.hudHit(x, y); if (o) return o; }
+  if (VP.Prog) { const ph = VP.Prog.hudHit(G, x, y); if (ph) return ph; }
   for (const id of ['c0', 'c1', 'c2', 'pause', 'special', 'dash', 'ctx']) {
     const b = H.btn[id]; if (id === 'ctx' && !G.ctx) continue; if (id === 'dash' && G.car) continue;
     if (U.d2(x, y, b.x, b.y) < (b.r + 7) * (b.r + 7)) return id;
@@ -53,9 +54,10 @@ function pill(x, y, w, h, fill, stroke) { Art.rr(c, x, y, w, h, Math.min(h / 2, 
 function bar(x, y, w, h, f, col, back) { Art.rr(c, x, y, w, h, h / 2); c.fillStyle = back || 'rgba(10,4,25,.75)'; c.fill(); if (f > 0.01) { Art.rr(c, x + 1, y + 1, Math.max(h - 2, (w - 2) * U.clamp(f, 0, 1)), h - 2, (h - 2) / 2); c.fillStyle = col; c.fill(); } }
 function wrap(s, maxW, size) { c.font = '800 ' + size + 'px ' + FONT; const words = s.split(' '), lines = []; let cur = ''; for (const w of words) { const t = cur ? cur + ' ' + w : w; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; } if (cur) lines.push(cur); return lines; }
 function portrait(name, x, y, r) {
-  const img = VP.Assets.image('portrait_' + name);
+  const custom = VP.Party && VP.Party.custom(name), img = custom ? VP.Party.image(name) : VP.Assets.image('portrait_' + name);
   c.save(); c.beginPath(); c.arc(x, y, r, 0, 6.283); c.clip();
-  if (img) { const s = img.naturalWidth; c.drawImage(img, s * 0.1, s * 0.02, s * 0.8, s * 0.8, x - r, y - r, r * 2, r * 2); }
+  if (img && custom) { c.fillStyle = '#2a0b4a'; c.fillRect(x - r, y - r, r * 2, r * 2); c.drawImage(img, x - r, y - r, r * 2, r * 2); }
+  else if (img) { const s = img.naturalWidth; c.drawImage(img, s * 0.1, s * 0.02, s * 0.8, s * 0.8, x - r, y - r, r * 2, r * 2); }
   else { c.fillStyle = '#2a0b4a'; c.fillRect(x - r, y - r, r * 2, r * 2); Art.cat(c, x, y + r * 0.9, { name, t: 0, face: 1, scale: r / 22 }); }
   c.restore();
 }
@@ -111,6 +113,7 @@ H.draw = function (G, dt) {
   if (G.objFlash > 0) G.objFlash -= dt * 1.2;
   pill(ox, oy, ow, oh, 'rgba(18,4,31,.72)', G.objFlash > 0 ? GOLD : G.online ? TEAL : (ob.cat ? CATCOL[ob.cat] : 'rgba(255,79,184,.8)'));
   H.obRect = { x: ox, y: oy, w: ow, h: oh }; if (G.online) txt('›', ox + ow - 12 * k, oy + oh / 2 - 1, 17 * k, TEAL, 'center', false);
+  H.obBox = H.obRect;
   let tx = ox + 13 * k;
   if (ob.cat) { portrait(ob.cat, ox + 20 * k, oy + oh / 2, 13 * k); c.beginPath(); c.arc(ox + 20 * k, oy + oh / 2, 13 * k, 0, 6.283); c.strokeStyle = CATCOL[ob.cat]; c.lineWidth = 2; c.stroke(); tx += 30 * k; }
   lines.forEach((l, i) => txt(l, tx, oy + (15 + i * lh) * k, ofs, '#fff', 'left', false, '800'));
@@ -140,6 +143,7 @@ H.draw = function (G, dt) {
   }
   // ---- banner ----
   if (G.banner) { const b = G.banner, al = Math.min(1, b.t * 6, (b.dur - b.t) * 3); c.globalAlpha = Math.max(0, al); const bl = wrap(b.txt, w - 40, 20 * k); bl.forEach((l, i) => txt(l, w / 2, h * 0.3 + i * 26 * k, 20 * k, b.col)); c.globalAlpha = 1; }
+  if (VP.Prog) VP.Prog.hudDraw(c, G, dt, { txt, pill, bar });
   // ---- controls ----
   controls(G, k, t, touch, a);
   if (H.emoOn(G)) {
@@ -214,11 +218,11 @@ function radar(G, k, t, ob) {
   c.restore();
   // objective + markers pinned to the rim
   const pin = (x, y, col, r) => { const dx = x - a.x, dy = y - a.y, an = Math.atan2(dy, dx) - (yaw + Math.PI / 2), d = Math.min(m.r - 4, Math.hypot(dx, dy) * sc); c.beginPath(); c.arc(m.x + Math.cos(an) * d, m.y + Math.sin(an) * d, r, 0, 6.283); c.fillStyle = col; c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke(); };
-  if (G.markers) for (const mk of G.markers) pin(mk.x, mk.y, mk.col, 3.6 * k);
+  if (G.markers) for (const mk of G.markers) if (!mk.quiet) pin(mk.x, mk.y, mk.col, 3.6 * k);
   if (ob.at && !ob.free) pin(ob.at.x, ob.at.y, GOLD, (4.5 + Math.sin(t * 6)) * k);
   Art.poly(c, [m.x, m.y - 7 * k, m.x - 5 * k, m.y + 5 * k, m.x, m.y + 2 * k, m.x + 5 * k, m.y + 5 * k], '#fff', INK, 1.5);
   c.beginPath(); c.arc(m.x, m.y, m.r, 0, 6.283); c.lineWidth = 3; c.strokeStyle = G.wanted > 0 ? (Math.floor(t * 4) % 2 ? '#ff2040' : '#2a6bff') : PINK; c.stroke();
-  const d = VP.World.distAt(W, a.x, a.y), rn = W.real ? W.real.name.split(' — ').pop().toUpperCase() : ''; txt(W.real ? (rn.length > 16 ? rn.slice(0, 15).trim() + '…' : rn) : VP.t('d' + ((G.m.d === 5 || G.m.d === 6) && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
+  const d = VP.World.distAt(W, a.x, a.y), rn = W.real ? W.real.name.split(' — ').pop().toUpperCase() : ''; txt(W.real ? (rn.length > 16 ? rn.slice(0, 15).trim() + '…' : rn) : VP.t((G.m.d === 5 || G.m.d === 6) && !G.free ? 'd' + G.m.d : VP.World.hoodKey(d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
 }
 
 // world labels (places, mission beams, shop): never under the top HUD, never on top of each other
@@ -261,6 +265,7 @@ function worldLabels(G, R3, k, t) {
     if (mk.k === 'shop') lab('🛍 ' + VP.t('shop'), p.x, p.y, 13 * k, GOLD);
     else if (mk.k === 'npc') lab('💬 ' + mk.label, p.x, p.y, 12 * k, '#7CFF6B');
     else if (mk.k === 'race') lab('🏁 ' + mk.label, p.x, p.y, 12 * k, TEAL);
+    else if (mk.lbl) lab(mk.lbl, p.x, p.y, 12 * k, mk.col || '#fff');
     else { const m = VP.Missions.get(mk.n); if (!m) continue; if (lab(VP.mname(m), p.x, p.y + 8 * k, 12 * k, '#fff')) { const q = placed[placed.length - 1]; txt('▶ ' + (m.boss ? '👑 ' : '') + (m.side ? '★' : 'M' + (m.bonus ? '★' : m.n)), q.x, q.y - 17 * k, 15 * k, mk.col); q.y -= 9 * k; q.h += 10 * k; } }
   }
   if (G.W.landmarks) for (const l of G.W.landmarks) { const dl = Math.max(Math.abs(l.gx - a.x), Math.abs(l.gy - a.y)); if (dl > (l.beacon ? 3200 : 1000)) continue; const p = R3.project(l.gx, l.gy, 5); if (p.on) lab((VP.S.tour && VP.S.tour[G.tour] && VP.S.tour[G.tour].seen[l.name] ? '✓ ' : '📍 ') + l.name, p.x, p.y, 10.5 * k, GOLD); }

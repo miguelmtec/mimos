@@ -77,6 +77,7 @@ export function buildCat(spec) {
   b.sph(fur, 0, 0.5, -0.04, 0.4, 0.38, 0.47);
   if (spec.pattern === 'tuxedo' || spec.pattern === 'points') b.sph(fur2, 0, 0.47, 0.2, 0.26, 0.28, 0.3);
   if (spec.pattern === 'calico' && !coat) { b.sph(pA, -0.22, 0.62, -0.2, 0.24, 0.2, 0.26); b.sph(pB, 0.24, 0.55, -0.05, 0.2, 0.22, 0.24); }
+  if (spec.pattern === 'spotted' && !coat) for (let i = 0; i < 12; i++) { const a = i * 2.4, yy = 0.4 + (i % 4) * 0.09; b.lo(pA, Math.sin(a) * 0.37, yy, Math.cos(a) * 0.42 - 0.04, 0.075, 0.06, 0.075); }
   if (spec.pattern === 'tabby') for (let i = 0; i < 3; i++) b.tor(pA, 0, 0.52, -0.3 + i * 0.2, 0.39 - Math.abs(i - 1) * 0.04, 0.4, 0.3, 0, 0, 0);
   if (A.shirt) { b.sph(A.shirt, 0, 0.5, 0.0, 0.42, 0.36, 0.44); if (A.shirt2) for (let i = 0; i < 9; i++) { const a = i * 2.4, yy = 0.36 + (i % 3) * 0.12; b.lo(A.shirt2, Math.sin(a) * 0.38, yy, Math.cos(a) * 0.36 + 0.02, 0.07, 0.07, 0.07); } }
   if (A.jacket) { // open jacket: two side shells + collar, chest stays visible
@@ -90,7 +91,14 @@ export function buildCat(spec) {
     b.tor(A.trim || A.hoodie, 0, 0.27, -0.04, 0.4, 0.47, 0.5, Math.PI / 2); b.box(A.trim || '#fff', -0.07, 0.6, 0.44, 0.03, 0.26, 0.03); b.box(A.trim || '#fff', 0.07, 0.6, 0.44, 0.03, 0.26, 0.03);
     b.box(A.hoodie, 0, 0.42, 0.42, 0.34, 0.16, 0.08);
   }
+  // Coleção Mimos
+  if (A.apron) { b.box(A.apron, 0, 0.5, 0.43, 0.5, 0.5, 0.05); b.box(A.apron, 0, 0.78, 0.36, 0.3, 0.14, 0.05); b.box(A.apron2 || '#ff4fb8', 0, 0.44, 0.47, 0.22, 0.14, 0.03); b.tor(A.apron, 0, 0.6, -0.02, 0.41, 0.06, 0.46, Math.PI / 2); }
+  if (A.bib) { b.sph(A.bib, 0, 0.66, 0.4, 0.26, 0.22, 0.06); b.sph(A.bib2 || '#e2574c', 0, 0.66, 0.45, 0.1, 0.07, 0.03); for (const sx of [-1, 1]) b.sph(A.bib2 || '#e2574c', sx * 0.13, 0.72, 0.45, 0.05, 0.07, 0.03); }
+  if (A.pillow) { b.box(A.pillow, 0, 0.6, -0.52, 0.66, 0.5, 0.2); b.sph(A.pillow, 0, 0.6, -0.56, 0.36, 0.28, 0.14); b.tor(A.pillow2 || '#2de2e6', 0, 0.86, 0.02, 0.32, 0.2, 0.4, Math.PI / 2); }
+  if (A.mug) { b.cyl('#ffffff', -0.42, 0.66, 0.44, 0.11, 0.2); b.cyl('#6b3f22', -0.42, 0.765, 0.44, 0.09, 0.01); b.tor('#ffffff', -0.54, 0.66, 0.44, 0.06, 0.07, 0.06); b.box(A.mug, -0.42, 0.64, 0.44, 0.225, 0.06, 0.225); }
+  if (A.snack) { b.sph(A.snack, 0.3, 0.5, -0.34, 0.2, 0.24, 0.16); b.box(A.snack, 0.12, 0.74, -0.1, 0.05, 0.05, 0.6, 0, 0.5, 0); b.sph('#ffb347', 0.3, 0.52, -0.2, 0.08, 0.06, 0.03); }
   if (A.collar) b.tor(A.collar, 0, 0.82, 0.05, 0.3, 0.3, 0.3, Math.PI / 2);
+  if (A.spikes) for (let i = 0; i < 7; i++) { const a = (i / 6 - 0.5) * 2.6; b.cone(A.spikes, Math.sin(a) * 0.33, 0.84, 0.05 + Math.cos(a) * 0.33, 0.045, 0.13, 0.045, Math.cos(a) * 1.3, 0, -Math.sin(a) * 1.3); }
   if (A.bell) b.sph(A.bell, 0, 0.74, 0.36, 0.08);
   if (A.bowtie) { b.cone(A.bowtie, -0.1, 0.78, 0.4, 0.09, 0.2, 0.05, 0, 0, -Math.PI / 2); b.cone(A.bowtie, 0.1, 0.78, 0.4, 0.09, 0.2, 0.05, 0, 0, Math.PI / 2); b.lo(A.bowtie, 0, 0.78, 0.4, 0.05); }
   if (A.scarf) { b.tor(A.scarf, 0, 0.84, 0.06, 0.34, 0.5, 0.34, Math.PI / 2); b.box(A.scarf, 0.2, 0.62, 0.36, 0.14, 0.4, 0.07, 0, 0, -0.2); }
@@ -111,11 +119,12 @@ export function buildCat(spec) {
   if (fl) for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283 + 0.4; if (!coat) b.lo(i % 2 && spec.pattern === 'calico' ? pA : fur, Math.sin(a) * 0.36, 0.42, Math.cos(a) * 0.4 - 0.04, 0.16 * fl); }
   const body = b.mesh(); inner.add(body);
   // ---- legs (two diagonal pairs, pivot at the hips) ----
-  const leg = (pairs) => { const l = new GB(); for (const [x, z] of pairs) { l.sph(fur, x, -0.1, z, 0.13, 0.2, 0.14); l.sph(fur2, x, -0.24, z + 0.05, 0.14, 0.09, 0.18); } const m = l.mesh(); m.position.y = 0.3; inner.add(m); return m; };
+  const leg = (pairs) => { const l = new GB(); for (const [x, z] of pairs) { l.sph(fur, x, -0.1, z, 0.13, 0.2, 0.14); l.sph(A.shoes || fur2, x, -0.24, z + 0.05, A.shoes ? 0.16 : 0.14, A.shoes ? 0.11 : 0.09, A.shoes ? 0.21 : 0.18); if (A.shoes) l.box('#ffffff', x, -0.3, z + 0.05, 0.3, 0.04, 0.4); } const m = l.mesh(); m.position.y = 0.3; inner.add(m); return m; };
   const legsA = leg([[-0.22, 0.2], [0.22, -0.26]]), legsB = leg([[0.22, 0.2], [-0.22, -0.26]]);
   // ---- tail (pivot at its base) ----
   const t = new GB(), tailCol = spec.pattern === 'calico' ? pA : spec.pattern === 'points' ? pA : fur;
-  for (let i = 0; i < 6; i++) { const f = i / 5; t.sph(i === 5 && spec.pattern === 'calico' ? pB : i > 3 && spec.pattern === 'tuxedo' ? fur2 : tailCol, 0, f * 0.55 + Math.sin(f * 2.4) * 0.05, -f * 0.3 - Math.sin(f * 3) * 0.12, 0.13 + (fl ? 0.05 : 0) * Math.sin(f * 3.1) + 0.02); }
+  const TL = { short: [4, 0.55, 1], bob: [2, 0.4, 1.25], fluffy: [6, 1, 1.75], curl: [6, 1, 1] }[spec.tail] || [6, 1, 1]; // tail: long (default) | fluffy | short | bob | curl
+  for (let i = 0; i < TL[0]; i++) { const f = i / 5 * TL[1] / (TL[0] === 6 ? 1 : 0.9), cu = spec.tail === 'curl' ? Math.sin(f * 3.4) * 0.3 : 0; t.sph(i === TL[0] - 1 && spec.pattern === 'calico' ? pB : i > 3 && spec.pattern === 'tuxedo' ? fur2 : spec.pattern === 'tabby' && i % 2 ? pA : tailCol, 0, f * 0.55 + Math.sin(f * 2.4) * 0.05 - cu * 0.3, -f * 0.3 - Math.sin(f * 3) * 0.12 + cu, (0.13 + (fl ? 0.05 : 0) * Math.sin(f * 3.1) + 0.02) * TL[2]); }
   const tail = t.mesh(); tail.position.set(0, 0.5, -0.44); inner.add(tail);
   // ---- head ----
   const h = new GB(), flat = spec.face !== 'round';
@@ -125,18 +134,22 @@ export function buildCat(spec) {
     h.lo(fur, 0, -0.36, 0.14, 0.26, 0.16, 0.22);
   }
   if (spec.pattern === 'calico') { h.sph(pA, -0.26, 0.2, 0.12, 0.3, 0.27, 0.3); h.sph(pB, 0.3, 0.24, 0.06, 0.27, 0.24, 0.3); h.sph(pA, 0.36, -0.2, 0.2, 0.16, 0.14, 0.14); }
+  if (spec.pattern === 'spotted') for (let i = 0; i < 5; i++) h.lo(pA, (i - 2) * 0.15, 0.32 + (i % 2) * 0.08, 0.26 - Math.abs(i - 2) * 0.05, 0.05, 0.05, 0.04);
   if (spec.pattern === 'tabby') for (let i = -1; i <= 1; i++) h.box(pA, i * 0.13, 0.36, 0.22, 0.05, 0.12, 0.2, -0.6);
   if (spec.pattern === 'tuxedo') h.sph(fur2, 0, -0.14, 0.26, 0.26, 0.26, 0.24);
   if (spec.pattern === 'points') h.sph(pA, 0, -0.3, 0.08, 0.36, 0.2, 0.34);
   // ears
   for (const sx of [-1, 1]) {
     const ec = spec.pattern === 'calico' ? (sx < 0 ? pA : pB) : spec.pattern === 'points' ? pA : fur;
-    h.cone(ec, sx * 0.36, 0.44, -0.02, 0.19, 0.34, 0.12, 0, 0, -sx * 0.32); h.cone(spec.earIn || '#f4a9b8', sx * 0.35, 0.42, 0.04, 0.11, 0.24, 0.07, 0, 0, -sx * 0.32);
+    const EK = spec.ears; // ears: pointy (default) | big | round | fold | tuft
+    if (EK === 'fold') { h.sph(ec, sx * 0.38, 0.36, 0.08, 0.17, 0.1, 0.14, 0.5, 0, -sx * 0.5); h.sph(spec.earIn || '#f4a9b8', sx * 0.38, 0.33, 0.16, 0.1, 0.05, 0.06, 0.5, 0, -sx * 0.5); }
+    else if (EK === 'round') { h.sph(ec, sx * 0.38, 0.4, -0.02, 0.19, 0.2, 0.1); h.sph(spec.earIn || '#f4a9b8', sx * 0.38, 0.4, 0.04, 0.11, 0.13, 0.06); }
+    else { const eb = EK === 'big' ? 1.35 : 1; h.cone(ec, sx * 0.36, 0.44 + (eb - 1) * 0.12, -0.02, 0.19 * eb, 0.34 * eb, 0.12, 0, 0, -sx * 0.32); h.cone(spec.earIn || '#f4a9b8', sx * 0.35, 0.42 + (eb - 1) * 0.1, 0.04, 0.11 * eb, 0.24 * eb, 0.07, 0, 0, -sx * 0.32); if (EK === 'tuft') h.cone(ec, sx * 0.45, 0.68, -0.02, 0.04, 0.2, 0.03, 0, 0, -sx * 0.5); }
   }
   // face (flat persian: eyes wide apart, tiny nose between them)
   const ez = flat ? 0.4 : 0.43, ey = 0.03, ex = 0.23, er = spec.size < 0.9 ? 0.15 : 0.135;
   for (const sx of [-1, 1]) {
-    h.sph('#ffffff', sx * ex, ey, ez, er, er, 0.07); h.sph(spec.eye, sx * ex, ey, ez + 0.035, er * 0.74, er * 0.74, 0.05); h.sph('#0b0610', sx * ex, ey, ez + 0.06, er * 0.36, er * 0.46, 0.035); h.sph('#ffffff', sx * ex - 0.04, ey + 0.05, ez + 0.085, 0.03);
+    h.sph('#ffffff', sx * ex, ey, ez, er, er, 0.07); h.sph(sx > 0 && spec.eye2 ? spec.eye2 : spec.eye, sx * ex, ey, ez + 0.035, er * 0.74, er * 0.74, 0.05); h.sph('#0b0610', sx * ex, ey, ez + 0.06, er * 0.36, er * 0.46, 0.035); h.sph('#ffffff', sx * ex - 0.04, ey + 0.05, ez + 0.085, 0.03);
     if (spec.lids) h.sph(pA, sx * ex, ey + 0.075, ez + 0.03, er * 1.12, er * 0.62, 0.085);
     if (spec.brows) h.box(INK, sx * (ex - 0.02), ey + 0.18, ez + 0.04, 0.2, 0.05, 0.05, 0, 0, sx * -0.45);
   }
@@ -157,6 +170,8 @@ export function buildCat(spec) {
   if (A.flowers) for (let i = 0; i < 7; i++) { const a = (i / 6 - 0.5) * 2.4; h.lo(A.flowers[i % A.flowers.length], Math.sin(a) * 0.42, 0.34 + Math.cos(a) * 0.14, 0.12, 0.085); h.lo('#ffd23f', Math.sin(a) * 0.42, 0.34 + Math.cos(a) * 0.14, 0.19, 0.035); }
   if (A.beanie) { h.sph(A.beanie, 0, 0.36, -0.02, 0.5, 0.3, 0.44); h.tor(A.trim2 || '#ffffff', 0, 0.3, -0.02, 0.5, 0.44, 0.5, Math.PI / 2); h.sph(A.trim2 || '#ffffff', 0, 0.68, -0.02, 0.1); }
   if (A.star) { for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; h.cone(A.star, Math.sin(a) * 0.09, 0.62 + Math.cos(a) * 0.09, 0.05, 0.06, 0.16, 0.03, 0, 0, -a); } h.sph(A.star, 0, 0.62, 0.05, 0.08, 0.08, 0.03); }
+  if (A.chef) { h.cyl(A.chef, 0, 0.5, 0, 0.3, 0.2); for (let i = 0; i < 5; i++) { const a = i * 1.257; h.sph(A.chef, Math.sin(a) * 0.2, 0.72, Math.cos(a) * 0.2, 0.2); } h.sph(A.chef, 0, 0.8, 0, 0.24); }
+  if (A.nightcap) { h.sph(A.nightcap, 0, 0.36, -0.02, 0.5, 0.26, 0.44); h.cone(A.nightcap, 0.2, 0.66, -0.06, 0.26, 0.6, 0.26, 0, 0, -0.9); h.sph(A.nightcap2 || '#ffffff', 0.52, 0.72, -0.06, 0.1); h.tor(A.nightcap2 || '#ffffff', 0, 0.3, -0.02, 0.5, 0.44, 0.5, Math.PI / 2); }
   if (A.santa) { h.cyl('#ffffff', 0, 0.42, 0, 0.36, 0.1); h.cone('#e01e37', 0.06, 0.66, -0.04, 0.3, 0.5, 0.3, 0, 0, -0.35); h.sph('#ffffff', 0.24, 0.86, -0.04, 0.09); }
   const head = h.mesh(); head.position.set(0, 1.12, 0.1); inner.add(head);
   // ---- tool (Mimo's toy blaster), pivot at the paw ----
@@ -257,6 +272,19 @@ export function animDog(g, st) {
 export function buildCar(type, K, col) {
   const g = new THREE.Group(), b = new GB();
   const S = 1 / 24, L = K.len * S, W = K.wid * S, body = col ? col[0] : K.body, body2 = col ? col[1] : K.body2, hl = L / 2, hw = W / 2;
+  if (K.veh) { // kart, motorbike, bicycle, speedboat, helicopter (forward = +z)
+    const wheel = (x, z, r) => { b.cyl('#120a18', x, r, z, r, 0.16, r, 0, 0, Math.PI / 2); b.cyl('#c0c7d1', x, r, z, r * 0.45, 0.18, r * 0.45, 0, 0, Math.PI / 2); };
+    let rotor = null;
+    if (K.veh === 'kart') { for (const z of [-0.9, 0.9]) for (const sx of [-1, 1]) wheel(sx * 0.7, z, 0.3); b.box(body, 0, 0.42, 0, 1.1, 0.3, 2.3); b.box(body2, 0, 0.6, 1.0, 1.3, 0.14, 0.4); b.box(body2, 0, 0.9, -1.05, 1.3, 0.1, 0.3); b.box('#17101c', 0, 0.72, -0.3, 0.8, 0.5, 0.6); b.cyl('#17101c', 0, 0.85, 0.35, 0.22, 0.05, 0.22, 1.1); }
+    else if (K.veh === 'moto' || K.veh === 'bike') { const m = K.veh === 'moto', r = m ? 0.36 : 0.34; wheel(0, -0.85, r); wheel(0, 0.85, r); if (m) { b.box(body, 0, 0.7, 0, 0.34, 0.5, 1.3); b.sph(body, 0, 0.98, 0.25, 0.26, 0.2, 0.42); b.box(body2, 0, 0.98, -0.42, 0.3, 0.12, 0.6); b.cyl('#c0c7d1', 0.2, 0.4, -0.5, 0.07, 0.8, 0.07, Math.PI / 2); } else { b.box(body, 0, 0.62, 0, 0.07, 0.07, 1.5, 0.3); b.box(body, 0, 0.5, 0.1, 0.07, 0.07, 1.3, -0.3); b.box(body2, 0, 0.98, -0.4, 0.2, 0.07, 0.36); b.box('#c98f4b', 0, 0.86, 1.0, 0.5, 0.3, 0.36); }
+      b.cyl('#59536b', 0, 0.75, 0.75, 0.04, 0.9, 0.04, -0.35); b.box('#17101c', 0, 1.18, 0.6, 0.8, 0.06, 0.06); b.sph('#fff6b0', 0, 0.95, 0.95, 0.1); }
+    else if (K.veh === 'lancha') { b.box(body, 0, 0.3, -0.2, 1.4, 0.6, 2.6); b.add(PR.cone, body, 0, 0.3, 1.75, 0.7, 1.3, 0.3, Math.PI / 2); b.box(body2, 0, 0.62, -0.2, 1.46, 0.08, 2.64); b.box('#9fe8ff', 0, 0.9, 0.5, 1.1, 0.5, 0.08, -0.3); b.box('#17101c', 0, 0.5, -1.6, 0.5, 0.6, 0.3); b.box('#c98f4b', 0, 0.62, -0.6, 1.0, 0.1, 0.9); }
+    else { b.sph(body, 0, 1.2, 0.2, 0.9, 0.85, 1.3); b.sph('#9fe8ff', 0, 1.3, 0.85, 0.72, 0.6, 0.75); b.box(body2, 0, 1.3, -1.6, 0.22, 0.26, 1.9); b.box(body2, 0, 1.8, -2.5, 0.08, 0.9, 0.4); b.cyl('#59536b', 0, 2.15, 0.2, 0.07, 0.4, 0.07); for (const sx of [-1, 1]) { b.box('#59536b', sx * 0.7, 0.12, 0.2, 0.08, 0.08, 2.2); b.box('#59536b', sx * 0.6, 0.45, 0.2, 0.06, 0.6, 0.06); }
+      const rg = new GB(); rg.box('#17101c', 0, 0, 0, 6.4, 0.05, 0.3); rg.box('#17101c', 0, 0, 0, 0.3, 0.05, 6.4); rotor = rg.mesh(); rotor.position.set(0, 2.4, 0.2); }
+    const mesh = b.mesh(); g.add(mesh); if (rotor) g.add(rotor);
+    g.userData = { mesh, heads: null, rotor };
+    return g;
+  }
   for (const z of [-hl * 0.62, hl * 0.58]) for (const sx of [-1, 1]) { b.cyl('#120a18', sx * (hw - 0.02), 0.3, z, 0.3, 0.26, 0.3, 0, 0, Math.PI / 2); b.cyl('#c0c7d1', sx * (hw + 0.115), 0.3, z, 0.14, 0.03, 0.14, 0, 0, Math.PI / 2); }
   if (K.pickup) { // farm pickup: cab in front, open bed with hay
     b.box(body, 0, 0.6, 0, W, 0.5, L); b.box(body2, 0, 0.36, 0, W + 0.04, 0.12, L - 0.1);
@@ -325,6 +353,12 @@ export function itemGeo(k) {
     case 'bag': b.sph('#c98f4b', 0, -0.05, 0, 0.3, 0.34, 0.26); b.cyl('#a8743a', 0, 0.26, 0, 0.13, 0.14, 0.13); b.tor('#ff4f5e', 0, 0.2, 0, 0.15, 0.15, 0.2, Math.PI / 2); b.sph('#ffb347', 0, -0.05, 0.25, 0.1, 0.07, 0.03); b.cone('#ff9a3d', 0.12, -0.05, 0.25, 0.07, 0.09, 0.03, 0, 0, Math.PI / 2); break;
     case 'gcoin': b.cyl('#ffd23f', 0, 0, 0, 0.26, 0.06, 0.26, Math.PI / 2); b.cyl('#fff3a8', 0, 0, 0.01, 0.19, 0.07, 0.19, Math.PI / 2); b.sph('#ffb300', 0, -0.03, 0.05, 0.08, 0.07, 0.02); for (const [x, y] of [[-0.09, 0.05], [0, 0.1], [0.09, 0.05]]) b.sph('#ffb300', x, y, 0.05, 0.04, 0.045, 0.02); break;
     case 'bobber': b.sph('#ff3355', 0, 0.06, 0, 0.14, 0.12, 0.14); b.sph('#ffffff', 0, -0.05, 0, 0.14, 0.1, 0.14); b.cyl('#3a2140', 0, 0.24, 0, 0.015, 0.2, 0.015); break;
+    // consumables (js/prog.js): bowl of kibble, omega-3 capsule, wet-food tin, catnip pouch, milk bottle
+    case 'c_racao': b.cyl('#ff4fb8', 0, -0.06, 0, 0.3, 0.16, 0.22); b.cyl('#c98f4b', 0, 0.03, 0, 0.25, 0.04, 0.25); for (let i = 0; i < 5; i++) b.lo('#a8743a', Math.sin(i * 1.26) * 0.12, 0.08, Math.cos(i * 1.26) * 0.12, 0.07); break;
+    case 'c_omega': b.sph('#ffd23f', -0.1, 0, 0, 0.2, 0.15, 0.15); b.sph('#2de2e6', 0.1, 0, 0, 0.2, 0.15, 0.15); b.sph('#ffffff', -0.14, 0.07, 0.08, 0.05); break;
+    case 'c_sache': b.cyl('#c0c7d1', 0, 0, 0, 0.26, 0.2, 0.26); b.cyl('#ff7ac0', 0, 0, 0, 0.265, 0.12, 0.265); b.cyl('#e9e2f0', 0, 0.105, 0, 0.22, 0.01, 0.22); b.sph('#ffb347', 0, 0, 0.26, 0.09, 0.05, 0.02); break;
+    case 'c_catnip': b.sph('#3fae6a', 0, -0.04, 0, 0.24, 0.26, 0.2); b.cyl('#2e9e3f', 0, 0.2, 0, 0.1, 0.1, 0.1); b.tor('#ffd23f', 0, 0.16, 0, 0.11, 0.11, 0.16, Math.PI / 2); for (let i = 0; i < 3; i++) b.sph('#7CFF6B', (i - 1) * 0.1, 0.32, 0, 0.07, 0.12, 0.03); break;
+    case 'c_leite': b.cyl('#ffffff', 0, -0.04, 0, 0.17, 0.34, 0.17); b.cyl('#ffffff', 0, 0.2, 0, 0.09, 0.14, 0.09); b.cyl('#7CFF6B', 0, 0.29, 0, 0.1, 0.05, 0.1); b.cyl('#7fd6c2', 0, -0.06, 0, 0.175, 0.12, 0.175); break;
     default: b.sph('#ffffff', 0, 0, 0, 0.2);
   }
   return (itemCache[k] = b.geo());
@@ -391,6 +425,25 @@ export function buildProp(p, pal) {
     }
     case 'flap': b.box('#7c8799', 0, 1.0, 0, p.hor ? 0.3 : 2.0, 2.0, p.hor ? 2.0 : 0.3); b.box('#17101c', 0, 0.5, 0, p.hor ? 0.34 : 0.9, 1.0, p.hor ? 0.9 : 0.34); b.box('#ffd23f', 0, 1.4, 0, p.hor ? 0.36 : 0.4, 0.3, p.hor ? 0.4 : 0.36); break;
     case 'nook': b.box('#c0c7d1', -1, 1.0, -1, 0.1, 0.06, 2.0); b.box('#c0c7d1', -1, 0.5, -1, 0.1, 0.06, 2.0); b.box('#c0c7d1', 1, 1.0, 1, 2.0, 0.06, 0.1); b.box('#c0c7d1', 1, 0.5, 1, 2.0, 0.06, 0.1); for (const [x, z] of [[-1, -2], [-1, 0], [0, 1], [2, 1]]) b.box('#8a90ad', x, 0.65, z, 0.16, 1.3, 0.16); break;
+    case 'works': { // friendly "under construction" barrier across a street that has not opened yet
+      const L = (p.len || 96) / 24, hor = !!p.hor;
+      for (let i = 0; i < Math.round(L / 0.5); i++) { const o = -L / 2 + (i + 0.5) * 0.5; b.box(i % 2 ? '#ffb347' : '#ffffff', hor ? o : 0, 0.95, hor ? 0 : o, hor ? 0.5 : 0.14, 0.3, hor ? 0.14 : 0.5); b.box(i % 2 ? '#ffffff' : '#ffb347', hor ? o : 0, 0.5, hor ? 0 : o, hor ? 0.5 : 0.12, 0.2, hor ? 0.12 : 0.5); }
+      for (const s of [-1, 1]) { b.box('#59536b', hor ? s * L / 2 : 0, 0.6, hor ? 0 : s * L / 2, 0.16, 1.2, 0.16); b.cone('#ff7a2e', hor ? s * (L / 2 - 0.5) : 0.6, 0.35, hor ? 0.6 : s * (L / 2 - 0.5), 0.26, 0.7); }
+      b.sph('#ffd23f', 0, 1.3, 0, 0.16); break;
+    }
+    case 'shelter': { // Abrigo dos Mimos: boarded up at first, one part restored per finished chapter (p.stage 0-5)
+      const st = p.stage || 0, wall = st ? '#fff1d6' : '#8d8794', roof = st ? '#ff4fb8' : '#5a5462';
+      b.box(wall, 0, 1.5, 0, 6.4, 3, 4.4); b.add(PR.cone, roof, 0, 3.9, 0, 5.2, 1.9, 3.8, 0, Math.PI / 4, 0);
+      b.box(st ? '#2de2e6' : '#3a3440', 0, 1.0, 2.22, 1.2, 2.0, 0.08); for (const sx of [-1, 1]) b.box(st ? '#bff4ff' : '#3a3440', sx * 2.1, 1.7, 2.22, 1.1, 1.0, 0.08);
+      b.box(st ? '#ffd23f' : '#6a6470', 0, 3.25, 2.3, 3.6, 0.6, 0.1); b.sph(st ? '#ff4fb8' : '#59536b', -1.5, 3.25, 2.38, 0.2, 0.2, 0.05); b.sph(st ? '#ff4fb8' : '#59536b', 1.5, 3.25, 2.38, 0.2, 0.2, 0.05);
+      if (!st) { for (const sx of [-1, 1]) { b.box('#8a5a2b', sx * 2.1, 1.7, 2.3, 1.5, 0.16, 0.06, 0, 0, 0.5); b.box('#8a5a2b', sx * 2.1, 1.7, 2.3, 1.5, 0.16, 0.06, 0, 0, -0.5); } b.box('#8a5a2b', 0, 1.2, 2.3, 1.7, 0.18, 0.06, 0, 0, 0.3); b.box('#e2574c', 0, 0.5, 3.2, 1.6, 0.9, 0.08); }
+      if (st >= 1) for (let i = 0; i < 4; i++) { const x = -2.6 + i * 0.9; b.cyl(['#ff4fb8', '#2de2e6', '#ffd23f', '#7CFF6B'][i], x, 0.12, 3.2, 0.3, 0.2, 0.22); b.cyl('#c98f4b', x, 0.22, 3.2, 0.24, 0.04, 0.24); } // food bowls
+      if (st >= 2) for (let i = 0; i < 3; i++) { const x = 1.2 + i * 1.0; b.sph(['#b967ff', '#ff7ac0', '#8ff3ff'][i], x, 0.16, 3.3, 0.42, 0.16, 0.36); b.sph('#ffffff', x, 0.26, 3.3, 0.28, 0.1, 0.24); } // beds
+      if (st >= 3) { b.box('#ffffff', 4.4, 1.2, -0.4, 2.4, 2.4, 3.2); b.box('#bfe9ff', 4.4, 2.5, -0.4, 2.6, 0.2, 3.4); b.box('#3fcf55', 4.4, 1.7, 1.24, 0.9, 0.28, 0.06); b.box('#3fcf55', 4.4, 1.7, 1.24, 0.28, 0.9, 0.06); } // vet room
+      if (st >= 4) { for (let i = 0; i < 9; i++) { const a = i * 0.7, x = -4.6 + (i % 3) * 0.8, z = -1.4 + Math.floor(i / 3) * 1.1; b.lo('#3fae6a', x, 0.2, z, 0.3, 0.2, 0.3); b.lo(['#ff4fb8', '#ffd23f', '#ffffff'][i % 3], x, 0.45, z, 0.16); void a; } b.cyl('#7a5a3b', -4.6, 1.0, 2.2, 0.16, 2.0, 0.16); b.lo('#2f9a5a', -4.6, 2.5, 2.2, 1.2, 1.0, 1.2); } // garden
+      if (st >= 5) { for (let i = 0; i < 12; i++) { const f = i / 11, x = -4.4 + f * 8.8; b.add(PR.cone, ['#ff4fb8', '#2de2e6', '#ffd23f', '#7CFF6B'][i % 4], x, 3.9 - Math.sin(f * Math.PI) * 0.6, 2.6, 0.2, 0.36, 0.05, Math.PI); } for (const [x, c2] of [[-3.4, '#ff4fb8'], [3.4, '#2de2e6'], [0, '#ffd23f']]) { b.cyl('#ffffff', x, 4.6, 2.3, 0.01, 1.4, 0.01); b.sph(c2, x, 5.5, 2.3, 0.34, 0.42, 0.34); } } // reopening party
+      break;
+    }
     default: return null;
   }
   const m = b.mesh(mat);

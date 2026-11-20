@@ -92,6 +92,31 @@ Tour.open = () => { const G = VP.Game.G; Tour.sel = G && G.tour ? G.tour : null;
 UI.act.wview = el => { Tour.view = el.dataset.v; UI.show('world'); };
 // tapping a pin selects the city and brings its card into view (the card is the button that flies)
 UI.act.pin = el => { Tour.sel = el.dataset.id; const sc = document.querySelector('#s-world'); const top = sc ? sc.scrollTop : 0; UI.show('world'); const s2 = document.querySelector('#s-world'); if (s2) s2.scrollTop = top; const cd = document.getElementById('city-' + Tour.sel); if (cd && cd.scrollIntoView) cd.scrollIntoView({ block: 'center', behavior: 'smooth' }); const c = M.cities.find(x => x.id === Tour.sel); if (c && !Tour.unlocked(c)) UI.toast('🔒 ' + t('wt_need', c.stars), 1800); };
+// Neighbour tiles: a city entry of index.json may list `tiles: [{id: 'rio_n', dir: 'n', file: 'rio_n.json', name?}]` (also e, s, w).
+// They load when the player walks up to that edge; a missing or broken file simply leaves the soft edge in place.
+const tileCache = {};
+Tour.tileMeta = function (id) { for (const c of M.cities) for (const tl of c.tiles || []) if (tl.id === id) return { city: c, tile: tl }; return null; };
+Tour.neighbor = function (id, side) {
+  const back = { n: 's', s: 'n', e: 'w', w: 'e' }[side], own = Tour.tileMeta(id);
+  let tl = null;
+  if (own) { if (own.tile.dir === back) tl = { id: own.city.id, name: own.city.name, main: 1 }; }
+  else { const c = M.cities.find(x => x.id === id), f = c && (c.tiles || []).find(x => x.dir === side); if (f) tl = { id: f.id, name: f.name || c.name }; }
+  if (!tl) return null;
+  const key = id + '>' + tl.id; if (!tileCache[key]) tileCache[key] = Object.assign(tl, { state: VP.CityCache[tl.id] ? 'ready' : null });
+  if (tileCache[key].state === 'ready' && !VP.CityCache[tl.id]) tileCache[key].state = null;
+  return tileCache[key];
+};
+Tour.loadTile = async function (id) {
+  if (VP.CityCache[id]) return VP.CityCache[id];
+  const own = Tour.tileMeta(id); if (!own) return Tour.load(id).catch(() => null);
+  try {
+    const r = await fetch('data/cities/' + (own.tile.file || id + '.json')); if (!r.ok) return null;
+    const C = await r.json(); if (!C || !C.roads || !C.buildings) return null;
+    C.id = id; if (!C.name) C.name = own.tile.name || own.city.name;
+    const keys = Object.keys(VP.CityCache), cur = VP.Game.G && VP.Game.G.tour; for (const k of keys) if (keys.length >= 2 && k !== cur) { delete VP.CityCache[k]; break; }
+    return (VP.CityCache[id] = VP.World.fromCity(C, Object.assign({}, own.city, { id, tileOf: own.city.id, hometown: 0 })));
+  } catch (e) { return null; }
+};
 Tour.load = async function (id) {
   if (VP.CityCache[id]) return VP.CityCache[id];
   const meta = M.cities.find(c => c.id === id); if (!meta) return null;

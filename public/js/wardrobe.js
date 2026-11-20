@@ -39,7 +39,7 @@ Wd.ownedTradable = () => D.items.filter(it => Wd.tradable(it) && S().owned.inclu
 Wd.equipSet = function (set) { const s = S(); for (const n of NAMES) s.wear[n] = Object.assign({}, s.wear[n], D.sets[set][n]); VP.persist(); if (VP.R3.refreshCats) VP.R3.refreshCats(); };
 
 const packOf = it => (D.packs && D.packs[it.grant]) || null;
-const price = it => it.free ? t('wd_free') : it.grant ? (it.grant === 'vip' ? '👑 VIP' : packOf(it) ? packOf(it).icon + ' R$' + ((VP.Shop.PRICE || {})[packOf(it).product] || '') : '🎄') : '🪙 ' + it.price;
+const price = it => it.how ? ({ earn: '🏅', hidden: '📦', raro: '💎', epico: '💎', lendario: '🌟', unico: '🌟' }[it.how] || '🏅') + ' ' + t('mm_how_' + it.how) : it.free ? t('wd_free') : it.grant ? (it.grant === 'vip' ? '👑 VIP' : packOf(it) ? packOf(it).icon + ' R$' + ((VP.Shop.PRICE || {})[packOf(it).product] || '') : '🎄') : '🪙 ' + it.price;
 UI.SCREENS.wardrobe = {
   cls: 'clear', hideHud: true, stage: true,
   html: () => {
@@ -69,6 +69,7 @@ UI.act.wdItem = el => {
   s.wear[Wd.cat] = s.wear[Wd.cat] || {};
   if (!id) { s.wear[Wd.cat][Wd.slot] = null; VP.persist(); UI.show('wardrobe'); return; }
   if (!Wd.owns(it)) {
+    if (it.how) { Wd.preview(Object.assign({}, s.wear[Wd.cat], { [Wd.slot]: id })); UI.toast(VP.Mimos ? VP.Mimos.howText(it) : '🏅', 3200); return; }
     if (it.grant) { Wd.preview(Object.assign({}, s.wear[Wd.cat], { [Wd.slot]: id })); UI.toast((it.grant === 'vip' ? '👑 ' : packOf(it) ? packOf(it).icon + ' ' : '🎄 ') + t('wd_shop') + ' → ' + t('shop'), 2600); return; }
     if (VP.S.cash < it.price) { Wd.preview(Object.assign({}, s.wear[Wd.cat], { [Wd.slot]: id })); UI.toast(t('wd_poor', it.price - VP.S.cash), 2600); return; }
     VP.S.cash -= it.price; s.owned.push(id); UI.toast('🛍 ' + t('wd_bought')); VP.Audio.sfx('cash');

@@ -48,6 +48,8 @@ SCREENS.title = {
     <div class="top"><h1 class="logo">VICE<span>PAWS</span></h1></div>
     <div class="in"><p class="tag">${t('tagline')}</p>
       <button class="btn big" data-act="play">▶ ${VP.S.unlocked > 1 || VP.S.pos ? t('cont') : t('play')}</button>
+      ${UI.challenge ? `<button class="dailybar chal" data-act="chalPlay">⚔️ <span><b>${esc(UI.challenge.name || t('ch_friend'))}</b> ${t('ch_dares', UI.challenge.score)}<small>${esc(VP.mname(M.get(UI.challenge.n)))}</small></span><i>▶</i></button>` : ''}
+      ${dailyBar()}
       <div class="grid2"><button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>
       <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="rank">🏆 ${t('ranking')}</button>
       <button class="btn ghost sm" data-act="account">👤 ${VP.Acct && VP.Acct.status === 'in' ? t('ac_mycats') : t('account')}</button><button class="btn ghost sm" data-act="world">✈ ${t('world')}</button>
@@ -57,7 +59,24 @@ SCREENS.title = {
 ACT.lang = () => VP.setLang(VP.lang() === 'pt' ? 'en' : 'pt');
 ACT.mute = () => { VP.Audio.toggleMute(); UI.relabel(); };
 ACT.title = () => { endGame(); VP.Audio.music(6); UI.show('title'); };
-ACT.play = () => { if (G && G.W && G.W.real) UI.tour(G.W.real.id); else UI.free(); };
+ACT.play = () => { if (!VP.S.tut && VP.S.unlocked <= 1 && !VP.totalStars() && M._.TYPES.tutorial) { UI.startTutorial(); return; } if (G && G.W && G.W.real) UI.tour(G.W.real.id); else UI.free(); };
+ACT.daily = () => UI.show('daily');
+function dailyBar() {
+  const st = M.dailyState(), n = st.done.filter(Boolean).length, ev = M.weekly();
+  return `<button class="dailybar" data-act="daily">🎯 <span><b>${t('daily')}</b> ${n}/3${ev ? `<small>${ev.icon || '🎉'} ${esc(ev.name[VP.lang() === 'pt' ? 'pt' : 'en'])}</small>` : ''}</span><i>${[0, 1, 2].map(i => (st.done[i] ? '★' : '☆')).join('')}</i></button>`;
+}
+// ---------- daily challenges + weekly event ----------
+SCREENS.daily = {
+  hideHud: true,
+  html: () => {
+    const st = M.dailyState(), ev = M.weekly(), L = VP.lang() === 'pt' ? 'pt' : 'en';
+    return `${corner('back')}<div class="wrap narrow" style="margin-top:46px"><h2 class="gold">🎯 ${t('daily')}</h2><p class="small">${t('dc_sub')}</p>
+      ${st.list.map(c => { const m = M.get(c.n) || M.list[0], done = st.done[c.i]; return `<div class="mrow ${done ? 'done' : ''}"><div style="flex:1"><b>${esc(VP.mname(m))}</b><br><span class="small">${t('dc_' + c.goal, U.fmtTime(M.par(m)))} · 🪙 ${c.reward}</span></div>${done ? `<span class="okb">✔ ${t('dc_ok')}</span>` : `<button class="btn sm" data-act="brief" data-n="${m.n}">▶ ${t('dc_go')}</button>`}</div>`; }).join('')}
+      <p class="small">🔥 ${t('dc_streak', VP.S.streak ? VP.S.streak.n : 0)} · ${t('dc_reset')}</p>
+      ${ev ? `<div class="panel t"><b>${ev.icon || '🎉'} ${t('wk_title')}: ${esc(ev.name[L])}</b><p class="small">${esc(ev.desc[L])} · ${t('wk_left', ev.endsIn)}</p></div>` : ''}
+      <button class="btn ghost" data-act="back">${t('back')}</button>${foot()}</div>`;
+  },
+};
 ACT.map = () => UI.show('map');
 ACT.how = () => UI.show('how');
 ACT.rank = () => UI.show('rank');
@@ -80,14 +99,18 @@ SCREENS.settings = {
   hideHud: true,
   html: () => { const q = VP.ls.get('vp_quality'); return `${corner('back')}<div class="wrap narrow" style="margin-top:48px"><h2 class="teal">⚙</h2><div class="panel">
     <div class="sw"><span>${t('quality')}</span><span class="row">${['a', 0, 1, 2].map(v => `<button class="tab ${(v === 'a' ? !q : q === '' + v) ? 'on' : ''}" data-act="q" data-v="${v}">${t('q' + v)}</button>`).join('')}</span></div>
+    <div class="sw"><span>${t('fpsShow')}</span><button class="tab ${VP.ls.get('vp_fps') === '1' ? 'on' : ''}" data-act="fps">${VP.ls.get('vp_fps') === '1' ? t('on') : t('off')}${VP.R3 && VP.R3.ok ? ' · ' + VP.R3.fps + ' fps' : ''}</button></div>
     <div class="sw"><span>${t('sound')}</span><button class="tab on" data-act="mute">${VP.Audio.muted ? t('off') : t('on')}</button></div>
     <div class="sw"><span>${t('lang')}</span><button class="tab on" data-act="lang">${VP.lang() === 'pt' ? 'Português' : 'English'}</button></div>
     ${VP.Shop.has('season') ? `<div class="sw"><span>🎄 ${t('xmasOn')}</span><button class="tab on" data-act="xmas">${VP.S.xmas ? t('on') : t('off')}</button></div>` : ''}
+    <div class="sw"><span>${t('tu_replay')}</span><button class="tab" data-act="tutorial">🎓</button></div>
     <div class="sw"><span>${t('restore')}</span><button class="tab" data-act="restore">🔑</button></div>
     <div class="sw" style="border:0"><span>${t('resetSave')}</span><button class="tab" data-act="reset">🗑</button></div></div>
     <button class="btn" data-act="back">${t('back')}</button>${foot()}</div>`; },
 };
 ACT.q = el => { const v = el.dataset.v; if (v === 'a') { VP.ls.set('vp_quality', ''); } else if (VP.R3) VP.R3.setQuality(+v); UI.relabel(); };
+ACT.fps = () => { VP.ls.set('vp_fps', VP.ls.get('vp_fps') === '1' ? '0' : '1'); UI.relabel(); };
+ACT.tutorial = () => UI.startTutorial();
 ACT.xmas = () => { VP.S.xmas = !VP.S.xmas; VP.persist(); UI.relabel(); };
 ACT.reset = () => { if (confirm(t('resetAsk'))) { VP.resetSave(); endGame(); UI.show('title'); } };
 ACT.restore = () => VP.Shop.restorePrompt();
@@ -96,11 +119,15 @@ ACT.restore = () => VP.Shop.restorePrompt();
 SCREENS.map = {
   hideHud: true,
   html: () => {
-    const d = UI.tab, D = M.DIST[d], list = M.list.filter(m => m.d === d), locked = D.grant && !VP.Shop.has(D.grant);
+    const d = UI.tab, D = M.DIST[d], list = M.list.filter(m => m.d === d), locked = D.grant && !VP.Shop.has(D.grant), L = VP.lang() === 'pt' ? 'pt' : 'en';
     const done = list.filter(m => VP.S.stars[m.n]).length, st = list.reduce((a, m) => a + (VP.S.stars[m.n] || 0), 0);
-    return `${corner('back')}<div class="wrap" style="margin-top:46px"><h2 class="teal">${t('map')}</h2>
-      <div class="tabs">${M.DIST.map(x => `<button class="tab ${x.id === d ? 'on' : ''} ${x.grant === 'vip' ? 'vip' : x.grant ? 'sea' : ''}" data-act="tab" data-d="${x.id}">${x.grant === 'vip' ? '👑 ' : x.grant ? '🎄 ' : ''}${t('d' + x.id)}</button>`).join('')}</div>
-      <div class="dhead" style="background:${DCOL[d]}"><b>${t('d' + d)}</b><span>${done}/${list.length} · ${st}⭐ / ${list.length * 3}</span></div>
+    const grp = x => (x.arc ? 1 : x.grant ? 2 : 0), g = grp(D), closed = D.arc && !M.distOpen(D) && !M.allOpen;
+    const dcount = x => M.list.filter(m => m.d === x.id && VP.S.stars[m.n]).length;
+    return `${corner('back')}<div class="wrap" style="margin-top:46px"><h2 class="teal">${t('map')} <small class="cnt">${M.list.filter(m => VP.S.stars[m.n]).length}/${M.list.length}</small></h2>
+      <div class="row grp">${[['story', 0], ['chapters', 1], ['bonusTab', 2]].map(([k, i]) => `<button class="tab ${g === i ? 'on' : ''}" data-act="tab" data-d="${M.DIST.find(x => grp(x) === i).id}">${['📖', '🧶', '👑'][i]} ${t(k)}</button>`).join('')}</div>
+      <div class="tabs">${M.DIST.filter(x => grp(x) === g).map(x => `<button class="tab ${x.id === d ? 'on' : ''} ${x.grant === 'vip' ? 'vip' : x.grant ? 'sea' : ''}" data-act="tab" data-d="${x.id}">${x.grant === 'vip' ? '👑 ' : x.grant ? '🎄 ' : x.arc && !M.distOpen(x) && !M.allOpen ? '🔒 ' : ''}${t('d' + x.id)}${x.arc && dcount(x) === 10 ? ' ✔' : ''}</button>`).join('')}</div>
+      <div class="dhead" style="background:${D.col ? 'linear-gradient(120deg,' + D.col + ')' : DCOL[d % DCOL.length]}"><b>${t('d' + d)}</b><span>${done}/${list.length} · ${st}⭐ / ${list.length * 3}</span>${D.intro ? `<p>${esc(D.intro[L])}</p>` : ''}</div>
+      ${closed ? `<div class="mrow">🔒 <div style="flex:1">${t('ch_need', D.req.stars, VP.totalStars())}</div></div>` : ''}
       <div class="path">${list.map(m => { const un = M.unlocked(m), s = VP.S.stars[m.n] || 0, next = un && !s; return `<button class="node ${s ? 'done' : ''} ${next ? 'next' : ''} ${un ? '' : 'lock'} ${m.boss ? 'boss' : ''}" data-act="${un ? 'brief' : locked ? 'shop' : 'nop'}" data-n="${m.n}">${un ? (m.bonus ? m.n - D.from + 1 : m.n) : '🔒'}<small>${s ? stars(s) : ''}</small></button>`; }).join('')}</div>
       ${locked ? `<div class="mrow">🔒 <div style="flex:1">${t('bonusLock')}</div><button class="btn gold sm" data-act="shop">${t('shop')}</button></div>` : ''}
       <div class="mrow"><div style="flex:1">❤️ ${t('lives')}: <b>${VP.S.lives}</b> &nbsp; ⭐ <b>${VP.totalStars()}</b> &nbsp; 🪙 <b>${VP.S.cash}</b></div><button class="btn sm" data-act="play">🌴 ${t('city')}</button></div>
@@ -112,20 +139,21 @@ ACT.nop = () => UI.toast('🔒 ' + t('locked'));
 ACT.brief = el => UI.show('brief', +el.dataset.n);
 
 // ---------- briefing ----------
-const NEED = { reach: null, waves: null, eat: ['morticia'], steal: ['morticia'], cash: ['mimosa', 'morticia'], rescue: 'all', truck: 'gate', vault: 'all', escape: null, chase: ['mimo'], race: null, defend: ['mimosa', 'mimo'], boss: 'all' };
+const NEED = { stealth: ['morticia'], kittens: 'all', duel: ['mimosa', 'mimo'], escort: ['mimosa', 'mimo'], heist: ['mimo'], fish: null, volley: null, kites: null, photo: null, chain: null, parkour: null, reach: null, waves: null, eat: ['morticia'], steal: ['morticia'], cash: ['mimosa', 'morticia'], rescue: 'all', truck: 'gate', vault: 'all', escape: null, chase: ['mimo'], race: null, defend: ['mimosa', 'mimo'], boss: 'all' };
 const GATECAT = { fence: 'mimosa', switch: 'mimo', gap: 'morticia', key: 'morticia' };
 SCREENS.brief = {
   cls: 'glass', hideHud: true,
   html: n => {
     const m = M.get(n), D = M.DIST[m.d];
-    let need = m.side ? null : NEED[m.type]; if (need === 'gate') need = [GATECAT[m.p.gate]]; if (need === 'all') need = ['mimo', 'mimosa', 'morticia'];
+    let need = m.side ? null : NEED[m.type]; const L = VP.lang() === 'pt' ? 'pt' : 'en', LI = L === 'pt' ? 1 : 2; if (need === 'gate') need = [GATECAT[m.p.gate]]; if (need === 'all') need = ['mimo', 'mimosa', 'morticia'];
     const hero = m.boss ? (art('boss_' + (m.d + 1)) || art('title_bg')) : m.d === 6 ? art('shop_season') : m.d === 5 ? art('shop_vip') : art('title_bg');
     const best = VP.S.best[n];
     return `${corner(G ? 'closeBrief' : 'map')}<div class="wrap narrow" style="margin-top:46px">
       <div class="hero" style="background-image:url('${hero}');${m.boss ? 'box-shadow:inset 0 0 0 3px #ffd23f,0 0 30px #ffd23f66' : ''}"><div class="cap"><span>${m.boss ? '👑 ' + t('bossM') + ' · ' : ''}${m.tourCity ? '✈ ' + esc(VP.CityCache[m.tourCity].real.name).toUpperCase() : t('d' + m.d).toUpperCase() + ' · ' + (m.side ? '🏁 ' + t('trial') : t('mission').toUpperCase() + ' ' + (m.bonus ? '★' + (m.n - D.from + 1) : m.n))}</span><b>${esc(VP.mname(m))}</b></div></div>
-      <div class="panel"><p>${t(m.tourCity ? 'b_tour' : m.side ? 'b_trial' : 'b_' + m.type)}</p>${m.boss ? `<p class="small">💡 ${t('bossTip')}</p>` : ''}
+      <div class="panel">${(m.talk || []).map(l => `<div class="talk">${art('portrait_' + l[0]) ? `<img src="${art('portrait_' + l[0])}" alt="">` : `<span class="pfb">${{ mimo: '😴', mimosa: '😾', morticia: '😋' }[l[0]]}</span>`}<p><b>${t(l[0])}</b> “${esc(l[LI])}”</p></div>`).join('')}<p>${m.tourCity ? esc(m.story ? m.story[L] : t('b_tour')) + '<br><span class="small">' + t('bk_' + m.p.kind) + '</span>' : t(m.side ? 'b_trial' : 'b_' + m.type)}</p>${m.boss ? `<p class="small">💡 ${t('bossTip')}</p>` : ''}
         ${need ? `<div class="need">${need.map(c => `<img src="${art('portrait_' + c)}" alt="">`).join('')}<div><b>${need.length === 3 ? t('need_all') : need.map(c => t('need_' + c)).join(' · ')}</b></div></div>` : ''}
         <p class="small">⏱ ${t('par')}: ${U.fmtTime(M.par(m))}${m.p.time ? ' · ⌛ ' + U.fmtTime(m.p.time) : ''} ${best ? ' · ' + t('best') + ': ' + best : ''} ${VP.S.stars[n] ? ' · ' + stars(VP.S.stars[n]) : ''}</p></div>
+      ${UI.challenge && UI.challenge.n === n ? `<p class="small gold">⚔️ ${t('ch_beat', esc(UI.challenge.name || t('ch_friend')), UI.challenge.score)}</p>` : ''}
       <button class="btn big" data-act="start" data-n="${n}">▶ ${t('start')}</button>
       <button class="btn ghost" data-act="${G ? 'closeBrief' : 'map'}">${t('back')}</button></div>`;
   },
@@ -145,8 +173,8 @@ SCREENS.pause = {
     <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="title">🏠 Menu</button></div></div>`,
 };
 ACT.resume = () => { UI.hide(); UI.paused = false; VP.Audio.pause(false); };
-ACT.restart = () => UI.startMission(G.m.n);
-ACT.quit = () => ACT.play();
+ACT.restart = () => (G.tutorial ? UI.startTutorial() : UI.startMission(G.m.n));
+ACT.quit = () => (G && G.tutorial ? UI.endTutorial(true) : ACT.play());
 
 // ---------- results ----------
 SCREENS.result = {
@@ -158,6 +186,7 @@ SCREENS.result = {
     return `<div class="wrap narrow" style="margin-top:auto">
       <h2 class="${r.win ? 'gold' : ''}">${r.win ? (r.districtClear ? t('districtClear') : t('win')) : t('lose')}</h2>
       <p class="small"><b>${esc(VP.mname(m))}</b>${r.win ? '' : ' · ' + t('f_' + r.why)}</p>
+      ${r.chal ? `<p class="small ${r.chal.won ? 'gold' : ''}">⚔️ ${t(r.chal.won ? 'ch_won' : 'ch_lost', esc(r.chal.name || t('ch_friend')), r.chal.score)}</p>` : ''}
       ${r.win ? `<div class="stars">${[1, 2, 3].map(i => `<span class="${i <= r.stars ? 'on' : ''}">⭐</span>`).join('')}</div>
       <div class="panel"><div class="checks"><div class="ok"><span>✔ ${t('s_done')}</span><span>⭐</span></div><div class="${r.noFaint ? 'ok' : 'no'}"><span>${r.noFaint ? '✔' : '✖'} ${t('s_nofaint')}</span><span>⭐</span></div><div class="${r.underPar ? 'ok' : 'no'}"><span>${r.underPar ? '✔' : '✖'} ${t('s_par')} (${U.fmtTime(r.time)} / ${U.fmtTime(r.par)})</span><span>⭐</span></div></div>
       <div class="row" style="justify-content:space-between;margin-top:6px"><span>${t('score')}</span><span class="bigscore">${r.score}</span></div>
@@ -174,6 +203,7 @@ function nextOf(m) { if (m.side) return null; const nx = M.list[M.list.indexOf(m
 UI.result = function (win, why) {
   if (!G) return;
   const m = G.m;
+  if (m.type === 'tutorial') { UI.endTutorial(); return; }
   if (m.free) { if (!win) { VP.S.lives = Math.max(VP.S.lives, 1); VP.persist(); UI.free(null, true); } return; }
   const r = { win, why: why || 'allDown', m, time: G.time, par: M.par(m), stars: 0, score: 0, cash: 0, rewards: [], districtClear: false };
   if (win) {
@@ -187,6 +217,9 @@ UI.result = function (win, why) {
     S.stars[m.n] = Math.max(old, r.stars); S.best[m.n] = Math.max(S.best[m.n] || 0, r.score); S.cash += r.cash;
     if (!m.bonus && m.n === S.unlocked && S.unlocked < 50) S.unlocked++; else if (!m.bonus && m.n === 50) S.unlocked = 51;
     r.districtClear = !!m.boss || (m.bonus && !m.side && m.n === M.DIST[m.d].to);
+    const wk = M.weeklyBonus(r); if (wk && wk.coins > 0) { S.cash += wk.coins; r.rewards.push((wk.ev.icon || '🎉') + ' ' + t('wk_bonus', wk.coins)); }
+    for (const line of M.dailyCheck(r)) r.rewards.push('🎯 ' + line);
+    const ch = UI.challenge; if (ch && ch.n === m.n) { r.chal = { name: ch.name, score: ch.score, won: r.score > ch.score }; if (r.chal.won) UI.challenge = null; }
     VP.persist();
     if (VP.onProgress) VP.onProgress(r);
   }
@@ -207,6 +240,7 @@ SCREENS.rank = {
 };
 const mainStars = () => { let s = 0; for (let n = 1; n <= 50; n++) s += VP.S.stars[n] || 0; return s; };
 const mainScore = () => { let s = 0; for (let n = 1; n <= 50; n++) s += VP.S.best[n] || 0; return s; };
+UI.mainStars = mainStars; UI.mainScore = mainScore; UI.last = () => lastResult;
 const mainLevel = () => { let l = 0; for (let n = 1; n <= 50; n++) if (VP.S.stars[n]) l = n; return l; };
 function drawRank(top) {
   const ol = $('#rk'); if (!ol) return;
@@ -225,21 +259,11 @@ ACT.sendScore = () => {
   fetch('/api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, score: mainScore(), level, stars: mainStars(), vip: VP.Shop.has('vip') }) })
     .then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => { UI.toast(t('sent')); drawRank(j.top); }).catch(() => UI.toast(t('rankOff'), 3000));
 };
-ACT.share = () => {
-  const text = t('shareTxt', mainStars() || (lastResult ? lastResult.stars : 0));
-  const done = () => UI.toast(t('copied'));
-  try {
-    if (navigator.share) { navigator.share({ title: 'Vice Paws', text, url: SITE }).catch(() => {}); return; }
-    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text + ' ' + SITE).then(done, done); return; }
-  } catch (e) { /* fall through */ }
-  const ta = document.createElement('textarea'); ta.value = text + ' ' + SITE; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) { /* ignore */ } ta.remove(); done();
-};
-
 // ---------- no webgl ----------
 SCREENS.nowebgl = { cls: 'center', hideHud: true, html: () => `<div class="wrap narrow"><h1 class="logo">VICE<span>PAWS</span></h1><div class="panel" style="margin-top:20px;text-align:center"><p>😿 ${t('noWebgl')}</p><p class="small">${t('openOut')}</p></div><a class="btn" href="${IG}" target="_blank" rel="noopener">📸 ${t('follow')}</a>${foot()}</div>` };
 
 // ---------- game flow ----------
-function endGame() { if (G) { Game.end(); G = null; } UI.state = 'menu'; UI.paused = false; }
+function endGame() { tutSkip(false); if (G) { Game.end(); G = null; } UI.state = 'menu'; UI.paused = false; }
 function begin(g) {
   G = g; UI.state = 'play'; UI.paused = false; UI.hide();
   if (VP.R3 && VP.R3.ok) { VP.R3.attach(G); VP.R3.snapCamera(-Math.PI / 2); }
@@ -251,13 +275,28 @@ UI.free = function (pos, keep, opts) {
   endGame(); begin(M.startFree(p, opts)); void keep;
   UI.songD = -1;
 };
-UI.tour = function (id) { if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; } if (!VP.CityCache[id]) return; endGame(); begin(M.startTour(id)); const meta = VP.CityCache[id].meta; VP.Audio.music([0, 1, 2, 3, 4, 2, 6][meta.mood || 0]); UI.songD = -2; Game.fx.say('✈ ' + VP.CityCache[id].real.name, '#ffd23f', 3); };
+UI.tour = function (id) { if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; } if (!VP.CityCache[id]) return; endGame(); begin(M.startTour(id)); const meta = VP.CityCache[id].meta; VP.Audio.music(UI.citySong(id)); UI.songD = -2; Game.fx.say('✈ ' + VP.CityCache[id].real.name, '#ffd23f', 3); };
+UI.citySong = id => (id === 'rioverde' ? 7 : [0, 1, 2, 3, 4, 2, 6][(VP.CityCache[id] && VP.CityCache[id].meta.mood) || 0]);
 UI.startMission = function (n) {
   if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
-  const m = M.get(n); if (!m || !M.unlocked(m)) return;
+  const m = M.get(n); if (!m || !(M.unlocked(m) || (UI.challenge && UI.challenge.n === n))) return;
   endGame(); begin(M.start(m));
-  VP.Audio.music(m.boss ? 5 : m.tourCity ? [0, 1, 2, 3, 4, 2, 6][VP.CityCache[m.tourCity].meta.mood || 0] : M.DIST[m.d].song);
+  if (m.talk && m.talk[0]) setTimeout(() => { if (G && G.m === m && !G.over) Game.fx.say(t(m.talk[0][0]) + ': “' + m.talk[0][VP.lang() === 'pt' ? 1 : 2] + '”', '#ffd23f', 4.2); }, 2700);
+  VP.Audio.music(m.boss ? 5 : m.tourCity ? UI.citySong(m.tourCity) : M.DIST[m.d].song);
   if (m.boss) { VP.Audio.sfx('boss'); Game.fx.say(t('boss_' + m.boss).toUpperCase() + '!', '#ffd23f', 3); } else Game.fx.say(VP.mname(m), '#fff', 2.6);
+};
+// ---------- first-play tutorial ----------
+M.tutorial = { n: -1, d: 0, geo: 0, type: 'tutorial', name: ['Treino', 'Training'], p: {}, lv: 1, par: 60, hunger: 0.2, boss: null, bonus: true, side: true };
+const tutSkip = on => { let el = document.getElementById('tutskip'); if (!on) { if (el) el.remove(); return; } if (!el) { el = document.createElement('button'); el.id = 'tutskip'; el.className = 'chip'; el.addEventListener('click', () => UI.endTutorial(true)); document.body.appendChild(el); } el.textContent = '⏭ ' + t('tu_skip'); };
+UI.startTutorial = function () {
+  if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
+  endGame(); begin(M.start(M.tutorial)); VP.Audio.music(0); tutSkip(true);
+};
+UI.endTutorial = function (skipped) {
+  if (G && G.tutLives !== undefined) VP.S.lives = Math.max(G.tutLives, 3);
+  VP.S.tut = 1; VP.persist(); tutSkip(false);
+  if (!skipped) { UI.confetti(); }
+  UI.free();
 };
 UI.marker = function (mk) {
   if (mk.k === 'shop') { UI.paused = true; VP.Shop.open(); return; }
@@ -298,10 +337,10 @@ function frame(ts) {
 
 VP.DATA = {};
 UI.boot = function () {
-  const files = ['missions', 'items', 'outfits', 'activities', 'cities/index'];
+  const files = ['missions', 'items', 'outfits', 'activities', 'cities/index', 'citypacks', 'events'];
   Promise.all(files.map(f => fetch('data/' + f + '.json').then(r => r.json()))).then(d => {
     files.forEach((f, i) => { VP.DATA[f] = d[i]; });
-    M.load(d[0], d[3]); M.loadCities(d[4]); if (VP.Wardrobe) VP.Wardrobe.load(d[2]);
+    M.load(d[0], d[3]); M.loadCities(d[4]); M.loadPacks(d[5]); M.loadEvents(d[6]); if (VP.Wardrobe) VP.Wardrobe.load(d[2]);
     boot2();
   }).catch(e => { console.error('data', e); document.getElementById('ui').innerHTML = '<div class="screen on center"><p>😿 Não deu para carregar o jogo. Recarregue a página.<br>Could not load the game. Please reload.</p></div>'; });
 };
@@ -320,6 +359,7 @@ function boot2() {
   UI.show('title');
   const startGfx = () => { if (VP.R3 && !VP.R3.ok && !UI.gfxTried) { UI.gfxTried = true; let ok = false; try { ok = VP.R3.init(document.getElementById('gl')); } catch (e) { ok = false; console.warn('gfx', e); } if (!ok) { UI.noGfx = true; UI.show('nowebgl'); } } };
   if (VP.R3) startGfx(); else addEventListener('vp-gfx', startGfx);
+  if (VP.Share) VP.Share.boot();
   UI.ready = true;
   if (VP.Acct) VP.Acct.init();
   requestAnimationFrame(frame);
@@ -327,7 +367,7 @@ function boot2() {
 // ---------- test hooks ----------
 window.__vp = {
   VP, get G() { return G; }, start: n => UI.startMission(n), free: p => UI.free(p), win: () => Game.win(), fail: w => Game.fail(w || 'time'),
-  unlockAll: () => { VP.S.unlocked = 51; VP.persist(); }, state: () => ({ screen: UI.screen, state: UI.state, paused: UI.paused, mission: G ? G.m.n : null, step: G ? G.step : -1, over: G ? G.over : null }),
+  unlockAll: () => { VP.S.unlocked = 51; M.allOpen = true; VP.persist(); }, state: () => ({ screen: UI.screen, state: UI.state, paused: UI.paused, mission: G ? G.m.n : null, step: G ? G.step : -1, over: G ? G.over : null }),
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', UI.boot); else UI.boot();
 })();

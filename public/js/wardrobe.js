@@ -26,7 +26,8 @@ Wd.spec = function (name, forceVip) {
 };
 Wd.equipSet = function (set) { const s = S(); for (const n of NAMES) s.wear[n] = Object.assign({}, s.wear[n], D.sets[set][n]); VP.persist(); if (VP.R3.refreshCats) VP.R3.refreshCats(); };
 
-const price = it => it.free ? t('wd_free') : it.grant ? (it.grant === 'vip' ? '👑 VIP' : '🎄') : '🪙 ' + it.price;
+const packOf = it => (D.packs && D.packs[it.grant]) || null;
+const price = it => it.free ? t('wd_free') : it.grant ? (it.grant === 'vip' ? '👑 VIP' : packOf(it) ? packOf(it).icon + ' R$' + ((VP.Shop.PRICE || {})[packOf(it).product] || '') : '🎄') : '🪙 ' + it.price;
 UI.SCREENS.wardrobe = {
   cls: 'clear', hideHud: true, stage: true,
   html: () => {
@@ -36,10 +37,10 @@ UI.SCREENS.wardrobe = {
       <div class="row">${NAMES.map(n => `<button class="tab ${n === Wd.cat ? 'on' : ''}" data-act="wdCat" data-c="${n}">${t(n)}</button>`).join('')}</div>
       <div class="tabs" style="justify-content:center;flex-wrap:wrap">${D.slots.map(sl => `<button class="tab ${sl === Wd.slot ? 'on' : ''}" data-act="wdSlot" data-s="${sl}">${t('slot_' + sl)}</button>`).join('')}</div>
       <div class="wdgrid">${Wd.slot !== 'body' ? `<button class="wdi ${!w[Wd.slot] ? 'on' : ''}" data-act="wdItem" data-i=""><b>✖</b><span>${t('wd_none')}</span></button>` : ''}
-      ${items.map(it => { const own = Wd.owns(it), on = w[Wd.slot] === it.id; return `<button class="wdi ${on ? 'on' : ''} ${own ? '' : 'lock'} ${it.grant === 'vip' ? 'vip' : ''}" data-act="wdItem" data-i="${it.id}"><b>${it.name[VP.lang() === 'pt' ? 'pt' : 'en']}</b><span>${on ? '✓ ' + t('wd_equipped') : own ? '✓' : price(it)}</span></button>`; }).join('')}</div>
+      ${items.map(it => { const own = Wd.owns(it), on = w[Wd.slot] === it.id; return `<button class="wdi ${on ? 'on' : ''} ${own ? '' : 'lock'} ${it.grant === 'vip' ? 'vip' : it.grant ? 'pk' : ''}" data-act="wdItem" data-i="${it.id}"><b>${it.name[VP.lang() === 'pt' ? 'pt' : 'en']}</b><span>${on ? '✓ ' + t('wd_equipped') : own ? '✓' : price(it)}</span></button>`; }).join('')}</div>
       <p class="small">${t('wd_sub')}</p></div>`;
   },
-  after: () => Wd.preview(),
+  after: () => { if (Wd.tryPack) { const w = Object.assign({}, S().wear[Wd.cat]); for (const it of D.items) if (it.grant === Wd.tryPack) w[it.slot] = w[it.slot] && byId[w[it.slot]] && byId[w[it.slot]].grant === Wd.tryPack ? w[it.slot] : it.id; Wd.tryPack = null; Wd.preview(w); } else Wd.preview(); },
 };
 Wd.preview = function (wearOverride) {
   const R3 = VP.R3; if (!R3 || !R3.ok) return;
@@ -56,7 +57,7 @@ UI.act.wdItem = el => {
   s.wear[Wd.cat] = s.wear[Wd.cat] || {};
   if (!id) { s.wear[Wd.cat][Wd.slot] = null; VP.persist(); UI.show('wardrobe'); return; }
   if (!Wd.owns(it)) {
-    if (it.grant) { Wd.preview(Object.assign({}, s.wear[Wd.cat], { [Wd.slot]: id })); UI.toast((it.grant === 'vip' ? '👑 ' : '🎄 ') + t('wd_shop') + ' → ' + t('shop'), 2600); return; }
+    if (it.grant) { Wd.preview(Object.assign({}, s.wear[Wd.cat], { [Wd.slot]: id })); UI.toast((it.grant === 'vip' ? '👑 ' : packOf(it) ? packOf(it).icon + ' ' : '🎄 ') + t('wd_shop') + ' → ' + t('shop'), 2600); return; }
     if (VP.S.cash < it.price) { Wd.preview(Object.assign({}, s.wear[Wd.cat], { [Wd.slot]: id })); UI.toast(t('wd_poor', it.price - VP.S.cash), 2600); return; }
     VP.S.cash -= it.price; s.owned.push(id); UI.toast('🛍 ' + t('wd_bought')); VP.Audio.sfx('cash');
   }

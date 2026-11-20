@@ -14,8 +14,9 @@ exports.open = async (mobile, opts = {}) => {
   page.on('pageerror', e => errors.push('PAGEERROR ' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 4).join('\n')));
   if (opts.routes) await opts.routes(page);
   else await page.route('**/api/**', r => r.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"offline"}' }));
-  await page.goto(exports.URL);
+  await page.goto(exports.URL + (opts.query || ''));
   await page.waitForFunction(() => window.__vp && window.VP.UI.ready && window.VP.R3 && (window.VP.R3.ok || window.VP.UI.noGfx), null, { timeout: 30000 });
+  if (!opts.tutorial) await page.evaluate(() => { window.VP.S.tut = 1; }); // tests skip the first-play tutorial unless they ask for it
   return { browser, page, errors };
 };
 exports.shot = (page, name) => page.screenshot({ path: (process.env.VP_SHOTS || '/tmp') + '/' + name + '.png' });

@@ -1,6 +1,6 @@
 # VICE PAWS 🐾🌴
 
-Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**, do Instagram [@mimo.mimosa.morticia](https://www.instagram.com/mimo.mimosa.morticia/). Uma cidade neon estilo anos 80, 50 missões de história, chefões, carros, polícia de bulldogs, loja Pix honesta e mapas reais para viajar.
+Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**, do Instagram [@mimo.mimosa.morticia](https://www.instagram.com/mimo.mimosa.morticia/). Uma cidade neon estilo anos 80, **209 missões** (50 de história + 15 capítulos + bônus), chefões, carros, polícia de bulldogs, desafios diários, loja Pix honesta e mapas reais para viajar.
 
 > Jogo de fã, sem vínculo com nenhum estúdio de games.
 
@@ -17,12 +17,15 @@ Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**,
 ## O que tem no jogo
 
 - **Cidade aberta** com 5 bairros (Sunset Beach, Neon Downtown, Palm Harbor, Storm Docks com chuva, Vice Heights), tráfego, carros para dirigir, nível de procurado, minimapa.
-- **50 missões** de 13 tipos (travessia, ondas, comer, roubar, juntar grana, resgate, caminhão de petiscos, cofre, fuga, perseguição, corrida, defesa, chefão) + **5 chefões**.
+- **209 missões** de 24 tipos. História (50) com 13 tipos (travessia, ondas, comer, roubar, juntar grana, resgate, caminhão de petiscos, cofre, fuga, perseguição, corrida, defesa, chefão) + **5 chefões**; **15 capítulos** extras (150 missões) com 11 modelos novos: escolta, furtivo (Mortícia entre cachorros dormindo), caça às fotos, entregas em cadeia, duelo, parkour, festival de pipas, vôlei de praia, pescaria, golpe do caminhão em movimento e resgate de gatinhos em etapas.
+- **Desafios do dia** (3 por dia, gerados pela data) e **evento da semana** (bônus de moedas por tipo de missão).
+- **Treino de primeira vez** (andar, atacar, trocar, reanimar), pulável, com dicas para toque e teclado.
+- **Cartão para compartilhar** (PNG 1080×1350 com os gatos na roupa atual) e link **"Desafie um amigo"** (`?c=missão-pontos-nome`).
 - **Atividades livres:** 25 patinhas douradas, 5 contra-relógios, 5 missões de bairro com gatos NPC.
 - **Guarda-roupa** por slots (cabeça, olhos, pescoço, roupa, costas, rastro) com moedas ganhas nas missões.
-- **Loja dos Mimos (Pix):** Pacote VIP, Temporada Natal Neon, +10 vidas e apoio. Só enfeite e bônus; dá para zerar sem pagar.
+- **Guarda-roupa com 80 itens** e **Loja dos Mimos (Pix):** Pacote VIP, Temporada Natal Neon, +10 vidas, apoio (a partir de R$0,99) e pacotes de visual de R$0,99/R$1,99 (Praia, Agro, Festa, Natal). Só enfeite e bônus; dá para zerar sem pagar. Sem sorteio, sem dobrador de moedas.
 - **Conta opcional:** login por código no e-mail, "Meus gatos" (crie seu gato 3D), progresso na nuvem e a "Cidade dos Gatos" (gatos públicos de outros jogadores passeando).
-- **Volta ao Mundo:** bairros reais extraídos do OpenStreetMap (Miami Beach, Copacabana e os próximos) com cartões-postais para colecionar e missões de viagem.
+- **Volta ao Mundo:** bairros reais extraídos do OpenStreetMap (Miami Beach, Copacabana, Vidigal, Santa Marta e os próximos) com relevo de verdade, cartões-postais para colecionar e 10 missões por cidade (pacotes escritos à mão para Miami, Copacabana e Rio Verde; modelo automático para as demais). Mapas de **comunidade** só têm missões positivas: sem polícia, sem procurado, sem crime.
 - PT-BR e inglês, feito primeiro para celular (retrato, navegador do Instagram).
 
 ## Controles
@@ -52,7 +55,8 @@ Sem nenhuma variável o jogo funciona inteiro offline, com progresso salvo no ap
 
 Tudo fica em `public/data/` e o esquema está em [DESIGN.md](DESIGN.md):
 
-- `missions.json`: bairros e missões (tipo + parâmetros).
+- `missions.json`: bairros, capítulos e missões (tipo + parâmetros + fala). `node tools/gen-missions.mjs` reescreve os 15 capítulos a partir das tabelas do script.
+- `citypacks.json`: missões por cidade real (pacotes, modelo padrão, modelo de comunidade). `events.json`: eventos semanais. Ambos saem de `node tools/gen-packs.mjs`.
 - `activities.json`: contra-relógios, missões de NPC, patinhas.
 - `outfits.json`: itens do guarda-roupa. `items.json`: valores de comida.
 - `cities/`: mapas reais. Rode `node tools/build-cities.mjs <pasta-com-os-json>` para copiar os extratos e regerar o `index.json`.
@@ -60,8 +64,11 @@ Tudo fica em `public/data/` e o esquema está em [DESIGN.md](DESIGN.md):
 ## Testes
 
 ```bash
-npm test                                   # API de contas (Node, sem instalar nada)
-node tests/e2e/missions.cjs all             # bot joga as 59 missões em modo acelerado
+npm test                                   # API de contas + validação do conteúdo (Node, sem instalar nada)
+node tests/e2e/missions.cjs all             # bot joga as 209 missões em modo acelerado (~2 min)
+node tests/e2e/expansion.cjs                # modelos novos, diário/semanal, treino no toque, relevo + comunidade, compartilhar, pacotes
+node tests/e2e/perf.cjs 4 [cidade]          # triângulos/draw calls por qualidade e tempo de quadro com CPU 4x mais lenta
+node tests/e2e/shots.cjs [filtro]           # capturas 390x844 (toque) e 1280x800
 node tests/e2e/missions.cjs 1000,1001 miami # missões de viagem
 node tests/e2e/controls.cjs                 # teclado, mouse e toque
 node tests/e2e/shop-accounts.cjs            # loja Pix e contas com API simulada
@@ -79,7 +86,7 @@ Os testes e2e usam Playwright (Chromium com WebGL por software). Capturas vão p
 
 ## English
 
-**Vice Paws** is a free 3D open-world fan game starring three real Persian cats from [@mimo.mimosa.morticia](https://www.instagram.com/mimo.mimosa.morticia/): **Mimo** shoots (and gets tired), **Mimosa** bites (and tanks), **Morticia** eats other people's things (and sneaks through cat flaps). Switch between them at any time, revive the fallen (no cat left behind) and clear 50 story missions across a five-district neon city, plus bosses, time trials, side quests, a wardrobe, an optional account with your own custom cat, and a World Tour of real neighbourhoods built from OpenStreetMap data.
+**Vice Paws** is a free 3D open-world fan game starring three real Persian cats from [@mimo.mimosa.morticia](https://www.instagram.com/mimo.mimosa.morticia/): **Mimo** shoots (and gets tired), **Mimosa** bites (and tanks), **Morticia** eats other people's things (and sneaks through cat flaps). Switch between them at any time, revive the fallen (no cat left behind) and clear 209 missions (50 story missions, 15 extra chapters and bonus districts) across a five-district neon city, plus bosses, daily challenges, weekly events, time trials, side quests, an 80-item wardrobe, a shareable score card, an optional account with your own custom cat, and a World Tour of real neighbourhoods (with real terrain) built from OpenStreetMap data.
 
 - No build step: serve `public/` (`python3 -m http.server 8000 --directory public`). Vercel serves `public/` and the functions in `api/`.
 - All content is data-driven (`public/data/*.json`); the schema is documented in [DESIGN.md](DESIGN.md).

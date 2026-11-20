@@ -69,6 +69,7 @@ H.draw = function (G, dt) {
   if (G.nap > 0) { c.fillStyle = 'rgba(80,140,255,' + Math.min(0.2, G.nap * 0.1) + ')'; c.fillRect(0, 0, w, h); }
   if (a.flash > 0) { c.fillStyle = 'rgba(255,40,80,.16)'; c.fillRect(0, 0, w, h); }
   if (G.feast > 0) { c.strokeStyle = 'rgba(255,179,71,.5)'; c.lineWidth = 10; c.strokeRect(0, 0, w, h); }
+  if (G.flashT > 0) { G.flashT -= dt; c.fillStyle = 'rgba(255,255,255,' + Math.min(0.7, G.flashT * 3) + ')'; c.fillRect(0, 0, w, h); }
   worldLabels(G, R3, k, t);
   // ---- cat cards ----
   const vip = VP.Shop && VP.Shop.has('vip');
@@ -129,9 +130,10 @@ H.draw = function (G, dt) {
   if (G.banner) { const b = G.banner, al = Math.min(1, b.t * 6, (b.dur - b.t) * 3); c.globalAlpha = Math.max(0, al); const bl = wrap(b.txt, w - 40, 20 * k); bl.forEach((l, i) => txt(l, w / 2, h * 0.3 + i * 26 * k, 20 * k, b.col)); c.globalAlpha = 1; }
   // ---- controls ----
   controls(G, k, t, touch, a);
+  if (G.tutorial) tutorial(G, k, t, touch, ob);
   if (G.real < 0.5) { c.fillStyle = 'rgba(18,4,31,' + (1 - G.real * 2) + ')'; c.fillRect(0, 0, w, h); }
   if (G.W.real) txt('© OpenStreetMap', 6, h - 8, 9, 'rgba(255,255,255,.75)', 'left', false, '600');
-  if (VP.debug && R3) txt(R3.fps + 'fps q' + R3.quality + ' dc' + R3.draws + ' tri' + Math.round((R3.tris || 0) / 1000) + 'k', w / 2, h - 12, 11, '#fff');
+  if ((VP.debug || VP.ls.get('vp_fps') === '1') && R3) txt(R3.fps + 'fps q' + R3.quality + ' dc' + R3.draws + ' tri' + Math.round((R3.tris || 0) / 1000) + 'k', w / 2, h - 12, 11, '#fff');
 };
 
 function controls(G, k, t, touch, a) {
@@ -161,6 +163,17 @@ function controls(G, k, t, touch, a) {
   else { const p = H.atkHint; ring(p.x, p.y, 46 * k, ac, 0.5); Art.icon(c, G.car || a.name === 'mimo' ? 'bolt' : a.name === 'mimosa' ? 'fang' : 'hand', p.x, p.y - 5 * k, 15 * k); txt(VP.t(G.car || a.name === 'mimo' ? 'atkShoot' : a.name === 'mimosa' ? 'atkBite' : 'atkSteal'), p.x, p.y + 22 * k, 10 * k, '#fff'); }
 }
 
+// first-play hints: a pulsing ring on the control the current step asks for, plus a short caption
+function tutorial(G, k, t, touch, ob) {
+  const hint = ob.step && ob.step.hint; if (!hint) return;
+  const pulse = (x, y, r) => { for (let i = 0; i < 2; i++) { const f = (t * 0.9 + i * 0.5) % 1; c.beginPath(); c.arc(x, y, r * (0.9 + f * 0.5), 0, 6.283); c.strokeStyle = 'rgba(255,210,63,' + (1 - f) + ')'; c.lineWidth = 4; c.stroke(); } };
+  const cap = (s, x, y) => { c.font = '800 ' + 12.5 * k + 'px ' + FONT; const tw = c.measureText(s).width + 18 * k; x = U.clamp(x, tw / 2 + 6, H.w - tw / 2 - 6); pill(x - tw / 2, y - 12 * k, tw, 24 * k, 'rgba(18,4,31,.88)', GOLD); txt(s, x, y, 12.5 * k, '#fff', 'center', false, '800'); };
+  const b = H.btn;
+  if (hint === 'move') { if (touch) { pulse(H.stickHint.x, H.stickHint.y, 46 * k); cap(VP.t('tu_hMoveT'), H.stickHint.x, H.stickHint.y - 70 * k); } else cap(VP.t('tu_hMoveK'), H.w / 2, H.h - 70 * k); }
+  else if (hint === 'attack') { if (touch) { pulse(H.atkHint.x, H.atkHint.y, 46 * k); cap(VP.t('tu_hAtkT'), H.atkHint.x, H.atkHint.y - 70 * k); } else cap(VP.t('tu_hAtkK'), H.w / 2, H.h - 70 * k); }
+  else if (hint === 'switch') { for (let i = 0; i < 3; i++) if (i !== G.active) pulse(b['c' + i].x, b['c' + i].y, b.c0.r); cap(VP.t(touch ? 'tu_hSwT' : 'tu_hSwK'), b.c1.x, b.c1.y + b.c1.r + 34 * k); }
+  else if (hint === 'revive') { if (G.ctx && G.ctx.k === 'revive') { pulse(b.ctx.x, b.ctx.y, b.ctx.r); cap(VP.t(touch ? 'tu_hRevT' : 'tu_hRevK'), b.ctx.x, b.ctx.y - b.ctx.r - 34 * k); } else cap(VP.t('tu_hRevGo'), H.w / 2, H.h * 0.42); }
+}
 function radar(G, k, t, ob) {
   const W = G.W, m = H.map, a = G.car || G.cats[G.active], yaw = (VP.R3 && VP.R3.yaw !== undefined) ? VP.R3.yaw : -Math.PI / 2, sc = 2 / 48 * 1.15 * k;
   c.save(); c.beginPath(); c.arc(m.x, m.y, m.r, 0, 6.283); c.clip();
@@ -179,7 +192,7 @@ function radar(G, k, t, ob) {
   if (ob.at && !ob.free) pin(ob.at.x, ob.at.y, GOLD, (4.5 + Math.sin(t * 6)) * k);
   Art.poly(c, [m.x, m.y - 7 * k, m.x - 5 * k, m.y + 5 * k, m.x, m.y + 2 * k, m.x + 5 * k, m.y + 5 * k], '#fff', INK, 1.5);
   c.beginPath(); c.arc(m.x, m.y, m.r, 0, 6.283); c.lineWidth = 3; c.strokeStyle = G.wanted > 0 ? (Math.floor(t * 4) % 2 ? '#ff2040' : '#2a6bff') : PINK; c.stroke();
-  const d = VP.World.distAt(W, a.x, a.y); txt(W.real ? W.real.name.split(' — ').pop().toUpperCase().slice(0, 18) : VP.t('d' + (G.m.d > 4 && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
+  const d = VP.World.distAt(W, a.x, a.y); txt(W.real ? W.real.name.split(' — ').pop().toUpperCase().slice(0, 18) : VP.t('d' + ((G.m.d === 5 || G.m.d === 6) && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
 }
 
 function worldLabels(G, R3, k, t) {
@@ -193,12 +206,14 @@ function worldLabels(G, R3, k, t) {
     if (!e.isBoss && e.hp < e.max) bar(p.x - 16 * k, p.y, 32 * k, 5 * k, e.hp / e.max, '#ff4f5e');
     if (!e.isBoss && e.armor > 0) bar(p.x - 16 * k, p.y + 5 * k, 32 * k, 4 * k, e.armor / e.maxArmor, '#c0c7d1');
     if (e.state === 'wind' && !e.isBoss) txt('!', p.x, p.y - (e.carry ? 34 : 14) * k, 18 * k, '#ff4f5e');
+    if (e.elite && e.label) txt('💢 ' + VP.mname({ name: e.label }), p.x, p.y - 16 * k, 12 * k, '#ffd23f');
   }
   for (const cat of G.cats) if (cat.down && !G.car) { const p = R3.project(cat.x, cat.y, 1.5); if (p.on) { txt('💫 ' + VP.t(cat.name), p.x, p.y - 8 * k, 13 * k, '#ff7ac0'); const near = U.d2(a.x, a.y, cat.x, cat.y) < 62 * 62; txt(near ? VP.t('hold') + (I.touch ? '' : ' [E]') : VP.t('revive') + '!', p.x, p.y + 10 * k, 11 * k, '#fff'); } }
   for (const pr of G.props) {
     if (pr.k === 'house' && !pr.done) { const p = R3.project(pr.x, pr.y, pr.tree ? 7 : 5.6); if (p.on) { bar(p.x - 40 * k, p.y, 80 * k, 9 * k, pr.hp / pr.max, pr.hp / pr.max < 0.35 ? '#ff4f5e' : TEAL); Art.icon(c, 'heart', p.x - 50 * k, p.y + 4 * k, 8 * k); } }
     else if ((pr.k === 'fgate' || pr.k === 'crate' || pr.k === 'cage') && !pr.done && pr.hp < pr.max) { const p = R3.project(pr.x, pr.y, 2.4); if (p.on) bar(p.x - 16 * k, p.y, 32 * k, 5 * k, pr.hp / pr.max, '#ffb347'); }
   }
+  if (G.house && G.house.friend && !G.house.done) { const pr = G.house, p = R3.project(pr.x, pr.y, 2.3); if (p.on) { bar(p.x - 30 * k, p.y, 60 * k, 8 * k, pr.hp / pr.max, pr.hp / pr.max < 0.35 ? '#ff4f5e' : TEAL); Art.icon(c, 'heart', p.x - 40 * k, p.y + 4 * k, 7 * k); } }
   for (const car of G.cars) if (car.ai === 'target' && !car.dead) { const p = R3.project(car.x, car.y, 2.6); if (p.on) bar(p.x - 26 * k, p.y, 52 * k, 7 * k, car.hp / car.max, GOLD); }
   if (G.car && G.car.hp < G.car.max) { const p = R3.project(G.car.x, G.car.y, 2.2); if (p.on) bar(p.x - 24 * k, p.y, 48 * k, 6 * k, G.car.hp / G.car.max, G.car.hp / G.car.max < 0.35 ? '#ff4f5e' : '#7CFF6B'); }
   if (G.ctx && G.ctx.k === 'car' && !I.touch) { const p = R3.project(G.ctx.car.x, G.ctx.car.y, 2.2); if (p.on) txt('[E] ' + VP.t('enter'), p.x, p.y, 13 * k, TEAL); }

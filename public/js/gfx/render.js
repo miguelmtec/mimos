@@ -1,7 +1,8 @@
 // VICE PAWS — Three.js renderer: syncs the simulation (VP.Game.G) to a 3D scene. No game logic here.
-import { THREE, GB, MAT, buildCat, animCat, CAT_SPECS, buildDog, animDog, buildCar, itemGeo, buildProp } from './models.js';
+import { THREE, GB, MAT, buildCat, animCat, CAT_SPECS, buildDog, animDog, buildCar, itemGeo, buildProp, setDetail } from './models.js';
 import { buildCity, MOODS, LAND_H, glowMaterial } from './city.js';
 import { buildRealCity } from './realcity.js';
+import { updateChunks } from './lod.js';
 
 const VP = window.VP, U = VP.U, I = VP.I, S = 1 / 24;
 const R = VP.R3 = { ok: false, lost: false, quality: 2, fps: 60, mode: 'game', draws: 0 };
@@ -33,6 +34,7 @@ R.init = function (cv) {
   if (!renderer.getContext()) return false;
   R.quality = mobile ? 1 : 2;
   try { const q = VP.ls.get('vp_quality'); if (q !== null && q !== '') R.quality = U.clamp(+q, 0, 2); } catch (e) { /* ignore */ }
+  setDetail(R.quality === 0);
   cv.addEventListener('webglcontextlost', e => { e.preventDefault(); R.lost = true; if (VP.UI && VP.UI.toast) VP.UI.toast(VP.t('ctxLost')); });
   cv.addEventListener('webglcontextrestored', () => { R.lost = false; R.resize(); });
   scene = new THREE.Scene(); scene.fog = new THREE.Fog(0xf08a78, 60, 300);
@@ -56,10 +58,9 @@ R.resize = function () {
   R.w = w; R.h = h;
   const sc = h * R.pixelRatio() * 0.5 / Math.tan(camera.fov * Math.PI / 360);
   if (fx.mat) fx.mat.uniforms.scale.value = sc; if (city) city.glowMat.uniforms.scale.value = sc; if (fx.glowMat) fx.glowMat.uniforms.scale.value = sc;
-  if (city) { city.palms.count = R.quality === 0 ? Math.floor(city.palmCount * 0.5) : city.palmCount; }
   if (stageCam) { stageCam.aspect = w / h; stageCam.updateProjectionMatrix(); }
 };
-R.setQuality = function (q, auto) { q = U.clamp(q, 0, 2); if (q === R.quality) return; R.quality = q; if (!auto) VP.ls.set('vp_quality', '' + q); R.resize(); };
+R.setQuality = function (q, auto) { q = U.clamp(q, 0, 2); if (q === R.quality) return; const lowChanged = (q === 0) !== (R.quality === 0); R.quality = q; if (!auto) VP.ls.set('vp_quality', '' + q); setDetail(q === 0); if (lowChanged && dyn) { for (const [, o] of ents) dyn.remove(o); ents.clear(); } R.resize(); };
 // auto quality: measured FPS, only steps down (or back up once things are clearly fine)
 let fpsAcc = 0, fpsN = 0, lowT = 0, highT = 0;
 function autoQuality(dt) {
@@ -90,7 +91,7 @@ function initFx() {
   fx.glowMat = glowMaterial(); fx.glow = new THREE.Points(gg, fx.glowMat); fx.glow.frustumCulled = false; scene.add(fx.glow); fx.GN = G2;
   // shockwave rings
   fx.rings = []; const rg = new THREE.RingGeometry(0.82, 1, 28); rg.rotateX(-Math.PI / 2);
-  for (let i = 0; i < 10; i++) { const m = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide })); m.visible = false; scene.add(m); fx.rings.push(m); }
+  for (let i = 0; i < 18; i++) { const m = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide })); m.visible = false; scene.add(m); fx.rings.push(m); }
   // blob shadows
   const sg = new THREE.CircleGeometry(1, 14); sg.rotateX(-Math.PI / 2);
   fx.shadows = new THREE.InstancedMesh(sg, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }), 48); fx.shadows.frustumCulled = false; scene.add(fx.shadows);
@@ -123,8 +124,9 @@ function pt(x, y, z, col, alpha, size, shape) {
 }
 function glow(x, y, z, col, size) { if (gn >= fx.GN) return; const i = gn++; fx.gpos[i * 3] = x; fx.gpos[i * 3 + 1] = y; fx.gpos[i * 3 + 2] = z; _c.set(col); fx.gcol[i * 3] = _c.r; fx.gcol[i * 3 + 1] = _c.g; fx.gcol[i * 3 + 2] = _c.b; fx.gsize[i] = size; }
 function shadow(x, z, y, rx, rz, rot) { if (sn >= 48) return; _e.set(0, rot || 0, 0); _q.setFromEuler(_e); _m4.compose(_p.set(x, y + 0.03, z), _q, _s.set(rx, 1, rz)); fx.shadows.setMatrixAt(sn++, _m4); }
-const hAt = (px, py) => W.real ? W.hpx(px, py) : (W.gnd[Math.floor(py / 48) * W.W + Math.floor(px / 48)] === 1 ? 0 : LAND_H);
-const H0 = (px, py) => W.real ? W.hpx(px, py) : 0;
+const onPitch = (px, py) => W.pitch && W.pitch.h !== undefined && Math.abs(px - W.pitch.x) < 88 && Math.abs(py - W.pitch.y) < 60;
+const hAt = (px, py) => W.real ? (onPitch(px, py) ? Math.max(W.pitch.h, W.hpx(px, py)) : W.hpx(px, py)) : (W.gnd[Math.floor(py / 48) * W.W + Math.floor(px / 48)] === 1 ? 0 : LAND_H);
+const H0 = (px, py) => W.real ? hAt(px, py) : 0;
 R.hAt = hAt;
 
 // ---------- entity meshes ----------
@@ -147,7 +149,7 @@ function syncCat(c, G, dt, near) {
   let h = ud.h === undefined ? c.aim : ud.h;
   if (c.atk > 0.05 || c.recoil > 0.05 || (c.idx === G.active && I.attack) || c.dashT > 0) h = c.aim; else if (moving) h = Math.atan2(mvy, mvx);
   turn(o, h, dt * 14);
-  o.position.set(c.x * S, hAt(c.x, c.y), c.y * S);
+  o.position.set(c.x * S, hAt(c.x, c.y) + (c.hopT > 0 ? Math.sin((1 - c.hopT / 0.5) * Math.PI) * 0.9 : 0), c.y * S);
   const dance = G.over && G.won ? G.real : 0;
   const st = ud.st || (ud.st = {});
   st.t = c.t; st.walk = c.walk && !c.down; st.atk = c.atk; st.down = c.down; st.sleepy = c.exhausted || (c.name === 'mimo' && G.nap > 0); st.recoil = c.recoil; st.mouth = c.mouth; st.hop = 0; st.spin = 0;
@@ -162,7 +164,7 @@ function syncCat(c, G, dt, near) {
 }
 function syncDog(e, G, dt) {
   const D = VP.Art.DOGS[e.type];
-  const o = obj(e, () => { const g = buildDog(e.type, D); g.userData.px = e.x; g.userData.py = e.y; return g; });
+  const o = obj(e, () => { const g = buildDog(e.type, D); g.userData.px = e.x; g.userData.py = e.y; if (e.big) g.scale.multiplyScalar(e.big); return g; });
   const ud = o.userData, mvx = e.x - ud.px, mvy = e.y - ud.py; ud.px = e.x; ud.py = e.y;
   let h = ud.h === undefined ? (e.face > 0 ? 0 : Math.PI) : ud.h;
   if (e.state === 'wind' || e.wind > 0 || (e.isBoss && e.boss.move)) h = e.isBoss && e.boss.move === 'charge' ? e.boss.a : e.aim; else if (mvx * mvx + mvy * mvy > 0.04) h = Math.atan2(mvy, mvx); else if (e.target) h = Math.atan2(e.target.y - e.y, e.target.x - e.x);
@@ -170,6 +172,8 @@ function syncDog(e, G, dt) {
   o.position.set(e.x * S, hAt(e.x, e.y), e.y * S);
   const st = ud.st || (ud.st = {}); st.t = e.t; st.walk = e.walk; st.wind = e.wind; st.stun = e.stun > 0;
   animDog(o, st);
+  o.rotation.z = e.sleep ? 1.35 : 0; if (e.sleep) o.position.y += 0.32 * D.s; // asleep: lying on its side
+  if (e.elite) glow(o.position.x, o.position.y + 2.6 * D.s, o.position.z, '#ff4f5e', 5);
   setMat(o, e.flash > 0 ? MAT.white : null);
   shadow(o.position.x, o.position.z, o.position.y, 0.6 * D.s, 0.6 * D.s);
   if (e.isBoss && e.exposed) glow(o.position.x, 2.4, o.position.z, '#ffd23f', 7);
@@ -188,8 +192,10 @@ function syncCar(c, G) {
   if (driven) { const fxp = Math.cos(c.a), fyp = Math.sin(c.a); glow(o.position.x + fxp * 3.2, o.position.y + 0.5, o.position.z + fyp * 3.2, '#fff6b0', 5); }
 }
 function syncItem(it) {
-  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : 1.35); return m; });
-  o.position.set(it.x * S, hAt(it.x, it.y) + 0.65 + Math.sin(it.t * 3) * 0.12 + (it.z || 0) * S, it.y * S); o.rotation.y = it.t * 2.2;
+  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k === 'kite' && it.col ? 'kite' + it.col : it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : it.k === 'kite' ? 1.5 : it.k === 'ball' ? 1.6 : it.k === 'bag' ? 1.8 : 1.35); return m; });
+  o.position.set(it.x * S, hAt(it.x, it.y) + 0.65 + Math.sin(it.t * 3) * 0.12 + (it.z || 0) * S, it.y * S); o.rotation.y = it.k === 'kite' ? Math.sin(it.t * 1.3) * 0.6 : it.t * 2.2;
+  if (it.k === 'kite') { o.rotation.x = -0.5 + Math.sin(it.t * 2) * 0.12; shadow(o.position.x, o.position.z, hAt(it.x, it.y), 0.5, 0.5); } else if (it.k === 'ball') { o.rotation.x = it.t * 3; shadow(o.position.x, o.position.z, hAt(it.x, it.y), 0.34, 0.34); }
+  if (it.k === 'bag' || it.k === 'gcoin') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', it.k === 'bag' ? 6 : 3);
   if (it.k === 'paw' || it.k === 'gpaw') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', 5); else if (it.k === 'coffee' || it.k === 'catnip' || it.k === 'key' || it.k === 'milk') glow(o.position.x, o.position.y, o.position.z, it.k === 'key' ? '#ffd23f' : '#ffffff', 2.4);
 }
 const HIDE_DONE = { fgate: 1, crate: 1, laser: 1, vlaser: 1, sdoor: 1 };
@@ -234,6 +240,7 @@ function syncTele(t) {
   });
   const f = Math.min(1, t.t / t.dur);
   o.position.set(t.x * S, hAt(t.x, t.y) + 0.06, t.y * S);
+  if (t.safe && !o.userData.safe) { o.userData.safe = 1; o.userData.d.material.color.set(0x2de2e6); o.userData.r.material.color.set(0xffffff); }
   if (t.k === 'circle') { const r = t.r * S; o.userData.r.scale.setScalar(r); o.userData.d.scale.setScalar(Math.max(0.01, r * f)); }
   else { o.rotation.y = -t.a; o.userData.d.scale.set(t.len * S, 1, t.w * S); o.userData.d.material.opacity = 0.15 + f * 0.4; }
 }
@@ -285,7 +292,7 @@ function applyMood(idx, dt) {
   city.waterMat.color.copy(c.water).multiplyScalar(0.9);
   mood.i = idx;
 }
-R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && G.m.d > 4 && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active]; return VP.World.distAt(W, a.x, a.y); };
+R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && (G.m.d === 5 || G.m.d === 6) && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active]; return VP.World.distAt(W, a.x, a.y); };
 
 // ---------- Natal Neon: seasonal decorations for the home city (trees, light strings); snow comes from the mood ----------
 let xmas = null;
@@ -316,7 +323,8 @@ function updateCamera(G, dt) {
   if (G.car) { const d = U.angDiff(cam.yaw, G.car.a + (G.car.spd < -20 ? Math.PI : 0)); cam.yaw += d * Math.min(1, dt * (0.8 + Math.min(2.2, Math.abs(G.car.spd) / 120))); }
   else if (!I.rmb) { const m = Math.hypot(I.rawx || 0, I.rawy || 0); if (m > 0.3 && !I.attack) { cam.yaw += (I.rawx || 0) * dt * 1.15 * (I.rawy > 0.5 ? 0.4 : 1); } }
   if (G.over && G.won) cam.yaw += dt * 0.5;
-  const wantDist = G.over && G.won ? 6 : G.car ? 12.5 + Math.abs(G.car.spd) * 0.008 : (G.boss && !G.boss.dead ? 12 : 8.6) * (R.w < R.h ? 1.06 : 1), pitch = G.car ? 0.36 : 0.44;
+  const hilly = W.real && (W.real.tags || []).includes('morro'); // steep, dense maps: look from higher up so the alleys stay readable
+  const wantDist = G.over && G.won ? 6 : G.car ? 12.5 + Math.abs(G.car.spd) * 0.008 : (G.boss && !G.boss.dead ? 12 : hilly ? 10.5 : 8.6) * (R.w < R.h ? 1.06 : 1), pitch = G.car ? (hilly ? 0.5 : 0.36) : hilly ? 0.78 : 0.44;
   // collision-lite: pull the camera in if a building is in the way
   const fx0 = Math.cos(cam.yaw), fz0 = Math.sin(cam.yaw);
   let maxD = wantDist;
@@ -348,7 +356,7 @@ R.render = function (G, dt) {
   if (R.mode === 'stage') return renderStage(dt);
   if (!G) return;
   updateCamera(G, dt);
-  const a = G.car || G.cats[G.active], near = 1900 * 1900, nearItem = 1300 * 1300;
+  const a = G.car || G.cats[G.active], near = R.quality === 0 ? 1250 * 1250 : 1900 * 1900, nearItem = R.quality === 0 ? 900 * 900 : 1300 * 1300;
   for (const c of G.cats) syncCat(c, G, dt);
   for (const f of G.friends) { const o = obj(f, () => { const g = buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
   for (const e of G.dogs) if (U.d2(e.x, e.y, a.x, a.y) < near) syncDog(e, G, dt);
@@ -364,13 +372,15 @@ R.render = function (G, dt) {
   fx.activeRing.visible = !G.car && !ac.down; fx.activeRing.position.set(ac.x * S, hAt(ac.x, ac.y) + 0.05, ac.y * S); fx.activeRing.scale.setScalar(1 + Math.sin(G.real * 5) * 0.06);
   for (const c of G.cats) if (c.down && !G.car) glow(c.x * S, 0.8, c.y * S, '#ff4f7a', 5 + Math.sin(G.real * 6));
   const ob = G.free ? null : VP.Missions.objective(G), at = ob && ob.at;
-  if (at && !at.kind && at.x !== undefined || at && (at.kind === 'car' || at.kind === 'prop')) { fx.target.visible = true; fx.target.position.set(at.x * S, hAt(at.x, at.y), at.y * S); fx.target.userData.ring.rotation.y = G.real; fx.target.userData.beam.scale.set(1.1, 16, 1.1); } else fx.target.visible = false;
+  const farAt = at && at.x !== undefined && U.d2(at.x, at.y, ac.x, ac.y) > 70 * 70 && !(ob.step && ob.step.mini);
+  if (farAt && (!at.kind || at.kind === 'car' || at.kind === 'prop')) { fx.target.visible = true; fx.target.position.set(at.x * S, hAt(at.x, at.y), at.y * S); fx.target.userData.ring.rotation.y = G.real; fx.target.userData.beam.scale.set(1.1, 16, 1.1); } else fx.target.visible = false;
   syncParts(G);
   const m = R.moodOf(G);
   weather(G, G.real, m);
   if (m === 3) { R.flash = Math.max(0, (R.flash || 0) - dt * 3); if (Math.random() < dt * 0.09) { R.flash = 1; VP.Audio.sfx('thunder', 3); } } else R.flash = 0;
   applyMood(m, dt); setXmas(m === 6 && !W.real);
   for (; rn < fx.rings.length; rn++) fx.rings[rn].visible = false;
+  if (city.chunks && (frame & 3) === 0) updateChunks(city, camera.position, R.quality, scene.fog.far);
   flush();
   city.waterTex.offset.x = G.real * 0.004; city.waterTex.offset.y = G.real * 0.006;
   city.sky.position.copy(camera.position);
@@ -411,6 +421,22 @@ R.showcase = function (items, opts) {
   R.stageOpts = opts; R.mode = 'stage'; R.stageT = 0;
 };
 R.endShowcase = function () { R.mode = 'game'; };
+// one-off render of cats on the stage at w x h, copied to a 2D canvas (share card). Leaves the current mode untouched.
+R.snapshot = function (items, w, h) {
+  if (!R.ok || R.lost) return null;
+  const keep = stageGroup.children.slice(), rotY = stageGroup.rotation.y, out = document.createElement('canvas'); out.width = w; out.height = h;
+  while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
+  for (const it of items) { const g = buildCat(it.spec); g.position.set(it.x || 0, 0.1, it.z || 0); if (it.s) g.scale.multiplyScalar(it.s); animCat(g, { t: 1.3 + (it.x || 0), walk: 0 }); stageGroup.add(g); }
+  stageGroup.rotation.y = 0;
+  renderer.setPixelRatio(1); renderer.setSize(w, h, false);
+  stageCam.aspect = w / h; stageCam.fov = 34; stageCam.updateProjectionMatrix(); stageCam.position.set(0, 2.0, 7.6); stageCam.lookAt(0, 0.95, 0);
+  renderer.render(stage, stageCam);
+  out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
+  while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
+  for (const k of keep) stageGroup.add(k); stageGroup.rotation.y = rotY;
+  R.resize();
+  return out;
+};
 function renderStage(dt) {
   R.stageT += dt; const t = R.stageT, o = R.stageOpts || {};
   if (o.spin !== false) stageGroup.rotation.y = t * 0.8;

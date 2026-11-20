@@ -346,7 +346,14 @@ World.fromCity = function (C, meta) {
     const seen = new Uint8Array(W * H);
     while (st.length) { const i = st.pop(); if (seen[i] || bar[i]) continue; seen[i] = 1; grid[i] = WATER; gnd[i] = G_WATER; const x = i % W; if (x > 0) st.push(i - 1); if (x < W - 1) st.push(i + 1); if (i >= W) st.push(i - W); if (i < W * (H - 1)) st.push(i + W); }
     let sea = 0; for (let i = 0; i < W * H; i++) sea += seen[i];
-    if (sea > W * H * 0.8) for (let i = 0; i < W * H; i++) if (seen[i]) { grid[i] = FLOOR; gnd[i] = G_LOT; } // orientation looked wrong: keep it dry rather than flood the city
+    if (sea > W * H * 0.8) { for (let i = 0; i < W * H; i++) if (seen[i]) { grid[i] = FLOOR; gnd[i] = G_LOT; } } // orientation looked wrong: keep it dry rather than flood the city
+    else if ((C.tags || []).includes('beach') && !(C.beach || []).length && sea > 0) {
+      // beach map without a beach polygon in OSM: lay a ~60 m strip of sand along the land side of the coastline
+      const dist = new Int16Array(W * H).fill(-1), q = []; const lim = Math.round(60 / MPT);
+      for (let i = 0; i < W * H; i++) if (seen[i]) { dist[i] = 0; q.push(i); }
+      for (let h = 0; h < q.length; h++) { const i = q[h], d = dist[i] + 1, x = i % W; if (d > lim) continue; for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) if (j >= 0 && j < W * H && dist[j] < 0 && grid[j] !== WATER) { dist[j] = d; gnd[j] = G_SAND; q.push(j); } }
+      w.sandStrip = true;
+    }
   }
   w.roads = [];
   for (const R of C.roads) {
@@ -355,7 +362,18 @@ World.fromCity = function (C, meta) {
     if (!foot) { const pts = []; for (let i = 2; i + 1 < R.length; i += 2) if (Math.abs(R[i]) < half - 6 && Math.abs(R[i + 1]) < half - 6) pts.push({ x: px(R[i]), y: px(R[i + 1]) }); let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); if (pts.length >= 2 && len > 500) w.roads.push({ pts, len, w: R[0] }); }
   }
   for (const B of C.buildings) fillPoly(B, 1, i => { if (gnd[i] !== G_ROAD && gnd[i] !== G_WALK) { grid[i] = WALL; gnd[i] = G_ROOF; } });
-  w.landmarks = (C.landmarks || []).filter(l => Math.abs(l[1]) < half - 20 && Math.abs(l[2]) < half - 20).map(l => ({ name: l[0], x: px(l[1]), y: px(l[2]), h: l[3] || 10 }));
+  // terrain height from the elevation grid (n x n, row-major, j south / i east, metres above elev.min): bilinear, in 3D units
+  const E = C.elev && C.elev.data && C.elev.n > 1 ? C.elev : null, KU = 2 / MPT, ES = E ? (E.size || half * 2) : 1;
+  w.hM = (x, z) => {
+    if (!E) return 0;
+    const n = E.n, fx = U.clamp((x + ES / 2) / ES * (n - 1), 0, n - 1.001), fz = U.clamp((z + ES / 2) / ES * (n - 1), 0, n - 1.001), i = Math.floor(fx), j = Math.floor(fz), a = fx - i, b = fz - j, d = E.data;
+    return ((d[j * n + i] * (1 - a) + d[j * n + i + 1] * a) * (1 - b) + (d[(j + 1) * n + i] * (1 - a) + d[(j + 1) * n + i + 1] * a) * b) * KU;
+  };
+  w.hpx = (x, y) => w.hM(x / T * MPT - half, y / T * MPT - half);
+  w.hasElev = !!E;
+  // family filter for place names shown on screen
+  const NOPE = /erotic|adult|sex|strip ?club|casino|cassino|liquor|vape|hookah|cannabis|tabac|gun\b/i;
+  w.landmarks = (C.landmarks || []).filter(l => !NOPE.test(l[0]) && Math.abs(l[1]) < half - 20 && Math.abs(l[2]) < half - 20).map(l => ({ name: l[0], x: px(l[1]), y: px(l[2]), h: l[3] || 10 }));
   finalize(w);
   // snap landmarks to the nearest walkable tile (they usually sit inside their building)
   const near = (x, y) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < 14; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W - 2 && Y < H - 2 && grid[Y * W + X] === FLOOR && (gnd[Y * W + X] === G_ROAD || gnd[Y * W + X] === G_WALK)) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };

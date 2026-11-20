@@ -7,9 +7,12 @@
    "name": "Miami Beach",
    "country": "EUA",
    "file": "miami.json",
-   "kb": 127,
-   "landmarks": 73,
-   "tags": [],
+   "kb": 132,
+   "landmarks": 72,
+   "tags": [
+    "beach"
+   ],
+   "elev": 1,
    "order": 0,
    "flag": "🇺🇸",
    "mood": 0,
@@ -22,15 +25,57 @@
    "name": "Rio de Janeiro — Copacabana",
    "country": "Brasil",
    "file": "rio.json",
-   "kb": 109,
-   "landmarks": 3,
-   "tags": [],
+   "kb": 116,
+   "landmarks": 8,
+   "tags": [
+    "beach"
+   ],
+   "elev": 1,
    "order": 1,
    "flag": "🇧🇷",
    "mood": 2,
    "pal": 2,
    "palms": 1,
    "stars": 0
+  },
+  {
+   "id": "rio_vidigal",
+   "name": "Rio — Vidigal e Leblon",
+   "country": "Brasil",
+   "file": "rio_vidigal.json",
+   "kb": 211,
+   "landmarks": 1,
+   "tags": [
+    "beach",
+    "comunidade",
+    "morro"
+   ],
+   "elev": 1,
+   "order": 2,
+   "flag": "🇧🇷",
+   "mood": 0,
+   "pal": 0,
+   "palms": 1,
+   "stars": 6
+  },
+  {
+   "id": "rio_santamarta",
+   "name": "Rio — Morro Santa Marta (Botafogo)",
+   "country": "Brasil",
+   "file": "rio_santamarta.json",
+   "kb": 185,
+   "landmarks": 3,
+   "tags": [
+    "comunidade",
+    "morro"
+   ],
+   "elev": 1,
+   "order": 3,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 6
   }
  ]
 }

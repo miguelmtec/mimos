@@ -11,7 +11,10 @@
   const tmp = { x: 0, y: 0 };
   function go(G, e, tx, ty, mode) {
     const W = G.W;
-    if (W.los(e.x, e.y, tx, ty, mode) && Math.hypot(tx - e.x, ty - e.y) < 400) { const d = Math.hypot(tx - e.x, ty - e.y) || 1; I.mx = (tx - e.x) / d; I.my = (ty - e.y) / d; return d; }
+    if (B.nudge > 0) { I.mx = Math.cos(B.nudgeA); I.my = Math.sin(B.nudgeA); return Math.hypot(tx - e.x, ty - e.y); } // unstick: slide sideways for a moment
+    { const dd = Math.hypot(tx - e.x, ty - e.y); if (!B.pg || B.pg.e !== e || Math.abs(B.pg.tx - tx) + Math.abs(B.pg.ty - ty) > 60 || dd < B.pg.d - 6) B.pg = { e, tx, ty, d: dd, t: B.tick }; else if (B.tick - B.pg.t > 40 && dd > 60) { B.force = 50; B.pg.t = B.tick; } }
+    if (B.force > 0) B.force--;
+    if (!(B.force > 0) && W.los(e.x, e.y, tx, ty, mode) && Math.hypot(tx - e.x, ty - e.y) < 400) { const d = Math.hypot(tx - e.x, ty - e.y) || 1; I.mx = (tx - e.x) / d; I.my = (ty - e.y) / d; return d; }
     const f = field(G, tx, ty, mode);
     const r = W.fieldDir(f, e.x, e.y, tmp);
     if (r > 0) { I.mx = tmp.x; I.my = tmp.y; } else if (r === 0) { const d = Math.hypot(tx - e.x, ty - e.y) || 1; I.mx = (tx - e.x) / d; I.my = (ty - e.y) / d; } else { I.mx = I.my = 0; return -1; }
@@ -22,6 +25,7 @@
   B.poll = function () {
     const G = VP.Game.G; if (!G || G.over) return;
     B.tick++;
+    { const k = G.cats[G.active]; if (B.nudge > 0) B.nudge--; if (!G.car && B.lastP && Math.hypot(k.x - B.lastP.x, k.y - B.lastP.y) < 0.4 && Math.hypot(I.mx, I.my) > 0.5 && !I.ctxHeld) { B.still = (B.still || 0) + 1; if (B.still > 12) { B.still = 0; B.nudge = 14; B.nudgeA = Math.atan2(I.my, I.mx) + (B.tick % 2 ? 1.57 : -1.57); } } else B.still = 0; B.lastP = { x: k.x, y: k.y }; }
     I.mx = I.my = 0; I.attack = false; I.aim = null; I.ctxHeld = false; I.useMouse = false;
     const c = G.cats[G.active], ob = VP.Missions.objective(G), st = ob.step || {}, at = ob.at;
     // --- driving ---
@@ -48,15 +52,27 @@
       return;
     }
     if (down && VP.S.lives <= 0) { const paw = G.items.find(i => i.k === 'paw'); if (paw) { go(G, c, paw.x, paw.y, mode); return; } }
-    if (st.txt === 'o_tutSwitch') { if (B.tick % 20 === 0) I.pressed.cycle = true; return; }
+    if (st.txt === 'o_tutSwitch' || st.hint === 'switch') { if (B.tick % 20 === 0) I.pressed.cycle = true; return; }
+    // --- stealth: walk around the snore rings, vanish when someone wakes up ---
+    if (st.sneak && at) {
+      const d0 = go(G, c, at.x, at.y, 1); void d0; let danger = false, inside = false, chased = false;
+      const nx = c.x + I.mx * 46, ny = c.y + I.my * 46;
+      for (const e of G.dogs) { if (e.dead) continue; if (e.sleep) { if (Math.hypot(nx - e.x, ny - e.y) < e.wake + 10) danger = true; if (Math.hypot(c.x - e.x, c.y - e.y) < e.wake + 12) inside = true; } else if (Math.hypot(c.x - e.x, c.y - e.y) < 170) chased = true; }
+      if ((danger || chased) && c.invis < 0.5) { if (c.cd2 <= 0) I.pressed.dash = true; else if (!inside && !chased) { I.mx = I.my = 0; B.still = 0; } }
+      return;
+    }
+    // --- tap mini-games (fishing): stand on the spot, press only when the bite is on ---
+    if (st.tap && at) { const d = go(G, c, at.x, at.y, mode); if (d >= 0 && d < 36) { I.mx = I.my = 0; I.attack = !!st.ready() && B.tick % 4 < 2; } return; }
+    if (st.mini && at) { const d = Math.hypot(at.x - c.x, at.y - c.y); if (d > 14) go(G, c, at.x, at.y, mode); return; }
     // --- dodge telegraphed attacks ---
     for (const tl of G.teles) {
+      if (tl.safe) continue;
       if (tl.k === 'circle') { const d = Math.hypot(c.x - tl.x, c.y - tl.y); if (d < tl.r + 40) { const an = d > 1 ? Math.atan2(c.y - tl.y, c.x - tl.x) : 0; I.mx = Math.cos(an); I.my = Math.sin(an); I.attack = true; if (c.cd2 <= 0 && c.name !== 'mimo') I.pressed.dash = true; return; } }
       else { const dx = c.x - tl.x, dy = c.y - tl.y, along = dx * Math.cos(tl.a) + dy * Math.sin(tl.a), perp = -dx * Math.sin(tl.a) + dy * Math.cos(tl.a); if (along > -40 && along < tl.len + 40 && Math.abs(perp) < tl.w / 2 + 50) { const sg = perp >= 0 ? 1 : -1; I.mx = -Math.sin(tl.a) * sg; I.my = Math.cos(tl.a) * sg; I.attack = true; return; } }
     }
     // --- pick the right cat ---
     let want = st.cat || null;
-    if (!want && at && at.k === 'crate') want = 'mimosa';
+    if (!want && (st.smash || (at && at.k === 'crate'))) want = 'mimosa';
     if (!want && st.fight) { const m = G.cats[0]; want = st.boss ? (G.boss && G.boss.exposed && G.boss.carry ? 'morticia' : 'mimosa') : (m.down || m.exhausted ? 'mimosa' : 'mimo'); }
     if (want && c.name !== want && !G.cats.find(k => k.name === want).down) { if (sw(G, want)) return; }
     // --- specials ---
@@ -73,7 +89,10 @@
       if (dS < 430 && G.W.los(c.x, c.y - 4, at.x, at.y - 8, 2)) { I.attack = true; I.aim = Math.atan2(at.y - 8 - (c.y - 12), at.x - c.x); if (dS > 330) go(G, c, from.x, from.y, mode); return; }
       go(G, c, from.x, from.y, mode); if (dog && U.d2(dog.x, dog.y, c.x, c.y) < 150 * 150) I.attack = true; return;
     }
-    const threat = dog && U.d2(dog.x, dog.y, c.x, c.y) < 210 * 210 && dog.state !== 'guard' && (G.W.los(c.x, c.y, dog.x, dog.y, 0) || G.W.distAt(G.field, dog.x, dog.y) >= 0);
+    // patience: after 45 s on a non-combat step, stop picking fights and just walk to the objective
+    if (B.stepIdx !== G.step) { B.stepIdx = G.step; B.stepTick = B.tick; }
+    const impatient = !st.fight && B.tick - B.stepTick > 30 * 45;
+    const threat = !impatient && dog && U.d2(dog.x, dog.y, c.x, c.y) < 210 * 210 && dog.state !== 'guard' && (G.W.los(c.x, c.y, dog.x, dog.y, 0) || G.W.distAt(G.field, dog.x, dog.y) >= 0);
     if ((st.fight || threat) && dog && !(st.act === 'ctx' && at && U.d2(at.x, at.y, c.x, c.y) < 90 * 90)) {
       // fight: mimo kites, others close in
       const d = Math.hypot(dog.x - c.x, dog.y - c.y);
@@ -85,7 +104,7 @@
     if (!at) { if (st.roam && dog) { I.attack = true; } return; }
     const d = go(G, c, at.x, at.y, st.mode !== undefined ? Math.min(st.mode, mode) : mode);
     if (st.act === 'attack' || at.k === 'crate' || at.stand || at.kind === 'dog') { if (d >= 0 && d < (at.stand ? 64 : at.kind === 'dog' ? 52 : 70)) { I.attack = true; I.aim = Math.atan2(at.y - c.y, at.x - c.x); if (d < 30) I.mx = I.my = 0; } }
-    if (st.act === 'ctx' && G.ctx && G.ctx.k === 'car') I.pressed.ctx = true;
+    if (st.act === 'ctx' && G.ctx && G.ctx.k === 'car' && (at.kind !== 'car' || G.ctx.car === at)) I.pressed.ctx = true;
     if (d < 0) { B.noPath = (B.noPath || 0) + 1; } else B.noPath = 0;
   };
   // run one mission headless; returns result
@@ -96,7 +115,7 @@
     VP.S.lives = 5;
     try {
       UI.startMission(n);
-      const G = VP.Game.G; I.bot = B.poll; B.fields = {}; B.tick = 0; B.stuck = 0; B.rev = 0;
+      const G = VP.Game.G; I.bot = B.poll; B.fields = {}; B.tick = 0; B.stuck = 0; B.rev = 0; B.nudge = 0; B.still = 0; B.lastP = null; B.force = 0; B.pg = null; B.stepIdx = -1; B.stepTick = 0;
       const dt = 1 / 30; let t = 0, lastStep = -1, stepT = 0; const steps = [];
       while (!res && t < maxSec) {
         I.poll(); VP.Game.update(dt); t += dt;

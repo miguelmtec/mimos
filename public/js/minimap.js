@@ -19,7 +19,10 @@ function snap(W, x, y) {
 }
 Mm.setWaypoint = function (x, y) {
   const G = Game.G, L = G && G.life; if (!L) return false; const W = G.W, p = snap(W, x, y); if (!p) return false;
-  L.wp = p; const fm = W.fieldMax; W.fieldMax = 0; L.wpField = W.field(p.x, p.y, 0, L.wpField); W.fieldMax = fm; L.route = null; L.routeT = 0;
+  const fm = W.fieldMax; W.fieldMax = 0; const fld = W.field(p.x, p.y, 0, L.wpField); W.fieldMax = fm;
+  // a neighbourhood that is still fenced off (story chapters) cannot be reached on foot: no dangling GPS line
+  if (W.distAt(fld, VP.Life.lead(G).x, VP.Life.lead(G).y) < 0) { L.wp = null; L.route = null; L.wpField = fld; Game.fx.say('🚧 ' + tr('lf_wpNoWay'), '#ffb347', 2.2); return false; }
+  L.wp = p; L.wpField = fld; L.route = null; L.routeT = 0;
   Mm.route(L); if (VP.Audio) VP.Audio.sfx('step'); Game.fx.say('📍 ' + tr('lf_wpSet'), '#ff4fb8', 1.8); return true;
 };
 Mm.clearWaypoint = function () { const L = Game.G && Game.G.life; if (L) { L.wp = null; L.route = null; } };

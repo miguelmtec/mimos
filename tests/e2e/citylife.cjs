@@ -20,7 +20,7 @@ const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.pa
     const G = __vp.G, Lf = G.life, W = G.W, T = 48; sim(40);
     const walkers = Lf.peds.filter(p => !p.fixed), c = G.cats[G.active];
     const inWall = walkers.filter(p => W.tile(p.x, p.y) !== 0).length, near = walkers.filter(p => Math.hypot(p.x - c.x, p.y - c.y) < 1000).length;
-    const onRoad = walkers.filter(p => W.gnd[Math.floor(p.y / T) * W.W + Math.floor(p.x / T)] === 1 && !p.cross && p.st === 'walk').length;
+    const onRoad = walkers.filter(p => W.gnd[Math.floor(p.y / T) * W.W + Math.floor(p.x / T)] === 1 && !p.cross && !(VP.LifeLogic.edge(Lf.net, p.from, p.to) || { axis: 0 }).axis && p.st === 'walk').length; // zebras without a light (outer districts) count as crossings too
     return { peds: walkers.length, cap: Lf.caps.peds, inWall, near, onRoad, roles: [...new Set(walkers.map(p => p.role))], cats: Lf.animals.filter(a => a.kind === 'cat').length, dogs: Lf.animals.filter(a => a.kind === 'dog').length, birds: Lf.birds.length,
       veh: Lf.vehicles.map(v => v.kind), stalls: [...new Set(Lf.stalls.map(s => s.def.id))], nStalls: Lf.stalls.length, props: [...new Set(Lf.props.map(p => p.k))], windows: Lf.windows.length, gang: Lf.animals.filter(a => a.gang).length, hp: G.cats.map(k => k.hp + '/' + k.max), pk: !!G.pk };
   });
@@ -125,7 +125,13 @@ const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.pa
   { const m = await page.evaluate(() => VP.HUD.map); await page.waitForTimeout(300); await page.touchscreen.tap(m.x, m.y); await page.waitForTimeout(700); }
   ok(await page.evaluate(() => VP.Life.panel === 'map' && !!document.getElementById('lf-map')), 'tapping the radar opens the big map');
   await L.shot(page, 'citylife-map-m');
-  { const b = await page.locator('#lf-map').boundingBox(); await page.touchscreen.tap(b.x + b.width * 0.7, b.y + b.height * 0.35); await page.waitForTimeout(800); }
+  // the start district can be fenced in (story chapters), so tap a spot that can really be walked to: ~60 tiles away on the open ground
+  { const b = await page.locator('#lf-map').boundingBox();
+    const tgt = await page.evaluate(() => { const G = __vp.G, W = G.W, l = VP.Life.lead(G), fm = W.fieldMax; W.fieldMax = 0; const f = W.field(l.x, l.y, 0); W.fieldMax = fm; let best = null;
+      for (let y = 4; y < W.H - 4; y += 3) for (let x = 4; x < W.W - 4; x += 3) { const d = f[y * W.W + x]; if (d >= 40 && d <= 90 && W.grid[y * W.W + x] === 0 && (!best || d < best.d)) best = { d, x: (x + 0.5) * 48, y: (y + 0.5) * 48 }; }
+      const m = W.mini; return best && { x: best.x, y: best.y, mw: m.width, mh: m.height }; });
+    const sc = Math.min(b.width / tgt.mw, b.height / tgt.mh);
+    await page.touchscreen.tap(b.x + b.width / 2 + (tgt.x / 24 - tgt.mw / 2) * sc, b.y + b.height / 2 + (tgt.y / 24 - tgt.mh / 2) * sc); await page.waitForTimeout(800); }
   r = await page.evaluate(() => { const Lf = __vp.G.life; sim(0.5); return { wp: !!Lf.wp, route: Lf.route ? Lf.route.length : 0, panel: VP.Life.panel, acts: VP.Life.activities(__vp.G).length, cats: [...new Set(VP.Life.activities(__vp.G).map(a => a.cat))] }; });
   ok(r.wp && r.route > 3 && !r.panel, 'a tap sets the waypoint and draws the GPS route (' + r.route + ' points)'); ok(r.acts > 30 && ['food', 'shop', 'fun', 'mission', 'friend'].every(c => r.cats.includes(c)), 'Atividades: ' + r.acts + ' entries (' + r.cats.join(', ') + ')');
   await page.waitForTimeout(500); await L.shot(page, 'citylife-waypoint-m');
@@ -151,8 +157,8 @@ const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.pa
   // ---------- 8. celebrities ----------
   console.log('celebrity Mimos');
   ({ browser, page, errors } = await boot(true, () => { window.__pre = 1; }));
-  r = await page.evaluate(() => { const none = (__vp.G.life.celebs || []).length; VP.Life.forceCelebs = true; __vp.free(); sim(1); const Lf = __vp.G.life, s = Lf.celebSpot, look = VP.Life.showcaseLook(); tp(s.x + 30, s.y + 150); sim(0.3); VP.R3.snapCamera(-Math.PI / 2); return { none, n: Lf.celebs.length, fans: Lf.peds.filter(p => p.st === 'fan').length, look, acc: Object.keys(Lf.celebs[1].spec.acc) }; });
-  ok(r.none === 0 && r.n === 3 && r.fans >= 5, 'playing as the Mimos: no celebrities; otherwise the three stars pose for ' + r.fans + ' fans'); ok(r.look.stub && r.look.mimosa.body === 'pink_leather' && r.acc.length > 0, 'showcase look falls back to the default outfit ids (stub for getMimosShowcaseLook)');
+  r = await page.evaluate(() => { const none = (__vp.G.life.celebs || []).length; VP.Life.forceCelebs = true; __vp.free(); sim(1); const Lf = __vp.G.life, s = Lf.celebSpot, look = VP.Life.showcaseLook(); tp(s.x + 30, s.y + 150); sim(0.3); VP.R3.snapCamera(-Math.PI / 2); return { none, n: Lf.celebs.length, fans: Lf.peds.filter(p => p.st === 'fan').length, look, acc: Object.keys(Lf.celebs[1].spec.acc), lookOk: ['mimo', 'mimosa', 'morticia'].every(n => look[n] && Object.keys(look[n]).length > 0), accOk: ['mimo', 'mimosa', 'morticia'].every(n => Object.values(look[n]).every(id => VP.Wardrobe.data.items.some(i => i.id === id))) }; });
+  ok(r.none === 0 && r.n === 3 && r.fans >= 5, 'playing as the Mimos: no celebrities; otherwise the three stars pose for ' + r.fans + ' fans'); ok(!r.look.stub && r.lookOk && r.acc.length > 0 && r.accOk, 'showcase look comes from the real getMimosShowcaseLook(): items for mimo, mimosa, morticia exist in the wardrobe data');
   await page.waitForTimeout(1800); await L.shot(page, 'citylife-celebs-m');
   r = await page.evaluate(() => { const G = __vp.G, Lf = G.life, c = Lf.celebs[0]; tp(c.x, c.y + 70); sim(0.3); const label = G.ctx && G.ctx.label; VP.I.pressed.ctx = true; sim(0.1); return { label, panel: VP.Life.panel }; }); ok(r.panel === 'celeb', 'walking up to a star: "' + r.label + '" → selfie / Quero esse look');
   await page.waitForTimeout(500); await page.tap('[data-life="selfie"]'); await page.waitForTimeout(900); ok(await page.evaluate(() => VP.Life.panel === 'photo' && !!__vp.G.life.selfie), 'selfie mode with the star'); await L.shot(page, 'citylife-selfie-m');

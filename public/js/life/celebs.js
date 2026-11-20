@@ -20,13 +20,16 @@ Life.celebNames = function () {
   const Pa = VP.Party; if (!Pa || typeof Pa.active !== 'function' || !Pa.active()) return [];
   return NAMES.filter(n => typeof Pa.specFor === 'function' && Pa.specFor(n));
 };
-// HOOK city-life: feat/progression exports getMimosShowcaseLook(). Until it lands on this branch, this stub answers with the
+// HOOK city-life: feat/progression exports the real getMimosShowcaseLook() ({ cats: { mimo: { items } } }); if it is missing or has no look this falls back to the
 // default outfit ids of data/outfits.json. Accepted shapes: { mimo: { slot: itemId } | [itemId...], ... } optionally wrapped as { look, name }.
 Life.showcaseLook = function () {
   const fn = VP.getMimosShowcaseLook || (VP.Prog && VP.Prog.getMimosShowcaseLook) || (VP.Wardrobe && VP.Wardrobe.getMimosShowcaseLook) || window.getMimosShowcaseLook;
   const D = (VP.Wardrobe && VP.Wardrobe.data) || { defaults: {}, items: [] }, byId = {}; for (const it of D.items) byId[it.id] = it;
   let raw = null, title = null; try { raw = typeof fn === 'function' ? fn() : null; } catch (e) { raw = null; }
   if (raw && raw.look) { title = raw.name || raw.title || null; raw = raw.look; }
+  else if (raw && raw.cats) { // progression's real shape: { id, name, week, cats: { mimo: { spec, items: [itemId...] }, ... } }
+    title = raw.name || raw.title || null; const c = {}; for (const n of NAMES) c[n] = raw.cats[n] && raw.cats[n].items; raw = c;
+  }
   const out = { title: title && typeof title === 'object' ? title[lg()] : title, stub: !raw };
   for (const n of NAMES) {
     let w = raw && raw[n]; const m = {};

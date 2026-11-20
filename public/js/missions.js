@@ -381,8 +381,8 @@ M.startFree = function (pos, opts) {
   return G;
 };
 // ---------- Volta ao Mundo (real cities) ----------
-M.cities = [];
-M.loadCities = idx => { M.cities = (idx && idx.cities) || []; M.osm = (idx && idx.attribution) || '© OpenStreetMap contributors'; };
+M.cities = []; M.soon = [];
+M.loadCities = idx => { M.cities = (idx && idx.cities) || []; M.soon = (idx && idx.soon) || []; M.osm = (idx && idx.attribution) || '© OpenStreetMap contributors'; };
 // City mission packs (data/citypacks.json): hand-written packs per city, a default template of 10 for any new city,
 // and a positive-only template for maps tagged "comunidade".
 M.packs = { templates: [], comunidade: [], packs: {} };

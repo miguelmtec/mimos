@@ -4,7 +4,7 @@
 // City files may carry `elev` {n, size, min, data} (n x n heights, row-major, j south / i east, metres above min) and `tags`
 // (comunidade, morro, beach, landmark, neon, hometown). Missions come from public/data/citypacks.json (a pack for the id, or the templates).
 import fs from 'node:fs'; import path from 'node:path';
-import { META } from './city-meta.mjs';
+import { META, PLANNED } from './city-meta.mjs';
 const src = process.argv[2] || path.resolve('..', 'vp_art', 'cities'), dst = path.resolve('public', 'data', 'cities');
 fs.mkdirSync(dst, { recursive: true });
 const cities = [];
@@ -18,5 +18,7 @@ for (const f of fs.readdirSync(src).filter(f => f.endsWith('.json') && f !== 'in
   cities.push(Object.assign({ id: c.id, name: c.name, country: c.country || '', lat: c.lat, lon: c.lon, file: c.id + '.json', kb: Math.round(fs.statSync(path.join(dst, c.id + '.json')).size / 1024), landmarks: lms, tags, elev: c.elev && c.elev.n > 1 ? 1 : 0, order: Object.keys(META).indexOf(c.id) < 0 ? 999 : Object.keys(META).indexOf(c.id) }, m, tags.includes('hometown') ? { hometown: 1, stars: 0 } : {}));
 }
 cities.sort((a, b) => (b.hometown || 0) - (a.hometown || 0) || a.order - b.order);
-fs.writeFileSync(path.join(dst, 'index.json'), JSON.stringify({ version: 1, attribution: '© OpenStreetMap contributors (ODbL)', cities }, null, 1));
-console.log(cities.length, 'cities:', cities.map(c => c.id + ' ' + c.kb + 'KB').join(', '));
+// destinations announced but not delivered yet: shown as "em breve" pins on the World Tour map
+const soon = PLANNED.filter(r => !cities.some(c => c.id === r[0])).map(r => ({ id: r[0], name: r[1], country: r[2], lat: r[3], lon: r[4], flag: (META[r[0]] || {}).flag || '🌍' }));
+fs.writeFileSync(path.join(dst, 'index.json'), JSON.stringify({ version: 2, attribution: '© OpenStreetMap contributors (ODbL)', cities, soon }, null, 1));
+console.log(cities.length, 'cities:', cities.map(c => c.id + ' ' + c.kb + 'KB').join(', '), '| soon:', soon.length);

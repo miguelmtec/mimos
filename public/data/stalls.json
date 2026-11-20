@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "currency": "moedas",
+  "note": "Barracas e lojas da cidade. Tudo se compra com Moedas ganhas no jogo; nada aqui usa dinheiro de verdade. Cada barraca tem um favor (minijogo) que rende a comida de graça.",
+  "buffs": {
+    "energy": { "icon": "⚡", "art": "coffee", "col": "#8ff3ff", "name": { "pt": "Energia", "en": "Energy" } },
+    "heal": { "icon": "💖", "art": "heart", "col": "#ff7ac0", "name": { "pt": "Corações", "en": "Hearts" } },
+    "life": { "icon": "❤️", "art": "heart", "col": "#ff4f5e", "name": { "pt": "Vida extra", "en": "Extra life" } },
+    "speed": { "icon": "💨", "art": "milk", "col": "#ffffff", "name": { "pt": "Velocidade", "en": "Speed" } },
+    "cooldown": { "icon": "❄️", "art": "milk", "col": "#9fe0ff", "name": { "pt": "Recarga zerada", "en": "Cooldowns reset" } },
+    "belly": { "icon": "🍽️", "art": "steak", "col": "#ffb347", "name": { "pt": "Barriga cheia", "en": "Full belly" } },
+    "regen": { "icon": "✨", "art": "heart", "col": "#7CFF6B", "name": { "pt": "Pelo brilhante", "en": "Shiny coat" } },
+    "catnip": { "icon": "🌿", "art": "catnip", "col": "#7CFF6B", "name": { "pt": "Catnip", "en": "Catnip" } },
+    "toy": { "icon": "🧶", "art": "ball", "col": "#ff4fb8", "name": { "pt": "Brinquedo", "en": "Toy" } }
+  },
+  "stalls": [
+    {
+      "id": "hotdog", "icon": "🌭", "model": "cart", "cols": ["#ff4f5e", "#ffffff"],
+      "name": { "pt": "Barraca de cachorro-quente", "en": "Hot-dog stand" },
+      "hello": { "pt": "Salsicha quentinha pro gatinho?", "en": "A warm sausage for the kitty?" },
+      "stand": "hotdog",
+      "items": [
+        { "id": "salsicha", "icon": "🌭", "art": "hotdog", "price": 15, "buff": { "kind": "energy", "amount": 100, "dur": 45 },
+          "name": { "pt": "Salsicha", "en": "Sausage" }, "desc": { "pt": "Energia cheia e Mimo não cansa por 45 s", "en": "Full energy and Mimo does not tire for 45 s" } },
+        { "id": "salsichao", "icon": "🥓", "art": "steak", "price": 28, "buff": { "kind": "energy", "amount": 100, "dur": 90 },
+          "name": { "pt": "Salsichão duplo", "en": "Double sausage" }, "desc": { "pt": "Energia cheia por 90 s", "en": "Full energy for 90 s" } }
+      ],
+      "favor": { "kind": "meow", "reward": "salsicha", "name": { "pt": "Chamar a freguesia", "en": "Call the customers" }, "desc": { "pt": "Mie para 3 pessoas que passam", "en": "Meow at 3 passers-by" } }
+    },
+    {
+      "id": "sushi", "icon": "🍣", "model": "cart", "cols": ["#2de2e6", "#ffffff"],
+      "name": { "pt": "Barraca de sushi", "en": "Sushi stand" },
+      "hello": { "pt": "Sushi fresquinho, sem wasabi!", "en": "Fresh sushi, no wasabi!" },
+      "stand": "sushi",
+      "items": [
+        { "id": "sushi", "icon": "🍣", "art": "sushi", "price": 16, "buff": { "kind": "heal", "amount": 30 },
+          "name": { "pt": "Sushi de salmão", "en": "Salmon sushi" }, "desc": { "pt": "Cura 30 de cada gato", "en": "Heals 30 on each cat" } },
+        { "id": "temaki", "icon": "🍙", "art": "sushi", "price": 12, "buff": { "kind": "belly", "amount": 45 },
+          "name": { "pt": "Temaki de atum", "en": "Tuna temaki" }, "desc": { "pt": "Enche a barriga da Mortícia", "en": "Fills Morticia's belly" } }
+      ],
+      "favor": { "kind": "photo", "reward": "sushi", "name": { "pt": "Foto para o turista", "en": "Photo for the tourist" }, "desc": { "pt": "Vá até o X e faça pose (sentar)", "en": "Go to the X and strike a pose (sit)" } }
+    },
+    {
+      "id": "donut", "icon": "🍩", "model": "cart", "cols": ["#ff7ac0", "#fff3a8"],
+      "name": { "pt": "Barraca de rosquinhas", "en": "Donut stand" },
+      "hello": { "pt": "Rosquinha de sachê, especial pra gato!", "en": "Sachet donuts, made for cats!" },
+      "stand": "donut",
+      "items": [
+        { "id": "rosquinha", "icon": "🍩", "art": "donut", "price": 10, "buff": { "kind": "belly", "amount": 35 },
+          "name": { "pt": "Rosquinha", "en": "Donut" }, "desc": { "pt": "Barriga +35", "en": "Belly +35" } },
+        { "id": "cafe", "icon": "☕", "art": "coffee", "price": 8, "buff": { "kind": "energy", "amount": 60 },
+          "name": { "pt": "Cafezinho descafeinado", "en": "Decaf coffee" }, "desc": { "pt": "Energia +60 para o Mimo", "en": "Energy +60 for Mimo" } }
+      ],
+      "favor": { "kind": "pigeons", "reward": "rosquinha", "name": { "pt": "Espantar os pombos", "en": "Shoo the pigeons" }, "desc": { "pt": "Corra atrás dos pombos em volta da barraca", "en": "Run at the pigeons around the stand" } }
+    },
+    {
+      "id": "peixaria", "icon": "🐟", "model": "shop", "cols": ["#27c4d6", "#ffffff"],
+      "name": { "pt": "Peixaria do Seu Zé", "en": "Mr. Zé's Fish Market" },
+      "hello": { "pt": "Olha o peixe! Fresquinho, fresquinho!", "en": "Fresh fish! Fresh, fresh!" },
+      "items": [
+        { "id": "sardinha", "icon": "🐟", "art": "sushi", "price": 8, "buff": { "kind": "heal", "amount": 15 },
+          "name": { "pt": "Sardinha", "en": "Sardine" }, "desc": { "pt": "Cura 15 de cada gato", "en": "Heals 15 on each cat" } },
+        { "id": "peixe", "icon": "🐠", "art": "sushi", "price": 20, "buff": { "kind": "heal", "amount": 45 },
+          "name": { "pt": "Peixe fresco", "en": "Fresh fish" }, "desc": { "pt": "Cura 45 de cada gato", "en": "Heals 45 on each cat" } },
+        { "id": "salmao", "icon": "🍥", "art": "heart", "price": 120, "buff": { "kind": "life", "amount": 1 },
+          "name": { "pt": "Salmão dourado", "en": "Golden salmon" }, "desc": { "pt": "+1 vida (até 9)", "en": "+1 life (up to 9)" } }
+      ],
+      "favor": { "kind": "mouse", "reward": "peixe", "name": { "pt": "Pegar o rato da cozinha", "en": "Catch the kitchen mouse" }, "desc": { "pt": "Um ratinho fugiu: alcance-o em 25 s (ele só leva um susto)", "en": "A little mouse got away: reach it in 25 s (it only gets a fright)" } }
+    },
+    {
+      "id": "padaria", "icon": "🥛", "model": "shop", "cols": ["#ffd27a", "#8a5a2b"],
+      "name": { "pt": "Padaria Pão de Gato", "en": "Cat Loaf Bakery" },
+      "hello": { "pt": "Saiu fornada agora! E o leite é sem lactose.", "en": "Fresh out of the oven! And the milk is lactose-free." },
+      "items": [
+        { "id": "leite", "icon": "🥛", "art": "milk", "price": 18, "prog": "leite", "buff": { "kind": "speed", "amount": 1.25, "dur": 30 },
+          "name": { "pt": "Leite sem lactose", "en": "Lactose-free milk" }, "desc": { "pt": "Velocidade +25% por 30 s", "en": "Speed +25% for 30 s" } },
+        { "id": "paodequeijo", "icon": "🧀", "art": "donut", "price": 10, "buff": { "kind": "belly", "amount": 40 },
+          "name": { "pt": "Pão de queijo", "en": "Cheese bread" }, "desc": { "pt": "Barriga +40", "en": "Belly +40" } }
+      ],
+      "favor": { "kind": "delivery", "reward": "leite", "name": { "pt": "Entregar o pão", "en": "Deliver the bread" }, "desc": { "pt": "Leve a sacola até o freguês no banco em 35 s", "en": "Take the bag to the customer on the bench in 35 s" } }
+    },
+    {
+      "id": "sorveteria", "icon": "🍦", "model": "shop", "cols": ["#ff9fd6", "#9fe0ff"],
+      "name": { "pt": "Sorveteria Miau Gelado", "en": "Frozen Meow Ice Cream" },
+      "hello": { "pt": "Picolé de atum? É o que mais sai!", "en": "Tuna popsicle? Our best seller!" },
+      "items": [
+        { "id": "picole", "icon": "🍦", "art": "milk", "price": 22, "buff": { "kind": "cooldown", "amount": 1 },
+          "name": { "pt": "Picolé de atum", "en": "Tuna popsicle" }, "desc": { "pt": "Zera a recarga de todas as habilidades", "en": "Resets every ability cooldown" } },
+        { "id": "sundae", "icon": "🍨", "art": "milk", "price": 34, "buff": { "kind": "cooldown", "amount": 1, "dur": 40 },
+          "name": { "pt": "Sundae de sardinha", "en": "Sardine sundae" }, "desc": { "pt": "Zera a recarga e ela corre 2x mais rápido por 40 s", "en": "Resets cooldowns and they run 2x faster for 40 s" } }
+      ],
+      "favor": { "kind": "photo", "reward": "picole", "name": { "pt": "Garoto-propaganda", "en": "Poster cat" }, "desc": { "pt": "Vá até o X e faça pose (sentar)", "en": "Go to the X and strike a pose (sit)" } }
+    },
+    {
+      "id": "petshop", "icon": "🐾", "model": "shop", "cols": ["#b967ff", "#ffd23f"],
+      "name": { "pt": "Pet Shop Bigode", "en": "Whiskers Pet Shop" },
+      "hello": { "pt": "Ração, sachê, catnip e brinquedo: tem de tudo!", "en": "Kibble, sachets, catnip and toys: we have it all!" },
+      "items": [
+        { "id": "racao", "icon": "🥣", "art": "treat", "price": 25, "prog": "racao", "buff": { "kind": "belly", "amount": 60, "heal": 15 },
+          "name": { "pt": "Ração premium", "en": "Premium kibble" }, "desc": { "pt": "Barriga +60 e cura 15", "en": "Belly +60 and heals 15" } },
+        { "id": "omega", "icon": "💊", "art": "heart", "price": 40, "prog": "omega", "buff": { "kind": "regen", "amount": 3, "dur": 30 },
+          "name": { "pt": "Ômega 3", "en": "Omega 3" }, "desc": { "pt": "Pelo brilhante: cura 3 por segundo por 30 s", "en": "Shiny coat: heals 3 per second for 30 s" } },
+        { "id": "sache", "icon": "🥫", "art": "steak", "price": 35, "prog": "sache", "buff": { "kind": "belly", "amount": 100, "heal": 25 },
+          "name": { "pt": "Sachê de frango", "en": "Chicken sachet" }, "desc": { "pt": "Barriga cheia (libera o Lanchão) e cura 25", "en": "Full belly (unlocks the Feast) and heals 25" } },
+        { "id": "catnip", "icon": "🌿", "art": "catnip", "price": 30, "prog": "catnip", "buff": { "kind": "catnip", "amount": 1, "dur": 12 },
+          "name": { "pt": "Catnip", "en": "Catnip" }, "desc": { "pt": "Os três ficam elétricos por 12 s", "en": "All three go zoomies for 12 s" } },
+        { "id": "novelo", "icon": "🧶", "art": "ball", "price": 20, "buff": { "kind": "toy", "toy": "yarn" },
+          "name": { "pt": "Novelo de lã", "en": "Ball of yarn" }, "desc": { "pt": "Brinquedo: empurre o novelo e ganhe pontos", "en": "Toy: push the yarn around for points" } },
+        { "id": "laser", "icon": "🔴", "art": "ball", "price": 20, "buff": { "kind": "toy", "toy": "laser" },
+          "name": { "pt": "Canetinha laser", "en": "Laser pointer" }, "desc": { "pt": "Brinquedo: um pontinho vermelho para caçar", "en": "Toy: a little red dot to chase" } }
+      ],
+      "favor": { "kind": "mouse", "reward": "racao", "name": { "pt": "Achar o hamster fujão", "en": "Find the runaway hamster" }, "desc": { "pt": "Alcance o hamster em 25 s e ele volta pra gaiola", "en": "Reach the hamster in 25 s and it goes back to its cage" } }
+    },
+    {
+      "id": "feirinha", "icon": "🍉", "model": "fair", "cols": ["#7CFF6B", "#ffd23f"],
+      "name": { "pt": "Feirinha de frutas", "en": "Fruit market" },
+      "hello": { "pt": "Olha a banana, olha o coco gelado!", "en": "Bananas here, ice-cold coconut here!" },
+      "items": [
+        { "id": "banana", "icon": "🍌", "art": "treat", "price": 5, "buff": { "kind": "energy", "amount": 30 },
+          "name": { "pt": "Banana", "en": "Banana" }, "desc": { "pt": "Energia +30", "en": "Energy +30" } },
+        { "id": "melancia", "icon": "🍉", "art": "treat", "price": 8, "buff": { "kind": "belly", "amount": 25, "heal": 10 },
+          "name": { "pt": "Melancia", "en": "Watermelon" }, "desc": { "pt": "Barriga +25 e cura 10", "en": "Belly +25 and heals 10" } },
+        { "id": "coco", "icon": "🥥", "art": "milk", "price": 10, "buff": { "kind": "speed", "amount": 1.2, "dur": 15 },
+          "name": { "pt": "Água de coco", "en": "Coconut water" }, "desc": { "pt": "Velocidade +20% por 15 s", "en": "Speed +20% for 15 s" } }
+      ],
+      "favor": { "kind": "delivery", "reward": "melancia", "name": { "pt": "Entregar a sacola", "en": "Deliver the bag" }, "desc": { "pt": "Leve as frutas até o freguês no banco em 35 s", "en": "Take the fruit to the customer on the bench in 35 s" } }
+    }
+  ],
+  "placement": {
+    "home": [
+      { "stall": "peixaria", "roles": ["plaza3", "plaza2"], "side": "n" },
+      { "stall": "padaria", "roles": ["plaza1", "house"], "side": "w" },
+      { "stall": "sorveteria", "roles": ["plaza2", "park"], "side": "e" },
+      { "stall": "petshop", "roles": ["house", "plaza1"], "side": "e" },
+      { "stall": "feirinha", "roles": ["park", "plaza3", "arena"], "side": "s" }
+    ],
+    "real": { "order": ["hotdog", "padaria", "peixaria", "sorveteria", "petshop", "feirinha", "sushi", "donut"], "spacing": 420 }
+  }
+}

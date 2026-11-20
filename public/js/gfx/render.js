@@ -346,6 +346,7 @@ function updateCamera(G, dt) {
   const fx0 = Math.cos(cam.yaw), fz0 = Math.sin(cam.yaw);
   let maxD = wantDist;
   for (let i = 2; i <= 10; i++) { const d = wantDist * i / 10, px = (tx - fx0 * d * Math.cos(pitch)) / S, py = (tz - fz0 * d * Math.cos(pitch)) / S, tX = Math.floor(px / 48), tY = Math.floor(py / 48); if (tX >= 0 && tY >= 0 && tX < W.W && tY < W.H && W.gnd[tY * W.W + tX] === 9 && 1.2 + d * Math.sin(pitch) < 5) { maxD = Math.max(3.2, d - wantDist / 10); break; } }
+  if (VP.LifeGfx && VP.LifeGfx.camClip && !G.car) maxD = VP.LifeGfx.camClip(W, tx, tz, cam.yaw, pitch, wantDist, maxD); // HOOK city-life
   cam.dist += (Math.min(wantDist, maxD) - cam.dist) * Math.min(1, dt * (maxD < cam.dist ? 12 : 3));
   const k = cam.init ? Math.min(1, dt * 9) : 1; cam.init = true;
   cam.x += (tx - cam.x) * k; cam.z += (tz - cam.z) * k;
@@ -400,6 +401,7 @@ R.render = function (G, dt) {
   weather(G, G.real, m);
   if (m === 3) { R.flash = Math.max(0, (R.flash || 0) - dt * 3); if (Math.random() < dt * 0.09) { R.flash = 1; VP.Audio.sfx('thunder', 3); } } else R.flash = 0;
   applyMood(m, dt); setXmas(m === 6 && !W.real);
+  if (VP.LifeGfx) VP.LifeGfx.sync(G, dt, { scene, camera, cam, city, hemi, sun, hAt, glow, pt, shadow, mood: m, yaw: cam.yaw, quality: R.quality, fxGlow: fx.glowMat }); // HOOK city-life
   for (; rn < fx.rings.length; rn++) fx.rings[rn].visible = false;
   if (city.chunks && (frame & 3) === 0) updateChunks(city, camera.position, R.quality, scene.fog.far);
   flush();

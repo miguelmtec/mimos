@@ -33,6 +33,7 @@ H.resize = function () {
 };
 H.hit = function (x, y) {
   const G = VP.Game.G; if (!G) return null;
+  if (VP.LifeHUD) { const lh = VP.LifeHUD.hit(x, y, G, H); if (lh) return lh; } // HOOK city-life
   if (H.emoOn(G)) { if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; if (U.d2(x, y, b.x, b.y) < (b.r + 4) * (b.r + 4)) return 'em_' + e[0]; } const b = H.btn.emo; if (U.d2(x, y, b.x, b.y) < (b.r + 8) * (b.r + 8)) return 'emo'; }
   for (const id of ['c0', 'c1', 'c2', 'pause', 'special', 'dash', 'ctx']) {
     const b = H.btn[id]; if (id === 'ctx' && !G.ctx) continue; if (id === 'dash' && G.car) continue;
@@ -121,6 +122,7 @@ H.draw = function (G, dt) {
   }
   // ---- radar ----
   radar(G, k, t, ob);
+  if (VP.LifeHUD) VP.LifeHUD.draw(c, G, dt, H); // HOOK city-life
   // wanted stars
   if (G.wanted > 0 || G.wantedFlash > 0) for (let i = 0; i < 5; i++) Art.icon(c, i < G.wanted ? 'star' : 'starOff', H.map.x - 36 * k + i * 18 * k, H.map.y + H.map.r + 14 * k, (i < G.wanted ? 8 + (G.wantedFlash > 0 ? Math.sin(t * 20) * 1.5 : 0) : 7) * k);
   // pause
@@ -164,7 +166,8 @@ function controls(G, k, t, touch, a) {
     else button(b.special, a.feastReady ? GOLD : '#ffb347', 'steak', VP.t('feast'), a.feastReady ? 0 : 1 - a.belly / 100, !!a.feastReady);
     button(b.dash, '#fff', n === 'mimo' ? 'ball' : n === 'mimosa' ? 'dash' : 'smoke', VP.t(n === 'mimo' ? 'hairLbl' : n === 'mimosa' ? 'dashLbl' : 'smokeLbl'), Math.max(0, a.cd2) / (n === 'mimo' ? 5 : n === 'mimosa' ? 2.4 : 4), a.cd2 <= 0);
   }
-  if (G.ctx) {
+  if (G.ctx && G.ctx.k === 'life' && VP.LifeHUD) VP.LifeHUD.ctxButton(c, b.ctx, G.ctx, H); // HOOK city-life
+  else if (G.ctx) {
     const x = G.ctx.k; button(b.ctx, x === 'revive' ? '#ff7ac0' : TEAL, x === 'revive' ? 'heart' : 'car', VP.t(x === 'revive' ? 'revive' : x === 'car' ? 'enter' : 'exit'), 0);
     if (x === 'revive') { c.beginPath(); c.arc(b.ctx.x, b.ctx.y, b.ctx.r + 5, -Math.PI / 2, -Math.PI / 2 + G.revive * 6.283); c.strokeStyle = '#7CFF6B'; c.lineWidth = 5; c.stroke(); if (G.revive <= 0) txt(VP.t('hold'), b.ctx.x, b.ctx.y - b.ctx.r - 12 * k, 11 * k, '#fff'); }
     if (!touch) txt('E', b.ctx.x - b.ctx.r, b.ctx.y - b.ctx.r, 12 * k, GOLD);

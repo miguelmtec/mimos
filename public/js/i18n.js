@@ -1,0 +1,113 @@
+'use strict';
+// VICE PAWS — PT-BR / EN strings
+(function () {
+const VP = window.VP;
+const L = {
+  // cats
+  mimo: ['Mimo', 'Mimo'], mimosa: ['Mimosa', 'Mimosa'], morticia: ['Mortícia', 'Morticia'],
+  role_mimo: ['O CANSADO', 'THE TIRED ONE'], role_mimosa: ['A BRAVA', 'THE FIERCE ONE'], role_morticia: ['A COMILONA', 'THE GLUTTON'],
+  desc_mimo: ['Atira bolhas de espinha de peixe. Cansa rápido: café ☕ recarrega. Especial: SONECA (câmera lenta).', 'Shoots fish-bone bubbles. Gets tired fast: coffee ☕ refills him. Special: NAP (slow motion).'],
+  desc_mimosa: ['Morde em combo, dá o bote e ROSNA para atordoar. Quebra cercas e aguenta pancada.', 'Bite combo, lunge-bite and a ROAR that stuns. Breaks fences and tanks hits.'],
+  desc_morticia: ['Rouba e come as coisas dos outros. Passa por portinhas. Barriga cheia libera o LANCHÃO.', "Steals and eats other people's things. Fits through cat flaps. A full belly unlocks the FEAST."],
+  // sim texts
+  fainted: ['desmaiou!', 'fainted!'], revived: ['voltou!', 'is back!'], isDown: ['Está desmaiado! Reanime primeiro.', 'Fainted! Revive first.'],
+  armorBreak: ['ARMADURA QUEBRADA!', 'ARMOR BROKEN!'], tink: ['tink', 'tink'], needMimosa: ['Só a Mimosa morde isso!', 'Only Mimosa can bite this!'],
+  freed: ['Gatinho libertado!', 'Kitten freed!'], stolen: ['ROUBADO!', 'STOLEN!'], gotKey: ['Chave na pata!', 'Got the key!'], disarmed: ['Desarmado!', 'Disarmed!'],
+  bossRobbed: ['Lanche do chefão roubado!', "Boss's snack stolen!"], needExpose: ['Quebre a armadura primeiro', 'Break the armor first'],
+  theft: ['Roubar barraquinha chama a polícia!', 'Robbing stands attracts the cops!'], gotLoot: ['TESOURO DE PETISCOS!', 'TREAT TREASURE!'],
+  tired: ['Cansado demais…', 'Too tired…'], nap: ['SONECA', 'NAP'], roar: ['ROSNADO', 'ROAR'], feast: ['LANCHÃO', 'FEAST'], needFull: ['Barriga cheia libera!', 'Needs a full belly!'],
+  exhausted: ['Exausto… zzz', 'Exhausted… zzz'], tipCoffee: ['Mimo cansou! Pegue um café ☕', 'Mimo is tired! Grab a coffee ☕'],
+  hungry: ['Fome!', 'Hungry!'], tipHungry: ['Mortícia está com fome: coma algo!', 'Morticia is starving: eat something!'],
+  ripNet: ['Rasgou a rede!', 'Ripped the net!'], coffee: ['Cafezinho!', 'Coffee!'], life1: ['+1 VIDA', '+1 LIFE'], catnip: ['CATNIP! Força total!', 'CATNIP! Full power!'],
+  needKey: ['Precisa da chave', 'Needs the key'], bossAte: ['O chefão comeu', 'The boss ate'], exposed: ['CHEFÃO EXPOSTO! ATAQUEM!', 'BOSS EXPOSED! ATTACK!'], bonk: ['BONK!', 'BONK!'],
+  noOneBehind: ['Ninguém fica pra trás! Reanime antes.', 'No cat left behind! Revive first.'], tipCar: ['Carro: direcione com o analógico. Ataque = Mimo atira.', 'Car: steer with the stick. Attack = Mimo shoots.'],
+  lostCops: ['Despistou a polícia!', 'You lost the cops!'], noLives: ['Sem vidas! Ache uma patinha dourada.', 'No lives! Find a golden paw.'], pawHint: ['Uma patinha dourada apareceu por perto!', 'A golden paw appeared nearby!'],
+  // objectives
+  o_free: ['Cidade livre: siga um feixe de luz para iniciar a missão', 'Free roam: follow a light beam to start a mission'],
+  o_trial: ['Volta de teste no conversível dourado!', 'Test lap in the golden convertible!'],
+  o_goto: ['Vá até o ponto marcado', 'Go to the marker'], o_reach: ['Chegue ao destino', 'Reach the destination'], o_clear: ['Derrote os guardas', 'Beat the guards'],
+  o_tutSwitch: ['Troque de gato: toque nos retratos (ou 1 · 2 · 3)', 'Switch cats: tap the portraits (or 1 · 2 · 3)'],
+  o_wave: ['Onda {0}/{1}: derrote todos', 'Wave {0}/{1}: beat them all'], o_waveIn: ['Onda {0}/{1} chegando…', 'Wave {0}/{1} incoming…'], o_ready: ['Prepare-se…', 'Get ready…'],
+  o_eat: ['Mortícia: coma {0} petiscos', 'Morticia: eat {0} treats'], o_steal: ['Mortícia: roube {0} coisas dos cachorros', 'Morticia: steal {0} things from the dogs'], o_cash: ['Junte ${0} (quebre caixotes, nocauteie, roube)', 'Earn ${0} (smash crates, KO, steal)'],
+  o_gateFence: ['Mimosa: morda o portão de madeira', 'Mimosa: bite through the wooden gate'], o_gateSwitch: ['Mimo: atire no botão vermelho', 'Mimo: shoot the red switch'],
+  o_gateGap: ['Mortícia: entre pela portinha e puxe a alavanca', 'Morticia: slip through the cat flap and pull the lever'], o_gateKey: ['Abra o portão com a chave', 'Open the gate with the key'],
+  o_getKey: ['Mortícia: roube a chave do guarda', "Morticia: steal the guard's key"],
+  o_cage: ['Abra a jaula', 'Open the cage'], o_cageBite: ['Mimosa: morda o cadeado da jaula', 'Mimosa: bite the cage lock'], o_ambush: ['Emboscada!', 'Ambush!'], o_escort: ['Leve os gatinhos ao ponto seguro', 'Escort the kittens to safety'],
+  o_enterTruck: ['Entre no caminhão de petiscos', 'Get in the treat truck'], o_driveTruck: ['Leve o caminhão ao esconderijo', 'Drive the truck to the hideout'],
+  o_vaultSwitch: ['Mimo: atire no botão do cofre', 'Mimo: shoot the vault switch'], o_vaultLoot: ['Mortícia: entre pela portinha e pegue o tesouro', 'Morticia: go through the flap and grab the loot'], o_escape: ['Fuja para o ponto de encontro', 'Escape to the meeting point'],
+  o_survive: ['Sobreviva à carrocinha', 'Survive the dog catchers'], o_enterCar: ['Entre no carro de fuga', 'Get in the getaway car'], o_driveSafe: ['Dirija até o esconderijo', 'Drive to the safehouse'], o_hideout: ['Corra para o esconderijo', 'Run to the hideout'],
+  o_chase: ['Alvo {0}/{1}: bata ou atire até parar', 'Target {0}/{1}: ram or shoot it down'], o_checkpoint: ['Checkpoint {0}/{1}', 'Checkpoint {0}/{1}'],
+  o_defend: ['Onda {0}/{1}: defenda a casinha', 'Wave {0}/{1}: defend the house'], o_boss: ['Derrote {0}', 'Defeat {0}'],
+  o_reviveAll: ['Reanime quem caiu: ninguém fica pra trás!', 'Revive the fallen: no cat left behind!'], o_done: ['Missão cumprida!', 'Mission complete!'],
+  boss_chief: ['o Delegado Bulldogão', 'Chief Bulldog'], boss_poodle: ['a Madame Poodle', 'Madame Poodle'], boss_rott: ['o Capitão Rottweiler', 'Captain Rott'], boss_pug: ['o Don Pug', 'Don Pug'], boss_dogcatcher: ['o Rei da Carrocinha', 'the Dog Catcher King'],
+  bossTip: ['Mimosa quebra a armadura · Mortícia rouba o lanche do chefão exposto · Mimo castiga de longe', "Mimosa breaks the armor · Morticia steals the exposed boss's snack · Mimo punishes from afar"],
+  // districts
+  d0: ['Sunset Beach', 'Sunset Beach'], d1: ['Neon Downtown', 'Neon Downtown'], d2: ['Palm Harbor', 'Palm Harbor'], d3: ['Storm Docks', 'Storm Docks'], d4: ['Vice Heights', 'Vice Heights'], d5: ['Marina Dourada', 'Golden Marina'], d6: ['Natal Neon', 'Neon Christmas'],
+  // mission type briefs
+  b_reach: ['Atravessem o bairro até o ponto marcado. Tem guarda no caminho.', 'Cross the district to the marker. Guards on the way.'],
+  b_waves: ['A matilha vem em ondas. Fiquem juntos e derrotem todos.', 'The pack comes in waves. Stick together and beat them all.'],
+  b_eat: ['Mortícia precisa comer antes do tempo acabar: barraquinhas, petiscos e o que os cachorros carregam.', 'Morticia must eat before time runs out: stands, treats and whatever the dogs carry.'],
+  b_steal: ['Mão leve! Mortícia rouba o que os cachorros carregam. Roubar atordoa.', 'Sticky paws! Morticia steals what the dogs carry. Stealing stuns them.'],
+  b_cash: ['Juntem a grana: Mimosa quebra caixotes, todo nocaute paga, Mortícia rouba.', 'Raise the cash: Mimosa smashes crates, every KO pays, Morticia steals.'],
+  b_rescue: ['Gatinhos presos! Abram os cercados, soltem todos e voltem em segurança.', 'Kittens caged! Open the compounds, free them all and get back safely.'],
+  b_truck: ['O caminhão de petiscos está no cercado. Abram o portão, entrem e dirijam até o esconderijo.', 'The treat truck sits in the compound. Open the gate, hop in and drive to the hideout.'],
+  b_vault: ['Golpe em três patas: Mimosa abre caminho, Mimo acerta o botão, Mortícia entra pela portinha.', 'A three-paw heist: Mimosa opens the way, Mimo hits the switch, Morticia slips through the flap.'],
+  b_escape: ['A carrocinha está atrás de vocês! Despistem e cheguem ao esconderijo.', 'The dog catchers are after you! Lose them and reach the safehouse.'],
+  b_chase: ['No conversível! Alcancem o alvo e parem na base da batida (e das bolhas do Mimo).', "In the convertible! Catch the target and stop it by ramming (and Mimo's bubbles)."],
+  b_race: ['Entrega contra o relógio: passe por todos os checkpoints.', 'Delivery against the clock: hit every checkpoint.'],
+  b_defend: ['Defendam a casinha das ondas de cachorros. Se ela cair, acabou.', 'Defend the house from the dog waves. If it falls, it is over.'],
+  b_boss: ['CHEFÃO! Quebrem a armadura, roubem o lanche e não deixem ninguém para trás.', 'BOSS! Break the armor, steal the snack and leave no cat behind.'],
+  need_mimo: ['Mimo é essencial aqui', 'Mimo is key here'], need_mimosa: ['Mimosa é essencial aqui', 'Mimosa is key here'], need_morticia: ['Mortícia é essencial aqui', 'Morticia is key here'], need_all: ['Precisa dos três!', 'Needs all three!'],
+  // HUD
+  lives: ['Vidas', 'Lives'], hold: ['SEGURE', 'HOLD'], revive: ['REANIMAR', 'REVIVE'], enter: ['ENTRAR', 'ENTER'], exit: ['SAIR', 'EXIT'], wantedLbl: ['PROCURADOS', 'WANTED'],
+  honk: ['BUZINA', 'HORN'], dashLbl: ['BOTE', 'DASH'], hairLbl: ['BOLA', 'LOB'], smokeLbl: ['SUMIR', 'VANISH'], atkShoot: ['ATIRAR', 'SHOOT'], atkBite: ['MORDER', 'BITE'], atkSteal: ['ROUBAR', 'STEAL'],
+  ctxLost: ['Gráficos reiniciando…', 'Graphics restarting…'],
+  // menus
+  tagline: ['Três gatos. Uma cidade neon. Ninguém fica pra trás.', 'Three cats. One neon city. No cat left behind.'],
+  play: ['JOGAR', 'PLAY'], cont: ['CONTINUAR', 'CONTINUE'], city: ['CIDADE LIVRE', 'FREE ROAM'], map: ['MISSÕES', 'MISSIONS'], shop: ['LOJA DOS MIMOS', 'MIMOS SHOP'], ranking: ['RANKING', 'RANKING'], how: ['COMO JOGAR', 'HOW TO PLAY'], wardrobe: ['GUARDA-ROUPA', 'WARDROBE'],
+  follow: ['Siga os gatos', 'Follow the cats'], fan: ['Jogo de fã, sem vínculo com nenhum estúdio de games', 'Fan game, not affiliated with any game studio'],
+  back: ['Voltar', 'Back'], start: ['COMEÇAR', 'START'], retry: ['TENTAR DE NOVO', 'TRY AGAIN'], next: ['PRÓXIMA MISSÃO', 'NEXT MISSION'], toCity: ['VOLTAR À CIDADE', 'BACK TO THE CITY'], toMap: ['Missões', 'Missions'],
+  paused: ['PAUSA', 'PAUSED'], resume: ['CONTINUAR', 'RESUME'], quit: ['Sair da missão', 'Quit mission'], restart: ['Reiniciar', 'Restart'], sound: ['Som', 'Sound'], on: ['ligado', 'on'], off: ['desligado', 'off'],
+  quality: ['Gráficos', 'Graphics'], q0: ['leve', 'low'], q1: ['médio', 'medium'], q2: ['alto', 'high'], qa: ['auto', 'auto'], lang: ['Idioma', 'Language'], resetSave: ['Apagar progresso', 'Erase progress'], resetAsk: ['Apagar todo o progresso deste aparelho?', 'Erase all progress on this device?'],
+  mission: ['Missão', 'Mission'], bossM: ['CHEFÃO', 'BOSS'], locked: ['Bloqueada', 'Locked'], bonusLock: ['Conteúdo bônus da Loja', 'Bonus content from the Shop'], par: ['Tempo-alvo', 'Par time'],
+  win: ['MISSÃO CUMPRIDA!', 'MISSION COMPLETE!'], lose: ['MISSÃO FALHOU', 'MISSION FAILED'],
+  f_allDown: ['Os três desmaiaram.', 'All three fainted.'], f_time: ['O tempo acabou.', 'Time ran out.'], f_house: ['A casinha caiu.', 'The house fell.'], f_truck: ['O caminhão foi destruído.', 'The truck was wrecked.'], f_car: ['O carro foi destruído.', 'The car was wrecked.'], f_quit: ['Missão abandonada.', 'Mission abandoned.'],
+  s_done: ['Missão completa', 'Mission complete'], s_nofaint: ['Ninguém desmaiou', 'Nobody fainted'], s_par: ['Dentro do tempo-alvo', 'Under par time'],
+  score: ['Pontos', 'Score'], best: ['Recorde', 'Best'], reward: ['Recompensa', 'Reward'], lifeReward: ['+1 vida (3 estrelas pela 1ª vez!)', '+1 life (first 3-star clear!)'], lifeBoss: ['+1 vida (chefão derrotado!)', '+1 life (boss defeated!)'],
+  share: ['Compartilhar', 'Share'], shareTxt: ['Fiz {0} ⭐ em Vice Paws com Mimo, Mimosa e Mortícia! Joga também:', 'I got {0} ⭐ in Vice Paws with Mimo, Mimosa and Morticia! Play it too:'], copied: ['Copiado!', 'Copied!'],
+  yourName: ['Seu nome no ranking', 'Your ranking name'], send: ['Enviar', 'Submit'], sent: ['Enviado!', 'Sent!'], rankOff: ['Ranking offline por enquanto. Seu progresso fica salvo no aparelho.', 'Ranking offline for now. Your progress is saved on this device.'], rankEmpty: ['Ninguém ainda. Seja o primeiro!', 'Nobody yet. Be the first!'], loading: ['Carregando…', 'Loading…'],
+  districtClear: ['BAIRRO LIMPO!', 'DISTRICT CLEARED!'], theEnd: ['A cidade é dos gatos! Obrigado por jogar 💖', 'The city belongs to the cats! Thanks for playing 💖'],
+  vipCard: ['Gostou? Conheça o Pacote VIP', 'Enjoying it? Check out the VIP Pack'], vipCardSub: ['Roupas, conversível dourado e um bairro bônus. Só cosméticos.', 'Outfits, golden convertible and a bonus district. Cosmetics only.'], see: ['Ver', 'See'], noThanks: ['Agora não', 'Not now'],
+  howTxt: ['<b>Celular:</b> analógico esquerdo anda · direito mira e ataca · botões: especial, bote, ação · toque nos retratos para trocar de gato.<br><b>PC:</b> WASD anda · mouse mira · clique ataca · Espaço especial · Shift bote · E ação/carro · 1 2 3 troca · botão direito gira a câmera · P pausa.<br><br><b>Ninguém fica pra trás:</b> fique ao lado do gato caído e SEGURE o botão de ação para reanimar (gasta 1 vida). A missão só termina com os três de pé.',
+    '<b>Phone:</b> left stick moves · right stick aims and attacks · buttons: special, dash, action · tap portraits to switch cats.<br><b>PC:</b> WASD move · mouse aim · click attack · Space special · Shift dash · E action/car · 1 2 3 switch · right button rotates the camera · P pause.<br><br><b>No cat left behind:</b> stand next to a fainted cat and HOLD the action button to revive (costs 1 life). A mission only ends with all three standing.'],
+  noWebgl: ['Seu navegador não conseguiu abrir os gráficos 3D. Tente abrir no Chrome ou Safari.', 'Your browser could not start 3D graphics. Try opening in Chrome or Safari.'],
+  openOut: ['Dica: abra no navegador (⋯ → Abrir no navegador) para rodar mais liso.', 'Tip: open in your browser (⋯ → Open in browser) for smoother play.'],
+  markerMission: ['Iniciar missão', 'Start mission'], cashLbl: ['Grana', 'Cash'], coins: ['moedas', 'coins'],
+  // shop
+  shopSub: ['O jogo é grátis e dá para zerar sem pagar. Aqui só tem enfeite e bônus. 🐾', 'The game is free and fully beatable without paying. Only cosmetics and bonuses here. 🐾'],
+  p_vip: ['Pacote VIP', 'VIP Pack'], p_vip_d: ['Roupas animadas para os três, rastro de brilho, conversível dourado com neon e buzina, dancinha da vitória, coroa no ranking e o bairro bônus Marina Dourada (5 missões).', 'Animated outfits for all three, sparkle trail, golden convertible with underglow and horn, victory dance, ranking crown and the Golden Marina bonus district (5 missions).'],
+  p_lives10: ['+10 vidas', '+10 lives'], p_lives10_d: ['Dez vidas extras para reanimar a turma. (Vidas também se ganham jogando.)', 'Ten extra lives to revive the crew. (Lives are also earned by playing.)'],
+  p_season: ['Temporada Natal Neon', 'Neon Christmas Season'], p_season_d: ['4 missões especiais de Natal com neve, luzinhas pela cidade e gorros de Papai Noel.', '4 special Christmas missions with snow, city lights and Santa hats.'],
+  p_apoio: ['Apoie os gatos', 'Support the cats'], p_apoio_d: ['Um mimo para Mimo, Mimosa e Mortícia. Você ganha selo de apoiador, nome dourado e entra no Mural.', 'A treat for Mimo, Mimosa and Morticia. You get a supporter badge, golden name and a spot on the Wall.'],
+  popular: ['Mais popular', 'Most popular'], buy: ['Comprar', 'Buy'], owned: ['✓ Seu', '✓ Owned'], tryOn: ['Provar', 'Try on'], testLap: ['Volta de teste (20s)', 'Test lap (20s)'],
+  restore: ['Restaurar compra', 'Restore purchase'], restoreHint: ['Cole o código da compra', 'Paste your purchase code'], restoreOk: ['Compra restaurada!', 'Purchase restored!'], restoreNo: ['Código não encontrado ou pagamento não aprovado.', 'Code not found or payment not approved.'],
+  shopOff: ['Loja abre em breve 🐾', 'Shop opens soon 🐾'], shopErr: ['Não deu para gerar o Pix agora. Tente de novo.', "Couldn't create the Pix right now. Try again."],
+  pixTitle: ['Pague com Pix', 'Pay with Pix'], pixScan: ['Escaneie o QR Code no app do seu banco ou use o copia-e-cola.', 'Scan the QR code in your bank app or use copy-and-paste.'], pixCopy: ['Copiar código Pix', 'Copy Pix code'], pixWait: ['Aguardando pagamento…', 'Waiting for payment…'], pixExpired: ['O tempo do Pix acabou. Gere outro.', 'The Pix expired. Create a new one.'],
+  pixPaid: ['Pagamento aprovado! Obrigado 💖', 'Payment approved! Thank you 💖'], pixCode: ['Código da compra (guarde para restaurar):', 'Purchase code (keep it to restore):'], close: ['Fechar', 'Close'], cancel: ['Cancelar', 'Cancel'],
+  legal: ['Pagamento via Pix processado pelo Mercado Pago. Itens digitais cosméticos/bônus, liberados na hora. Jogo de fã sem vínculo com estúdios.', 'Payment via Pix processed by Mercado Pago. Digital cosmetic/bonus items, unlocked instantly. Fan game not affiliated with any studio.'],
+  mural: ['Mural de apoiadores', "Supporters' wall"], muralEmpty: ['Seu nome aparece aqui quando você apoia os gatos.', 'Your name shows up here when you support the cats.'], thanks: ['MIAU-TO OBRIGADO!', 'THANK MEOW!'], thanksSub: ['Mimo, Mimosa e Mortícia agradecem de coração.', 'Mimo, Mimosa and Morticia thank you from the heart.'],
+  supporter: ['Apoiador', 'Supporter'], trialEnd: ['Fim da volta de teste!', 'Test lap over!'], tryTitle: ['Provador VIP', 'VIP fitting room'],
+  xmasOn: ['Decoração de Natal', 'Christmas decorations'],
+};
+let lang = 'en';
+try { const s = VP.ls.get('vp_lang'); lang = s === 'pt' || s === 'en' ? s : (/^pt/i.test(navigator.language || '') ? 'pt' : 'en'); } catch (e) { lang = 'en'; }
+VP.L = L;
+VP.lang = () => lang;
+VP.setLang = l => { lang = l === 'pt' ? 'pt' : 'en'; VP.ls.set('vp_lang', lang); try { document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en'; } catch (e) { /* ignore */ } if (VP.UI && VP.UI.relabel) VP.UI.relabel(); };
+VP.t = function (k) {
+  const e = L[k]; let s = e ? e[lang === 'pt' ? 0 : 1] : k;
+  for (let i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]);
+  return s;
+};
+VP.mname = m => m.name[lang === 'pt' ? 0 : 1];
+})();

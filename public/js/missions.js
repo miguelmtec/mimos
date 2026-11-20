@@ -278,7 +278,7 @@ const TYPES = {
       B.dogs({ x: lot.frontX - 100, y: lot.frontY + 40 }, pack(B, 2));
       gateSteps(B, lot, p.gate);
       const vl = B.propOf(lot, 'vlaser'), sw = G.props.find(q => q.k === 'switch' && q.link === vl.id), loot = B.propOf(lot, 'loot');
-      B.step({ txt: 'o_vaultSwitch', cat: 'mimo', act: 'attack', at: () => ({ x: sw.x, y: sw.y - 20, shoot: true, from: { x: (lot.tx + 5.5) * T, y: (lot.ty + 3.5) * T + 60 } }), done: () => vl.done });
+      B.step({ txt: 'o_vaultSwitch', cat: 'mimo', act: 'attack', at: () => ({ x: sw.x, y: sw.y - 20, shoot: true, from: { x: (lot.tx + 6.5) * T, y: (lot.ty + 4.5) * T } }), done: () => vl.done });
       B.step({ txt: 'o_vaultLoot', cat: 'morticia', act: 'attack', mode: 1, at: () => ({ x: (lot.tx + 3.5) * T, y: (lot.ty + 4.5) * T }), done: () => loot.done });
       B.step({ txt: 'o_ambush', enter() { B.wantedOn(p.wanted); VP.Audio.sfx('alarm'); }, done: () => true, at: () => null });
       B.goto(start, 'o_escape');

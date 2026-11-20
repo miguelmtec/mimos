@@ -56,7 +56,7 @@ Game.create = function (world, mission) {
   G = Game.G = {
     W: world, m: mission, n: mission.lv || 1, id: mission.n, d: mission.d, time: 0, real: 0, over: false, paused: false,
     cats: [], active: 0, dogs: [], bullets: [], items: [], props: [], cars: [], parts: [], texts: [], teles: [], friends: [],
-    cam: { x: 0, y: 0 }, shake: 0, hitstop: 0, nap: 0, catnip: 0, feast: 0, banner: null,
+    cam: { x: 0, y: 0 }, mtimer: null, shake: 0, hitstop: 0, nap: 0, catnip: 0, feast: 0, banner: null,
     heat: 0, wanted: 0, minWanted: 0, calm: 0, copT: 2, car: null, ctx: null, revive: 0, keys: 0,
     stat: { ko: 0, eaten: 0, freed: 0, cash: 0, downs: 0, stolen: 0, dmg: 0 }, flags: {},
     steps: [], step: 0, stepT: 0, timer: null, fieldT: 0, field: null, fieldM: null, houseField: null, house: null,
@@ -1028,7 +1028,7 @@ Game.update = function (dt) {
 };
 Game.fail = function (why) { if (G.over) return; G.over = true; VP.Audio.engine(0, false); sfx('fail'); setTimeout(() => VP.UI.result(false, why), 900); };
 Game.win = function () {
-  if (G.over) return; G.over = true; VP.Audio.engine(0, false); sfx('win');
+  if (G.over) return; G.over = true; G.won = true; VP.Audio.engine(0, false); sfx('win');
   for (const c of G.cats) burst(c.x, c.y - 20, 14, ['#ffd23f', '#ff4fb8', '#2de2e6'], 220, 'star', 8, 1);
   setTimeout(() => VP.UI.result(true), 1100);
 };

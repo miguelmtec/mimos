@@ -23,7 +23,7 @@ const mob = process.argv[2] !== 'd', P = mob ? 'm-' : 'd-';
   await page.waitForTimeout(8000); await L.shot(page, P + 'boss');
   await page.evaluate(() => { VP.I.bot = null; VP.UI.act.title(); });
   await page.waitForTimeout(400);
-  await tap('[data-act=wardrobe]'); await page.waitForTimeout(800); await L.shot(page, P + 'wardrobe');
+  await page.evaluate(() => VP.UI.act.sheetCat()); await tap('[data-act=wardrobe]'); await page.waitForTimeout(800); await L.shot(page, P + 'wardrobe');
   await tap('[data-act=wdBack]');
   await tap('[data-act=shop]'); await L.shot(page, P + 'shop');
   await tap('[data-act=tryOn]'); await page.waitForTimeout(900); await L.shot(page, P + 'tryon');

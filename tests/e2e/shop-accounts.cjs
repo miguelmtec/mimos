@@ -8,7 +8,7 @@ const out = [], ok = (n, c) => { out.push((c ? 'PASS ' : 'FAIL ') + n); };
     const tap = async s => { await page.locator(s).first().click({ force: true }); await page.waitForTimeout(350); };
     await tap('[data-act=shop]'); await tap('[data-act=buy][data-p=vip]'); await page.waitForTimeout(400);
     ok('503 toast shop opens soon', /Loja abre em breve/.test(await page.locator('#toast').textContent()));
-    await tap('[data-act=shopBack]'); await tap('[data-act=rank]'); await page.waitForTimeout(500);
+    await tap('[data-act=shopBack]'); await page.evaluate(() => VP.UI.act.sheetMore()); await tap('[data-act=rank]'); await page.waitForTimeout(500);
     ok('rank offline msg', /offline/i.test(await page.locator('#rk').textContent()));
     await tap('[data-act=back]'); await tap('[data-act=account]');
     ok('accounts offline msg', /offline/i.test(await page.locator('#s-account').textContent()));
@@ -68,7 +68,7 @@ const out = [], ok = (n, c) => { out.push((c ? 'PASS ' : 'FAIL ') + n); };
     await page.reload(); await page.waitForFunction(() => window.__vp && VP.UI.ready && VP.R3 && VP.R3.ok);
     ok(P + 'purchase survives reload', await page.evaluate(() => VP.Shop.has('vip') && VP.Shop.has('season')));
     // ranking with crown
-    await tap('[data-act=rank]'); await page.waitForTimeout(500); await L.shot(page, P + 'rank');
+    await page.evaluate(() => VP.UI.act.sheetMore()); await tap('[data-act=rank]'); await page.waitForTimeout(500); await L.shot(page, P + 'rank');
     await tap('[data-act=back]');
     // accounts
     await tap('[data-act=account]'); await page.fill('#aemail', 'a@b.co'); await tap('[data-act=acStart]'); await page.waitForTimeout(400);

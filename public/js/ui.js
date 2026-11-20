@@ -23,7 +23,7 @@ UI.confetti = function () {
 // ---------- screen plumbing ----------
 const SCREENS = UI.SCREENS = {};
 UI.show = function (id, arg) {
-  UI.screen = id; UI.arg = arg;
+  UI.screen = id; UI.arg = arg; if (id !== 'title') UI.sheet = null;
   const def = SCREENS[id];
   root.innerHTML = `<div class="screen on ${def.cls || ''}" id="s-${id}">${def.html(arg)}</div>`;
   if (def.after) def.after(arg);
@@ -36,28 +36,61 @@ const ACT = UI.act = {};
 function onClick(e) {
   const el = e.target.closest('[data-act]'); if (!el) return;
   VP.Audio.unlock(); VP.Audio.sfx('click');
+  if (el.dataset.act === 'play' && UI.screen === 'title' && UI.needLogin()) { UI.openSheet('login'); return; }
   const f = ACT[el.dataset.act]; if (f) f(el, e);
 }
 const corner = back => `<div class="corner l">${back ? `<button class="chip" data-act="${back}">‹ ${t('back')}</button>` : ''}</div><div class="corner"><button class="chip" data-act="lang">${VP.lang() === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN'}</button><button class="chip" data-act="mute">${VP.Audio.muted ? '🔇' : '🔊'}</button></div>`;
 const foot = () => `<div class="foot"><a href="${IG}" target="_blank" rel="noopener">📸 ${t('follow')} @mimo.mimosa.morticia</a><br>${t('fan')}</div>`;
 
 // ---------- title ----------
+// Layout: logo on top, ONE big play button, an icon dock at the bottom; everything else lives in two sheets (Meu Gato, Mais).
+// Other modules add to the title through markers: <!--vp:toast--> (small pill), <!--vp:look--> (small card), <!--vp:story--> (inside "Mais"),
+// plus VP.Ext.slot('title') (inside "Mais").
+const lvTop = () => { try { return Math.max(1, ...VP.Prog.CATS.map(n => VP.Prog.level(n).lv)); } catch (e) { return 1; } };
+const acctChip = () => (VP.Acct && VP.Acct.status === 'in'
+  ? `<button class="acct in" data-act="account" aria-label="${esc(t('account'))}"><span class="av">🐱</span><span class="lvb">${t('pg_lv')} ${lvTop()}</span></button>`
+  : `<button class="acct" data-act="account" aria-label="${esc(t('tl_enter'))}"><span class="av">👤</span><span>${t('tl_enter')}</span></button>`);
+const dock = (act, ic, label, extra) => `<button class="dk ${extra && extra.cls || ''}" data-act="${act}"><span class="ic">${ic}</span><span class="lb">${label}</span>${extra && extra.badge ? `<small class="newtag">${extra.badge}</small>` : ''}</button>`;
+const tile = (act, ic, label, extra) => `<button class="si ${extra || ''}" data-act="${act}"><span class="ic">${ic}</span><span class="lb">${label}</span></button>`;
+const sheet = (id, title, body) => `<div class="sheet-wrap" data-sheet="${id}"><div class="scrim" data-act="sheetClose"></div><div class="sheet" role="dialog" aria-label="${esc(title)}"><i class="grab"></i><button class="x" data-act="sheetClose" aria-label="${esc(t('back'))}">✕</button><h3 class="sh-t">${title}</h3>${body}</div></div>`;
+function catSheet() {
+  const has = !!VP.S.avatar, Pa = VP.Party;
+  return sheet('cat', '🐱 ' + t('tl_mycat'), `<div class="sgrid">${tile(has ? 'party' : 'myCat', '🐱', has ? (Pa && Pa.active && Pa.active() ? t('pa_on', esc(VP.S.avatar.label || '')) : t('pa_title')) : t('ac_create'), 'hot')}
+    ${tile('wardrobe', '👕', t('wardrobe'))}${tile('profile', '🪪', t('pf_title'))}${tile('upg', '⬆', t('pg_up'))}${tile('ach', '🏅', t('ah_title'))}${tile('shelter', '🏠', t('lg_shelter'))}</div>`);
+}
+function moreSheet() {
+  return sheet('more', '✨ ' + t('tl_more'), `<!--vp:story--><div class="sgrid">${VP.Ext ? VP.Ext.slot('title') /* [hook:ext] */ : ''}${tile('rank', '🏆', t('ranking'))}${tile('world', '✈', t('world'))}${tile('board', '📌', t('bd_title'))}${tile('catcity', '🐱', t('gc_title'))}${tile('how', '❓', t('how'))}${tile('settings', '⚙', t('settings'))}</div>${foot()}`);
+}
+function loginSheet() {
+  return sheet('login', '🐾 ' + t('tl_loginT'), `<p class="small lg-sub">${t('tl_loginSub')}</p>
+    <button class="btn big" data-act="loginGo">👤 ${t('tl_enter')}</button>
+    <button class="btn ghost" data-act="guestPlay">${t('tl_guest')}</button>
+    <p class="small lg-note">${t('tl_guestNote')}</p>`);
+}
 SCREENS.title = {
   hideHud: true,
-  html: () => `<div class="bg"${bg('title_bg')}></div><div class="shade"></div>${corner()}
-    <div class="top"><h1 class="logo">VICE<span>PAWS</span></h1></div>
-    <div class="in"><p class="tag">${t('tagline')}</p>
-      <button class="btn big" data-act="play">▶ ${VP.S.unlocked > 1 || VP.S.pos ? t('cont') : t('play')}</button>
-      ${UI.challenge ? `<button class="dailybar chal" data-act="chalPlay">⚔️ <span><b>${esc(UI.challenge.name || t('ch_friend'))}</b> ${t('ch_dares', UI.challenge.score)}<small>${esc(VP.mname(M.get(UI.challenge.n)))}</small></span><i>▶</i></button>` : ''}
-      ${dailyBar()}
-      <div class="grid2"><button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>
-      <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="rank">🏆 ${t('ranking')}</button>
-      <button class="btn ghost sm" data-act="account">👤 ${VP.Acct && VP.Acct.status === 'in' ? t('ac_mycats') : t('account')}</button><button class="btn ghost sm" data-act="world">✈ ${t('world')}</button>
-      <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button>
-      <button class="btn teal sm wide" data-act="online">🌐 ${t('on_title')} <small class="newtag">${t('on_new')}</small></button>
-      <button class="btn ghost sm wide" data-act="catcity">🐱 ${t('gc_title')}</button>${VP.Ext ? VP.Ext.slot('title') : '' /* [hook:ext] */}</div>
-      ${foot()}</div>`,
+  html: () => `<div class="bg"${bg('title_bg')}></div><div class="shade"></div>
+    <div class="tbar"><div class="tl"><button class="ib" data-act="settings" aria-label="${esc(t('settings'))}">⚙</button><button class="ib" data-act="lang" aria-label="${esc(t('lang'))}">${VP.lang() === 'pt' ? '🇧🇷' : '🇺🇸'}</button><button class="ib" data-act="mute" aria-label="${esc(t('sound'))}">${VP.Audio.muted ? '🔇' : '🔊'}</button></div><div class="tr">${acctChip()}</div></div>
+    <div class="top"><h1 class="logo">VICE<span>PAWS</span></h1><p class="tag">${t('tagline')}</p></div>
+    <div class="art"></div>
+    <div class="in"><!--vp:toast--><!--vp:look-->
+      <button class="btn big play" data-act="play">▶ ${VP.S.unlocked > 1 || VP.S.pos ? t('cont') : t('play')}</button>
+      <div class="chips">${UI.challenge ? `<button class="dailybar chal" data-act="chalPlay">⚔️ <span><b>${esc(UI.challenge.name || t('ch_friend'))}</b> ${t('ch_dares', UI.challenge.score)}<small>${esc(VP.mname(M.get(UI.challenge.n)))}</small></span><i>▶</i></button>` : ''}${dailyBar()}</div>
+      <nav class="dock">${dock('map', '🗺', t('tl_missions'))}${dock('shop', '🛍', t('tl_shop'), { cls: 'gold' })}${dock('sheetCat', '🐱', t('tl_mycat'))}${dock('online', '🌐', t('tl_online'), { badge: t('on_new') })}${dock('sheetMore', '☰', t('tl_more'))}</nav></div>
+    ${catSheet()}${moreSheet()}${loginSheet()}`,
+  after: () => { const el = $('#s-title'); if (el && UI.sheet) el.dataset.open = UI.sheet; },
 };
+// sheets (Meu Gato, Mais, login) toggle a data attribute, so opening one never re-renders the title
+UI.sheet = null;
+UI.openSheet = id => { UI.sheet = id; const el = root && root.querySelector('#s-title'); if (el) { if (id) el.dataset.open = id; else delete el.dataset.open; } };
+ACT.sheetCat = () => UI.openSheet('cat');
+ACT.sheetMore = () => UI.openSheet('more');
+ACT.sheetClose = () => UI.openSheet(null);
+// JOGAR: a player who is not signed in is offered "Entrar" or "Jogar como visitante" (at most once a day once they chose guest)
+const today = () => new Date().toISOString().slice(0, 10);
+UI.needLogin = () => { const A = VP.Acct; if (!A || A.status === 'in' || A.status === 'offline' || A.status === 'unknown') return false; return VP.ls.get('vp_guest') !== today(); };
+ACT.loginGo = () => { UI.openSheet(null); UI.show('account'); };
+ACT.guestPlay = () => { VP.ls.set('vp_guest', today()); UI.openSheet(null); ACT.play(); };
 ACT.haptic = () => { const off = VP.ls.get('vp_haptic') === '0'; VP.ls.set('vp_haptic', off ? '1' : '0'); if (off) VP.haptic(30); UI.relabel(); };
 ACT.lang = () => VP.setLang(VP.lang() === 'pt' ? 'en' : 'pt');
 ACT.mute = () => { VP.Audio.toggleMute(); UI.relabel(); };

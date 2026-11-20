@@ -112,7 +112,7 @@ const SECTIONS = {
       await page.locator('[data-act=sendScore]').click(); await page.waitForTimeout(300);
       ok(tag + ': posted entry carries the all-missions totals', posted && posted.score === 4500 && posted.missions === 5 && posted.stars === 12 && posted.level === 2, posted);
       // --- Cidade dos Gatos ---
-      await page.evaluate(() => VP.UI.show('title')); await page.locator('[data-act=catcity]').click(); await page.waitForTimeout(1500);
+      await page.evaluate(() => VP.UI.show('title')); await page.evaluate(() => VP.UI.act.sheetMore()); await page.locator('[data-act=catcity]').click(); await page.waitForTimeout(1500);
       const g = await page.evaluate(() => ({ cards: document.querySelectorAll('.catcard').length, names: [...document.querySelectorAll('.catcard b')].map(b => b.textContent), imgs: [...document.querySelectorAll('.catcard img')].filter(i => i.src && i.naturalWidth > 100).length, ig: [...document.querySelectorAll('.catcard .ig')].map(s => s.textContent), mail: /@[\w.]+\.(com|co|br)\b/.test(document.querySelector('#s-catcity').textContent) }));
       ok(tag + ': gallery lists the registered cats plus the three stars', g.cards === 6 && g.names.includes('Frajola') && g.names.some(n => /Mimosa/.test(n)), g.names);
       ok(tag + ': every card has a 3D portrait', g.imgs === g.cards, g);

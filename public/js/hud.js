@@ -101,13 +101,14 @@ H.draw = function (G, dt) {
   if (G.keys > 0) { Art.icon(c, 'key', 148 * k, ly, 8 * k); txt('×' + G.keys, 162 * k, ly + 1, 13 * k, GOLD, 'left'); }
   // ---- objective ----
   const ob = H.ob = VP.Missions.objective(G);
-  const ow = Math.min(w - 20 * k, 420 * k), ox = w > 700 ? w / 2 - ow / 2 : 10 * k, oy = w > 700 ? H.top + 12 * k : H.top + 108 * k;
-  const lines = wrap(ob.txt, ow - 26 * k - (ob.cat ? 30 * k : 0), 13.5 * k), oh = (lines.length * 17 + 12 + (ob.prog ? 9 : 0)) * k;
+  const ow = Math.min(w - 20 * k, 420 * k), ox = w > 700 ? w / 2 - ow / 2 : 10 * k, oy = w > 700 ? H.top + 12 * k : H.top + (G.wanted > 0 || G.wantedFlash > 0 ? 142 : 124) * k; // on phones: below the minimap label (and the wanted stars)
+  const ofs = (w > 700 ? 13.5 : 14.5) * k, lh = w > 700 ? 17 : 18.5; // a touch larger on phones: the goal is the one line everybody must read
+  const lines = wrap(ob.txt, ow - 26 * k - (ob.cat ? 30 * k : 0), ofs), oh = (lines.length * lh + 12 + (ob.prog ? 9 : 0)) * k;
   if (G.objFlash > 0) G.objFlash -= dt * 1.2;
   pill(ox, oy, ow, oh, 'rgba(18,4,31,.72)', G.objFlash > 0 ? GOLD : (ob.cat ? CATCOL[ob.cat] : 'rgba(255,79,184,.8)'));
   let tx = ox + 13 * k;
   if (ob.cat) { portrait(ob.cat, ox + 20 * k, oy + oh / 2, 13 * k); c.beginPath(); c.arc(ox + 20 * k, oy + oh / 2, 13 * k, 0, 6.283); c.strokeStyle = CATCOL[ob.cat]; c.lineWidth = 2; c.stroke(); tx += 30 * k; }
-  lines.forEach((l, i) => txt(l, tx, oy + (15 + i * 17) * k, 13.5 * k, '#fff', 'left', false, '800'));
+  lines.forEach((l, i) => txt(l, tx, oy + (15 + i * lh) * k, ofs, '#fff', 'left', false, '800'));
   if (ob.prog) bar(tx, oy + oh - 11 * k, ow - (tx - ox) - 14 * k, 6 * k, ob.prog[0] / ob.prog[1], GOLD);
   if (G.mtimer !== null && G.mtimer !== undefined) { const low = G.mtimer < 10; txt(U.fmtTime(G.mtimer), w / 2, oy + oh + 22 * k, (low ? 30 + Math.sin(t * 10) * 3 : 24) * k, low ? '#ff4f5e' : '#fff'); }
   // ---- boss bar ----
@@ -127,7 +128,7 @@ H.draw = function (G, dt) {
     const p = R3.project(ob.at.x, ob.at.y, 1.2), behind = p.z > 1;
     if (!p.on || behind) {
       let dx = p.x - w / 2, dy = p.y - h / 2; if (behind) { dx = -dx; dy = Math.abs(dy) + h; }
-      const an = Math.atan2(dy, dx), ex = U.clamp(w / 2 + Math.cos(an) * w, 34 * k, w - 34 * k), ey = U.clamp(h / 2 + Math.sin(an) * h, H.top + 150 * k, h - 190 * k);
+      const an = Math.atan2(dy, dx), ex = U.clamp(w / 2 + Math.cos(an) * w, 34 * k, w - 34 * k), ey = U.clamp(h / 2 + Math.sin(an) * h, H.top + (w > 700 ? 150 : 200) * k, h - (touch ? (ex > w * 0.5 ? 372 : 300) : 190) * k); // on phones: above the ability buttons and the emote button
       c.save(); c.translate(ex, ey); c.rotate(an); Art.poly(c, [16 * k, 0, -8 * k, -11 * k, -3 * k, 0, -8 * k, 11 * k], ob.free ? PINK : GOLD, INK, 2.5); c.restore();
       const dist = Math.round(Math.hypot(ob.at.x - a.x, ob.at.y - a.y) / 24); txt(dist + 'm', ex - Math.cos(an) * 26 * k, ey - Math.sin(an) * 26 * k, 11 * k, '#fff');
     }
@@ -205,11 +206,20 @@ function radar(G, k, t, ob) {
   if (ob.at && !ob.free) pin(ob.at.x, ob.at.y, GOLD, (4.5 + Math.sin(t * 6)) * k);
   Art.poly(c, [m.x, m.y - 7 * k, m.x - 5 * k, m.y + 5 * k, m.x, m.y + 2 * k, m.x + 5 * k, m.y + 5 * k], '#fff', INK, 1.5);
   c.beginPath(); c.arc(m.x, m.y, m.r, 0, 6.283); c.lineWidth = 3; c.strokeStyle = G.wanted > 0 ? (Math.floor(t * 4) % 2 ? '#ff2040' : '#2a6bff') : PINK; c.stroke();
-  const d = VP.World.distAt(W, a.x, a.y); txt(W.real ? W.real.name.split(' — ').pop().toUpperCase().slice(0, 18) : VP.t('d' + ((G.m.d === 5 || G.m.d === 6) && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
+  const d = VP.World.distAt(W, a.x, a.y), rn = W.real ? W.real.name.split(' — ').pop().toUpperCase() : ''; txt(W.real ? (rn.length > 16 ? rn.slice(0, 15).trim() + '…' : rn) : VP.t('d' + ((G.m.d === 5 || G.m.d === 6) && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
 }
 
+// world labels (places, mission beams, shop): never under the top HUD, never on top of each other
+let placed = [];
+function lab(s, x, y, size, col) {
+  const w = H.w, top = H.top, k = H.k; c.font = '900 ' + size + 'px ' + FONT; const tw = c.measureText(s).width / 2 + 4, th = size * 0.7;
+  for (let n = 0; n < 5; n++) { let hit = false; for (const r of placed) if (Math.abs(r.x - x) < r.w + tw && Math.abs(r.y - y) < r.h + th) { hit = true; break; } if (!hit) break; y -= size * 1.25; }
+  if (w > 700 ? (y < top + 70 * k || (y < top + 130 * k && x - tw < 260 * k) || (y < top + 150 * k && x + tw > w - 120 * k)) : y < top + 182 * k) return false;
+  placed.push({ x, y, w: tw, h: th }); txt(s, x, y, size, col); return true;
+}
 function worldLabels(G, R3, k, t) {
   if (!R3 || !R3.ok) return;
+  placed = [];
   const a = G.cats[G.active];
   // dogs: carried loot, hp
   for (const e of G.dogs) {
@@ -231,16 +241,16 @@ function worldLabels(G, R3, k, t) {
   if (G.car && G.car.hp < G.car.max) { const p = R3.project(G.car.x, G.car.y, 2.2); if (p.on) bar(p.x - 24 * k, p.y, 48 * k, 6 * k, G.car.hp / G.car.max, G.car.hp / G.car.max < 0.35 ? '#ff4f5e' : '#7CFF6B'); }
   if (G.ctx && G.ctx.k === 'car' && !I.touch) { const p = R3.project(G.ctx.car.x, G.ctx.car.y, 2.2); if (p.on) txt('[E] ' + VP.t('enter'), p.x, p.y, 13 * k, TEAL); }
   for (const f of G.friends) if (f.label && Math.abs(f.x - a.x) < 700 && Math.abs(f.y - a.y) < 700) { const p = R3.project(f.x, f.y, 1.7); if (p.on) txt(f.label, p.x, p.y, 11 * k, f.name === 'avatar' ? GOLD : '#fff'); }
-  if (G.W.landmarks) for (const l of G.W.landmarks) { const dl = Math.max(Math.abs(l.gx - a.x), Math.abs(l.gy - a.y)); if (dl > (l.beacon ? 3200 : 1000)) continue; const p = R3.project(l.gx, l.gy, 5); if (p.on) txt((VP.S.tour && VP.S.tour[G.tour] && VP.S.tour[G.tour].seen[l.name] ? '✓ ' : '📍 ') + l.name, p.x, p.y, 10.5 * k, GOLD); }
   // mission beams
-  if (G.markers) for (const mk of G.markers) {
+  if (G.markers) for (const mk of G.markers.slice().sort((p, q) => U.d2(p.x, p.y, a.x, a.y) - U.d2(q.x, q.y, a.x, a.y))) {
     if (U.d2(mk.x, mk.y, a.x, a.y) > 1500 * 1500) continue;
     const p = R3.project(mk.x, mk.y, 3.4); if (!p.on) continue;
-    if (mk.k === 'shop') txt('🛍 ' + VP.t('shop'), p.x, p.y, 13 * k, GOLD);
-    else if (mk.k === 'npc') txt('💬 ' + mk.label, p.x, p.y, 12 * k, '#7CFF6B');
-    else if (mk.k === 'race') txt('🏁 ' + mk.label, p.x, p.y, 12 * k, TEAL);
-    else { const m = VP.Missions.get(mk.n); if (!m) continue; txt((m.boss ? '👑 ' : '') + (m.side ? '★' : 'M' + (m.bonus ? '★' : m.n)), p.x, p.y - 9 * k, 15 * k, mk.col); txt(VP.mname(m), p.x, p.y + 8 * k, 11.5 * k, '#fff'); }
+    if (mk.k === 'shop') lab('🛍 ' + VP.t('shop'), p.x, p.y, 13 * k, GOLD);
+    else if (mk.k === 'npc') lab('💬 ' + mk.label, p.x, p.y, 12 * k, '#7CFF6B');
+    else if (mk.k === 'race') lab('🏁 ' + mk.label, p.x, p.y, 12 * k, TEAL);
+    else { const m = VP.Missions.get(mk.n); if (!m) continue; if (lab(VP.mname(m), p.x, p.y + 8 * k, 12 * k, '#fff')) { const q = placed[placed.length - 1]; txt('▶ ' + (m.boss ? '👑 ' : '') + (m.side ? '★' : 'M' + (m.bonus ? '★' : m.n)), q.x, q.y - 17 * k, 15 * k, mk.col); q.y -= 9 * k; q.h += 10 * k; } }
   }
+  if (G.W.landmarks) for (const l of G.W.landmarks) { const dl = Math.max(Math.abs(l.gx - a.x), Math.abs(l.gy - a.y)); if (dl > (l.beacon ? 3200 : 1000)) continue; const p = R3.project(l.gx, l.gy, 5); if (p.on) lab((VP.S.tour && VP.S.tour[G.tour] && VP.S.tour[G.tour].seen[l.name] ? '✓ ' : '📍 ') + l.name, p.x, p.y, 10.5 * k, GOLD); }
   // floating numbers + sim text particles
   for (const tx of G.texts) { const p = R3.project(tx.x, tx.y + 20, 1.7 + tx.t * 1.3); if (p.on) { c.globalAlpha = Math.min(1, (0.9 - tx.t) * 4); txt(tx.txt, p.x, p.y, tx.size * k * (tx.t < 0.1 ? 1 + (0.1 - tx.t) * 5 : 1), tx.col); c.globalAlpha = 1; } }
   for (const pt of G.parts) if (pt.k === 'txt' || pt.k === 'icon') { const p = R3.project(pt.x, pt.y + 30, 2.1 + pt.t); if (!p.on) continue; if (pt.k === 'txt') txt(pt.txt, p.x, p.y, pt.size * k, pt.col); else Art.icon(c, pt.icon, p.x, p.y, pt.size * k, t); }

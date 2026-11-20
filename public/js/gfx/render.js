@@ -141,6 +141,15 @@ R.spec = function (name, vip) { const Wd = VP.Wardrobe; if (Wd) return Wd.spec(n
 R.catSpec = function (name, G) { return R.spec(name, (G && G.forceVip) || (!VP.Wardrobe && VP.Shop && VP.Shop.has('vip'))); };
 R.refreshCats = function () { for (const [e, o] of ents) if (e.kind === 'cat') { dyn.remove(o); ents.delete(e); } };
 
+// height of a cat: the ground, or the top of the parkour platform it stands on (with the arcs of hops and jump-pad flights)
+const platY = (p, x, y) => (p ? hAt(p.x, p.y) + p.h : hAt(x, y));
+function catY(c) {
+  if (c.jump) { const j = c.jump, f = Math.min(1, j.t / j.dur); return U.lerp(platY(j.fp, j.fx, j.fy), platY(j.tp, j.tx, j.ty), f) + Math.sin(f * Math.PI) * j.arc; }
+  let y = platY(c.plat, c.x, c.y);
+  if (c.dropT > 0) y += (c.dropH || 0) * Math.pow(c.dropT / 0.26, 2); else if (c.climbT > 0) y -= 0.5 * (c.climbT / 0.18);
+  return y;
+}
+R.catY = catY;
 function syncCat(c, G, dt, near) {
   const o = obj(c, () => { const g = buildCat(R.catSpec(c.name, G)); g.userData.px = c.x; g.userData.py = c.y; return g; });
   if (G.car) { o.visible = false; return; }
@@ -149,11 +158,13 @@ function syncCat(c, G, dt, near) {
   let h = ud.h === undefined ? c.aim : ud.h;
   if (c.atk > 0.05 || c.recoil > 0.05 || (c.idx === G.active && I.attack) || c.dashT > 0) h = c.aim; else if (moving) h = Math.atan2(mvy, mvx);
   turn(o, h, dt * 14);
-  o.position.set(c.x * S, hAt(c.x, c.y) + (c.hopT > 0 ? Math.sin((1 - c.hopT / 0.5) * Math.PI) * 0.9 : 0), c.y * S);
+  o.position.set(c.x * S, catY(c) + (c.hopT > 0 ? Math.sin((1 - c.hopT / 0.5) * Math.PI) * 0.9 : 0), c.y * S);
   const dance = G.over && G.won ? G.real : 0;
   const st = ud.st || (ud.st = {});
   st.t = c.t; st.walk = c.walk && !c.down; st.atk = c.atk; st.down = c.down; st.sleepy = c.exhausted || (c.name === 'mimo' && G.nap > 0); st.recoil = c.recoil; st.mouth = c.mouth; st.hop = 0; st.spin = 0;
   if (dance && !c.down) { const vip = ud.spec && ud.spec.shiny, t = G.real * (vip ? 7 : 5) + c.idx * 1.2; st.hop = Math.abs(Math.sin(t)) * (vip ? 0.5 : 0.3); st.walk = 1; if (vip) st.spin = c.name === 'morticia' ? G.real * 7 : Math.sin(G.real * 3.5 + c.idx) * 0.9; }
+  // a follower standing right in front of the lens would hide the leader (it happens a lot on phones): step out of the shot
+  if (c.idx !== G.active) { const dx = o.position.x - camera.position.x, dz = o.position.z - camera.position.z; o.visible = dx * dx + dz * dz > 4.4; if (!o.visible) return; } else o.visible = true;
   if (c.root > 0) st.walk = 0;
   st.sit = 0; st.wave = 0;
   if (c.emote && !c.down) { const k = c.emote.k, et = c.t; if (k === 'dance') { st.walk = 1; st.hop = Math.abs(Math.sin(et * 8)) * 0.38; st.spin = Math.sin(et * 4.5) * 1.1; } else if (k === 'sit') st.sit = 1; else if (k === 'wave') { st.wave = 1; st.hop = Math.abs(Math.sin(et * 6)) * 0.08; } else st.mouth = Math.max(st.mouth || 0, 0.8); }
@@ -209,7 +220,8 @@ function syncProp(p, G) {
     return m;
   });
   if (!o) return;
-  o.position.set(p.x * S, hAt(p.x, p.y), p.y * S);
+  o.position.set(p.x * S, (p.k === 'pkpad' && p.plat ? hAt(p.plat.x, p.plat.y) + p.plat.h : hAt(p.x, p.y)), p.y * S);
+  if (p.k === 'pkpad') { o.rotation.y = p.t * 2; const sc = 1 + Math.sin(p.t * 5) * 0.06 + (p.flash > 0 ? 0.3 : 0); o.scale.set(sc, sc, sc); }
   if (HIDE_DONE[p.k] && p.done) { o.visible = false; return; }
   if (o.userData.geoB) { const g = p.done ? o.userData.geoB : o.userData.geoA; if (o.geometry !== g) o.geometry = g; }
   if (o.userData.kit) { o.userData.kit.visible = !p.done; if (!p.done) animCat(o.userData.kit, { t: p.t, walk: 0 }); }
@@ -318,7 +330,7 @@ function setXmas(on) {
 // ---------- camera ----------
 function updateCamera(G, dt) {
   const a = G.car || G.cats[G.active];
-  const tx = a.x * S, tz = a.y * S, by = H0(a.x, a.y);
+  const tx = a.x * S, tz = a.y * S, by = !G.car && (a.plat || a.jump) ? catY(a) : H0(a.x, a.y);
   cam.by = cam.by === undefined || !cam.init ? by : cam.by + (by - cam.by) * Math.min(1, dt * 6);
   // manual look (desktop RMB drag / HUD) + gentle auto-follow
   cam.yaw += I.look; I.look = 0;
@@ -364,7 +376,7 @@ R.render = function (G, dt) {
   updateCamera(G, dt);
   const a = G.car || G.cats[G.active], near = R.quality === 0 ? 1250 * 1250 : 1900 * 1900, nearItem = R.quality === 0 ? 900 * 900 : 1300 * 1300;
   for (const c of G.cats) syncCat(c, G, dt);
-  for (const f of G.friends) { const o = obj(f, () => { const g = buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
+  for (const f of G.friends) { const o = obj(f, () => { const g = buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); { const dx = o.position.x - camera.position.x, dz = o.position.z - camera.position.z; o.visible = dx * dx + dz * dz > 6.2; } animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
   for (const e of G.dogs) if (U.d2(e.x, e.y, a.x, a.y) < near) syncDog(e, G, dt);
   for (const c of G.cars) if (!c.dead && U.d2(c.x, c.y, a.x, a.y) < near * 1.6) syncCar(c, G);
   for (const it of G.items) if (U.d2(it.x, it.y, a.x, a.y) < nearItem) syncItem(it);
@@ -375,7 +387,7 @@ R.render = function (G, dt) {
   for (const [e, o] of ents) if (o.userData.f !== frame) { if (e.dead || e.life <= 0 || !o.userData.keep && (e.kind === 'net' || e.t > e.dur || !alive(G, e))) { dyn.remove(o); ents.delete(e); } else o.visible = false; }
   // active ring + objective beam
   const ac = G.cats[G.active];
-  fx.activeRing.visible = !G.car && !ac.down; fx.activeRing.position.set(ac.x * S, hAt(ac.x, ac.y) + 0.05, ac.y * S); fx.activeRing.scale.setScalar(1 + Math.sin(G.real * 5) * 0.06);
+  fx.activeRing.visible = !G.car && !ac.down; fx.activeRing.position.set(ac.x * S, (ac.jump ? hAt(ac.x, ac.y) : platY(ac.plat, ac.x, ac.y)) + (ac.plat && !ac.jump ? 0.1 : 0.05), ac.y * S); fx.activeRing.scale.setScalar(1 + Math.sin(G.real * 5) * 0.06);
   for (const c of G.cats) if (c.down && !G.car) glow(c.x * S, 0.8, c.y * S, '#ff4f7a', 5 + Math.sin(G.real * 6));
   const ob = G.free ? null : VP.Missions.objective(G), at = ob && ob.at;
   const farAt = at && at.x !== undefined && U.d2(at.x, at.y, ac.x, ac.y) > 70 * 70 && !(ob.step && ob.step.mini);

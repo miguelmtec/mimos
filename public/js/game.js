@@ -432,6 +432,52 @@ function doSpecial(c) {
   }
 }
 Game.special = doSpecial;
+// ---------- parkour course: low roofs, crates, gaps and jump pads ----------
+// The simulation stays 2D: a course is a set of rectangles ("platforms") with a height. The leading cat climbs anything up to
+// CLIMB higher than where it stands just by walking into it, hops over short gaps on its own when it walks off an edge
+// towards another platform, and is launched by jump pads. Walking off anywhere else is a harmless drop. No jump button:
+// it plays the same on touch and keyboard. plats: {x, y, hw, hh (px), h (3D units), solid}, pads: {x, y, plat, to: {x, y, plat}}.
+const CLIMB = 0.85, HOP = 150;
+Game.addCourse = function (plats, pads) {
+  G.pk = { plats: [], pads: [] };
+  for (const o of plats) { const p = Game.addProp(Object.assign({ k: 'pkplat', solid: true }, o)); G.pk.plats.push(p); }
+  for (const o of pads || []) { const p = Game.addProp(Object.assign({ k: 'pkpad' }, o)); G.pk.pads.push(p); }
+  return G.pk;
+};
+function platAt(x, y, m) { let best = null; m = m || 0; for (const p of G.pk.plats) if (Math.abs(x - p.x) <= p.hw + m && Math.abs(y - p.y) <= p.hh + m && (!best || p.h > best.h)) best = p; return best; }
+Game.platAt = (x, y) => (G && G.pk ? platAt(x, y) : null);
+function startJump(c, to, dur, arc) { c.jump = { t: 0, dur, arc, fx: c.x, fy: c.y, fp: c.plat || null, tx: to.x, ty: to.y, tp: to.plat || null }; c.emote = null; sfx('dash', 0.05); }
+function pkJump(c, dt) {
+  const j = c.jump; j.t += dt; const f = Math.min(1, j.t / j.dur);
+  c.x = U.lerp(j.fx, j.tx, f); c.y = U.lerp(j.fy, j.ty, f); c.walk = 1;
+  if (f >= 1) { c.plat = j.tp; c.jump = null; poof(c.x, c.y - 6, 5, '#fff'); sfx('step', 0.05); VP.haptic(10); }
+}
+// one movement step of the leading cat on a map with a course
+function pkMove(c, dx, dy, mode) {
+  const cur = c.plat || null, ch = cur ? cur.h : 0, nx = c.x + dx, ny = c.y + dy, np = platAt(nx, ny);
+  if (np && np !== cur && np.h > ch + 0.01) {
+    if (np.h - ch <= CLIMB) { c.x = nx; c.y = ny; c.plat = np; c.climbT = 0.18; sfx('step', 0.08); return false; } // low enough: climb
+    if (np.solid && !cur) return true;                 // a wall for cats on the ground
+    if (!cur) return step(c, dx, dy, mode);            // roofs on posts: walk underneath
+  }
+  if (cur) {
+    if (np === cur || (np && np.h <= ch)) { c.x = nx; c.y = ny; if (np !== cur) { c.plat = np; c.dropH = ch - np.h; c.dropT = 0.16; } return false; }
+    if (!np) { // walking off the edge: hop to a platform straight ahead, otherwise drop to the ground
+      const l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l;
+      for (let d = 24; d <= HOP; d += 8) { const q = platAt(c.x + ux * d, c.y + uy * d); if (q && q !== cur && q.h - ch <= CLIMB + 0.1) { const lx = U.clamp(c.x + ux * (d + 30), q.x - q.hw + 14, q.x + q.hw - 14), ly = U.clamp(c.y + uy * (d + 30), q.y - q.hh + 14, q.y + q.hh - 14); startJump(c, { x: lx, y: ly, plat: q }, 0.4, 0.9); return false; } }
+      if (W.blocked(nx, ny, c.r, mode)) return true;
+      c.x = nx; c.y = ny; c.plat = null; c.dropH = ch; c.dropT = 0.26; poof(c.x, c.y - 6, 4, '#fff'); return false;
+    }
+    return true; // a taller platform ahead while up here: blocked
+  }
+  return step(c, dx, dy, mode);
+}
+// keep cats consistent after dashes, knockbacks or a switch; fire jump pads
+function pkTick(c, dt) {
+  if (c.climbT > 0) c.climbT -= dt; if (c.dropT > 0) c.dropT -= dt;
+  if (c.plat && !c.jump && (Math.abs(c.x - c.plat.x) > c.plat.hw + 3 || Math.abs(c.y - c.plat.y) > c.plat.hh + 3)) { const q = platAt(c.x, c.y); if (q && q.h <= c.plat.h + CLIMB) c.plat = q; else { c.dropH = c.plat.h; c.dropT = 0.26; c.plat = null; } }
+  if (!c.jump && c.idx === G.active && !c.down) for (const p of G.pk.pads) if ((p.plat || null) === (c.plat || null) && U.d2(c.x, c.y, p.x, p.y) < 34 * 34) { startJump(c, p.to, 0.85, 2.6); p.flash = 0.4; burst(p.x, p.y - 10, 8, ['#2de2e6', '#fff'], 180, 'star', 6, 0.4); VP.haptic(18); break; }
+}
 // Emotes: little gestures of the active cat (HUD buttons or Z X C V). Pure fun today; they travel in Game.snapshot()
 // so other players will see them when the shared world arrives.
 const EMOTES = Game.EMOTES = { miau: 1.3, dance: 3.2, sit: 5, wave: 1.9 };
@@ -490,11 +536,12 @@ function updCat(c, dt) {
   let spd = c.spd * pace * (c.exhausted ? 0.62 : 1) * (c.root > 0 ? 0 : 1);
   if (c.name === 'morticia' && c.belly <= 0) spd *= 0.8;
   if (c.hopT > 0) c.hopT -= dt;
+  if (G.pk) { pkTick(c, dt); if (c.jump) { pkJump(c, dt); return; } }
   if (c.emote) { c.emote.t -= dt; if (c.emote.t <= 0 || (isA && (Math.hypot(I.mx, I.my) > 0.3 || I.attack))) c.emote = null; else if (c.emote.k === 'miau') c.mouth = Math.max(c.mouth, 0.6); } // moving or attacking ends the gesture
   if (isA) {
     const m = Math.hypot(I.mx, I.my);
     if (m > 0.12 && spd > 0) spd *= slopeMul(c.x, c.y, I.mx / m, I.my / m);
-    if (m > 0.12 && spd > 0) { step(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); c.walk = 1; if (!I.attack && Math.abs(I.mx) > 0.15) c.face = I.mx > 0 ? 1 : -1; if (Math.random() < dt * 9) part({ x: c.x - I.mx * 8, y: c.y - 1, k: 'puff', size: 5, life: 0.3, col: 'rgba(255,255,255,.5)' }); }
+    if (m > 0.12 && spd > 0) { if (G.pk) pkMove(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); else step(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); c.walk = 1; if (!I.attack && Math.abs(I.mx) > 0.15) c.face = I.mx > 0 ? 1 : -1; if (Math.random() < dt * 9) part({ x: c.x - I.mx * 8, y: c.y - 1, k: 'puff', size: 5, life: 0.3, col: 'rgba(255,255,255,.5)' }); }
     // aim
     const range = c.name === 'mimo' ? 520 : 120, kind = c.name === 'mimo' ? 'bolt' : c.name === 'mimosa' ? 'bite' : 'snatch';
     let ang = null;

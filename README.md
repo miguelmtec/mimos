@@ -25,13 +25,19 @@ Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**,
 - **Guarda-roupa** por slots (cabeça, olhos, pescoço, roupa, costas, rastro) com moedas ganhas nas missões.
 - **Guarda-roupa com 80 itens** e **Loja dos Mimos (Pix):** Pacote VIP, Temporada Natal Neon, +10 vidas, apoio (a partir de R$0,99) e pacotes de visual de R$0,99/R$1,99 (Praia, Agro, Festa, Natal). Só enfeite e bônus; dá para zerar sem pagar. Sem sorteio, sem dobrador de moedas.
 - **Conta opcional:** login por código no e-mail, "Meus gatos" (crie seu gato 3D), progresso na nuvem e a "Cidade dos Gatos" (gatos públicos de outros jogadores passeando).
-- **Volta ao Mundo:** bairros reais extraídos do OpenStreetMap (Miami Beach, Copacabana, Vidigal, Santa Marta e os próximos) com relevo de verdade, cartões-postais para colecionar e 10 missões por cidade (pacotes escritos à mão para Miami, Copacabana e Rio Verde; modelo automático para as demais). Mapas de **comunidade** só têm missões positivas: sem polícia, sem procurado, sem crime.
+- **Volta ao Mundo:** bairros reais extraídos do OpenStreetMap (Miami Beach, Copacabana, Vidigal, Santa Marta e os próximos) com relevo de verdade, cartões-postais para colecionar e 10 missões por cidade. Tela de viagem com **mapa** (Brasil primeiro, depois o mundo), alfinetes por cidade, cartões agrupados por país com o progresso (⭐ estrelas, 🐾 patinhas, 📸 cartões-postais), destinos "em breve" e **voo animado** enquanto o mapa baixa. Miami e Rio são livres; as outras cidades abrem com estrelas. Tudo grátis.
+- **Pacotes de missões escritos à mão** para Miami, Copacabana, Rio Verde, Urca, Lapa, Maracanã, São Paulo (Paulista), Brasília, Salvador, Paris, Tóquio e Nova York; as demais cidades usam o modelo automático. Mapas de **comunidade** só têm missões positivas: sem polícia, sem procurado, sem crime.
+- **Cidades com poucos prédios no mapa** (ex.: Rio Verde, com 162 ruas e 22 prédios no OpenStreetMap) são completadas por um gerador: casas coloridas com muro e portão, lojas com toldo, predinhos e ipês floridos ao longo das ruas reais, no estilo do país, sempre iguais para todo mundo (semente = id da cidade).
+- **Rio no horizonte:** Cristo Redentor e Pão de Açúcar (com bondinho) aparecem ao fundo nos mapas do Rio; a câmera chega olhando para eles.
+- **Parkour de telhado:** nas missões de parkour o gato sobe caixotes só andando, salta vãos sozinho e voa em trampolins até o telhado alto. Sem botão de pulo: igual no toque e no teclado.
+- **Cidade dos Gatos:** galeria com os gatos cadastrados pelos jogadores (retrato 3D, nome, raça, recado e @), os mesmos que passeiam pela cidade. **Emotes** do gato (miau, dançar, sentar, acenar) por botões no celular ou Z X C V.
+- **Ranking** soma todas as missões (história, capítulos e Volta ao Mundo). **Vibração** nos golpes no celular (dá para desligar em Ajustes).
 - PT-BR e inglês, feito primeiro para celular (retrato, navegador do Instagram).
 
 ## Controles
 
-- **Celular:** analógico esquerdo anda · direito mira e ataca · botões de especial, dash e ação · toque nos retratos troca de gato.
-- **PC:** WASD · mouse mira · clique ataca · Espaço especial · Shift dash · E ação/carro · 1 2 3 troca · botão direito gira a câmera · P pausa · M mudo.
+- **Celular:** analógico esquerdo anda · direito mira e ataca · botões de especial, dash e ação · toque nos retratos troca de gato · 😺 abre os emotes (cidade livre).
+- **PC:** WASD · mouse mira · clique ataca · Espaço especial · Shift dash · E ação/carro · 1 2 3 troca · Z X C V emotes · botão direito gira a câmera · P pausa · M mudo.
 
 ## Como rodar
 
@@ -59,7 +65,7 @@ Tudo fica em `public/data/` e o esquema está em [DESIGN.md](DESIGN.md):
 - `citypacks.json`: missões por cidade real (pacotes, modelo padrão, modelo de comunidade). `events.json`: eventos semanais. Ambos saem de `node tools/gen-packs.mjs`.
 - `activities.json`: contra-relógios, missões de NPC, patinhas.
 - `outfits.json`: itens do guarda-roupa. `items.json`: valores de comida.
-- `cities/`: mapas reais. Rode `node tools/build-cities.mjs <pasta-com-os-json>` para copiar os extratos e regerar o `index.json`.
+- `cities/`: mapas reais. Rode `node tools/build-cities.mjs <pasta-com-os-json>` para copiar os extratos e regerar o `index.json`. O visual de cada cidade (céu, paleta, palmeiras, estrelas para abrir) e a lista de destinos previstos ficam em `tools/city-meta.mjs`. Um pacote de missões escrito antes do mapa chegar fica valendo sozinho quando o arquivo aparece.
 
 ## Testes
 
@@ -67,6 +73,8 @@ Tudo fica em `public/data/` e o esquema está em [DESIGN.md](DESIGN.md):
 npm test                                   # API de contas + validação do conteúdo (Node, sem instalar nada)
 node tests/e2e/missions.cjs all             # bot joga as 209 missões em modo acelerado (~2 min)
 node tests/e2e/expansion.cjs                # modelos novos, diário/semanal, treino no toque, relevo + comunidade, compartilhar, pacotes
+node tests/e2e/expansion2.cjs [seção]       # cidades esparsas, horizonte do Rio, mapa-múndi, ranking, galeria, emotes, vibração, parkour, HUD, peso da 1ª carga
+node tests/e2e/packs.cjs [id,id]            # pacotes de cidade: mapa real ou substituto, lugares na rua, bot vence as 10 missões
 node tests/e2e/perf.cjs 4 [cidade]          # triângulos/draw calls por qualidade e tempo de quadro com CPU 4x mais lenta
 node tests/e2e/shots.cjs [filtro]           # capturas 390x844 (toque) e 1280x800
 node tests/e2e/missions.cjs 1000,1001 miami # missões de viagem
@@ -86,7 +94,7 @@ Os testes e2e usam Playwright (Chromium com WebGL por software). Capturas vão p
 
 ## English
 
-**Vice Paws** is a free 3D open-world fan game starring three real Persian cats from [@mimo.mimosa.morticia](https://www.instagram.com/mimo.mimosa.morticia/): **Mimo** shoots (and gets tired), **Mimosa** bites (and tanks), **Morticia** eats other people's things (and sneaks through cat flaps). Switch between them at any time, revive the fallen (no cat left behind) and clear 209 missions (50 story missions, 15 extra chapters and bonus districts) across a five-district neon city, plus bosses, daily challenges, weekly events, time trials, side quests, an 80-item wardrobe, a shareable score card, an optional account with your own custom cat, and a World Tour of real neighbourhoods (with real terrain) built from OpenStreetMap data.
+**Vice Paws** is a free 3D open-world fan game starring three real Persian cats from [@mimo.mimosa.morticia](https://www.instagram.com/mimo.mimosa.morticia/): **Mimo** shoots (and gets tired), **Mimosa** bites (and tanks), **Morticia** eats other people's things (and sneaks through cat flaps). Switch between them at any time, revive the fallen (no cat left behind) and clear 209 missions (50 story missions, 15 extra chapters and bonus districts) across a five-district neon city, plus bosses, daily challenges, weekly events, time trials, side quests, an 80-item wardrobe, a shareable score card, an optional account with your own custom cat, a gallery of players' cats, emotes, and a World Tour of real neighbourhoods (real terrain, a world map with per-city progress, hand-written mission packs, procedural buildings where the map data is sparse) built from OpenStreetMap data.
 
 - No build step: serve `public/` (`python3 -m http.server 8000 --directory public`). Vercel serves `public/` and the functions in `api/`.
 - All content is data-driven (`public/data/*.json`); the schema is documented in [DESIGN.md](DESIGN.md).

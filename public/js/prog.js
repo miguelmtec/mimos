@@ -266,7 +266,7 @@ function spawnPatrol(G, B, avoid, d) {
 P.freeSetup = function (G, B, sp, opts) {
   opts = opts || {}; const W = G.W;
   G.patrols = []; G.fishSpots = []; G.edge = null; G.guide = null;
-  if (opts.trial) return;
+  if (opts.trial || opts.online) return; // the shared city keeps to walking, phrases and paws
   // fishing spots on the piers (home city)
   for (const f of W.fish || []) { const mk = { x: f.x, y: f.y, k: 'fish', col: '#2de2e6', lbl: '🎣 ' + t('fi_label'), thin: true, quiet: true, cool: 0, d: f.d }; mk.act = () => P.fishStart(G, mk); G.markers.push(mk); G.fishSpots.push(mk); }
   // the daily market stall

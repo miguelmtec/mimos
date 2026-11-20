@@ -55,7 +55,7 @@ Rw.cachesFor = function (G) {
   return cfg.caches.filter(c => !c.month || c.month === month).map((c, k) => Object.assign({ at: spots[(k * 7) % spots.length] }, c)).filter(c => c.at);
 };
 { const f0 = P.freeSetup; P.freeSetup = function (G, B, sp, opts) {
-    f0(G, B, sp, opts); if (!Rw.cfg || G.W.real || (opts && opts.trial)) return;
+    f0(G, B, sp, opts); if (!Rw.cfg || G.W.real || (opts && (opts.trial || opts.online))) return;
     const s = S(), prem = Rw.premium(); G.caches = [];
     for (const c of Rw.cachesFor(G)) { if (s.caches[c.id] || (c.premium && !prem) || (G.lockedHoods && G.lockedHoods[World.distAt(G.W, c.at.x, c.at.y)])) continue; const it = Game.addItem('c_cache', c.at.x, c.at.y); it.cache = c; G.caches.push(it); }
     if (Rw.rainOn()) { const r = U.rng(Date.now() >>> 12); for (let i = 0; i < 40; i++) { const q = G.W.randWalk(r); if (!(G.lockedHoods && G.lockedHoods[World.distAt(G.W, q.x, q.y)])) Game.addItem('c_' + P.roll(r), q.x, q.y); } setTimeout(() => { if (Game.G === G) Game.fx.say('🌧 ' + t('rw_rain'), '#ffd23f', 5); }, 2500); }

@@ -103,8 +103,8 @@ Lg.freeSetup = function (G, B) {
     const def = Lg.pick(r, i === 0), id = (W.real ? W.real.id : 'home') + '_' + i; let q = null;
     for (let k = 0; k < 40 && !q; k++) { const c = W.randWalk(r); if (!(G.lockedHoods && G.lockedHoods[World.distAt(W, c.x, c.y)]) && !World.edgeAt(W, c.x, c.y)) q = c; }
     if (!q || !def || s.strays.got[id]) continue;
-    const f = Game.addFriend(q.x, q.y, 'f' + (i % 4)); f.spec = def.spec; f.stay = true; f.wander = true; f.home = { x: q.x, y: q.y }; f.label = '🐱 ' + t('lg_stray');
-    const mk = { x: q.x, y: q.y, k: 'stray', col: RAR[def.rarity], lbl: '', thin: true, quiet: true, sid: id, def, f };
+    const f = Game.addFriend(q.x, q.y, 'f' + (i % 4)); f.spec = def.spec; f.stay = true; f.stray = true;
+    const mk = { x: q.x, y: q.y, k: 'stray', col: RAR[def.rarity], lbl: '🐱 ' + t('lg_stray'), thin: true, quiet: true, sid: id, def, f };
     mk.act = () => { const got = Lg.rescue(def, 'stray'); if (!got) { Game.fx.say('🏠 ' + t(Lg.cap() ? 'lg_full' : 'lg_closed'), '#ffb347', 3); return; } s.strays.got[id] = 1; G.markers.splice(G.markers.indexOf(mk), 1); G.friends.splice(G.friends.indexOf(f), 1); Game.fx.burst(f.x, f.y - 16, 16, ['#ff7ac0', '#fff', '#ffd23f'], 180, 'heart', 8, 0.9); VP.Audio.sfx('revive'); Game.fx.say('💛 ' + t('lg_strayGot', def.name[L()]) + (got.isNew ? ' · ' + t('lg_new') : ''), '#ffd23f', 3.5); if (G.guide && G.guide.src === mk) G.guide = null; VP.persist(); };
     G.markers.push(mk); (G.strays = G.strays || []).push(mk);
   }
@@ -193,7 +193,7 @@ ACT.profile = () => { if (UI.state === 'play' && Game.G) UI.paused = true; UI.sh
 { const res0 = UI.result; UI.result = function (win, why) { const G = Game.G, m = G && G.m; res0(win, why); if (m && m.board !== undefined) { delete VP.S.stars[m.n]; delete VP.S.best[m.n]; VP.persist(); } }; }
 { const s = SC.result, h0 = s.html; s.html = r => { let html = h0(r); if (r && r.m.board !== undefined) html = html.replace(/<button class="btn big" data-act="start" data-n="\d+">▶[^]*?<\/button>/, r.win ? `<button class="btn big" data-act="board">📌 ${t('bd_title')}</button>` : '$&'); return html; }; }
 // free roam: strays to find; activities list gets the shelter and the board
-{ const f0 = P.freeSetup; P.freeSetup = function (G, B, sp, opts) { f0(G, B, sp, opts); if (!(opts && (opts.trial || opts.comu))) Lg.freeSetup(G, B); }; }
+{ const f0 = P.freeSetup; P.freeSetup = function (G, B, sp, opts) { f0(G, B, sp, opts); if (!(opts && (opts.trial || opts.comu || opts.online))) Lg.freeSetup(G, B); }; }
 { const a0 = P.activities; P.activities = function (G) {
     const out = a0(G); G = G || Game.G; if (!G || !G.free) return out;
     const a = G.car || G.cats[G.active], extra = [];

@@ -26,7 +26,7 @@ let base = null;
 { const load0 = Wd.load; const merge = () => { if (!base) return; const have = new Set(base.items.map(i => i.id)); for (const i of (Mm.data ? Mm.data.items : [])) if (!have.has(i.id)) base.items.push(Object.assign({ cats: [i.star] }, i));
     // the buyable catalogue of every season (data/seasons/<id>.json -> catalog): never capped; price null = awaiting the owner's price
     for (const def of ((VP.Season && VP.Season.defs) || [])) for (const i of ((def.catalog && def.catalog.items) || [])) if (i.slot && !have.has(i.id)) { have.add(i.id); base.items.push(Object.assign({ seasonal: def.id, line: 'season' }, i, i.grant || i.price ? {} : { how: 'soon' })); }
-    load0(base); if (UI.screen === 'title' && UI.relabel) UI.relabel(); };
+    const n0 = Mm.mergedN; Mm.mergedN = base.items.length; load0(base); if (n0 !== Mm.mergedN && UI.screen === 'title' && UI.relabel) UI.relabel(); };
   Wd.load = d => { base = d; merge(); };
   Mm.merge = merge; { let n = 0; const iv = setInterval(() => { if ((VP.Season && VP.Season.ready) || ++n > 40) { clearInterval(iv); merge(); } }, 250); }
   fetch('data/mimos.json').then(r => (r.ok ? r.json() : null)).then(d => { if (d && d.items) { Mm.data = d; merge(); } }).catch(() => {}); }
@@ -68,10 +68,11 @@ Mm.specFor = function (name, look) {
 Mm.showcaseLook = function (date) { const look = Mm.look(date); if (!look) return null; const cats = {}; for (const n of NAMES) cats[n] = { spec: Mm.specFor(n, look), items: Object.values(look.wear[n] || {}) }; return { id: look.id, name: look.name, week: Mm.weekOf(date), edition: 'Edição dos Mimos #0', cats }; };
 window.getMimosShowcaseLook = Mm.showcaseLook;
 let thumb = null, thumbId = null;
-Mm.thumb = function () { const lk = Mm.look(), R3 = VP.R3; if (!lk || !R3 || !R3.ok || !R3.snapshot) return ''; if (thumbId === lk.id && thumb) return thumb; try { const cv = R3.snapshot(NAMES.map((n, i) => ({ spec: Mm.specFor(n, lk), s: 1, x: (i - 1) * 1.5 })), 480, 240); thumb = cv ? cv.toDataURL('image/jpeg', 0.85) : ''; thumbId = lk.id; } catch (e) { thumb = ''; } return thumb; };
+Mm.thumb = function (make) { const lk = Mm.look(), R3 = VP.R3; if (!lk || !R3 || !R3.ok || !R3.snapshot) return ''; if (thumbId === lk.id) return thumb || ''; if (!make) return ''; // rendered once, off the title's critical path (see the title wrapper)
+  try { const cv = R3.snapshot(NAMES.map((n, i) => ({ spec: Mm.specFor(n, lk), s: 1, x: (i - 1) * 1.5 })), 480, 240); thumb = cv ? cv.toDataURL('image/jpeg', 0.85) : ''; } catch (e) { thumb = ''; } thumbId = lk.id; return thumb; };
 SC.look = {
   cls: 'glass', hideHud: true,
-  html: () => { const lk = Mm.look(); if (!lk) return `<div class="wrap narrow"><button class="btn" data-act="title">${t('back')}</button></div>`; const img = Mm.thumb();
+  html: () => { const lk = Mm.look(); if (!lk) return `<div class="wrap narrow"><button class="btn" data-act="title">${t('back')}</button></div>`; const img = Mm.thumb(true);
     return `<div class="corner l"><button class="chip" data-act="title">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="gold">✨ ${esc(lk.name[L()])}</h2><p class="small">${t('mm_look')} · ${t('mm_edition')}</p>
       ${img ? `<img src="${img}" alt="" style="width:100%;border-radius:18px;border:3px solid #ffd23f">` : ''}
       ${NAMES.map(n => `<h3>${esc(t(n))}</h3>${Object.values(lk.wear[n] || {}).map(id => { const it = byId(id); if (!it) return ''; const own = Wd.owns(it); return `<div class="pg-item ${own ? '' : 'zero'}"><div class="ic">${own ? '✔' : '👕'}</div><div class="tx"><b>${esc(it.name[L()])}</b><span>${own ? t('mm_have') : esc(Mm.howText(it))}</span></div></div>`; }).join('')}`).join('')}
@@ -80,5 +81,5 @@ SC.look = {
 };
 ACT.look = () => UI.show('look');
 ACT.lookWear = () => { const lk = Mm.look(), s = VP.S; s.wear = s.wear || {}; for (const n of NAMES) for (const sl in lk.wear[n]) { const it = byId(lk.wear[n][sl]); if (it && Wd.owns(it)) { s.wear[n] = s.wear[n] || {}; s.wear[n][sl] = it.id; } } VP.persist(); if (VP.R3.refreshCats) VP.R3.refreshCats(); UI.toast('👕 ✔'); UI.show('look'); };
-{ const s = SC.title, h0 = s.html; s.html = a => { let html = h0(a); const lk = Mm.look(); if (!lk) return html; const img = Mm.thumb(); return html.replace(/<div class="foot">/, `<button class="pg-card" data-act="look" style="width:100%;color:#fff;font:inherit;cursor:pointer">${img ? `<img src="${img}" alt="" style="width:108px;border-radius:12px">` : '<span class="em">✨</span>'}<div><b>✨ ${t('mm_look')}</b><span>${esc(lk.name[L()])}</span></div><span class="btn gold sm" style="margin:0">${t('mm_want')}</span></button><div class="foot">`); }; }
+{ const s = SC.title, h0 = s.html; s.html = a => { let html = h0(a); const lk = Mm.look(); if (!lk) return html; const img = Mm.thumb(); if (!img && thumbId !== lk.id && !Mm.thumbT) Mm.thumbT = setTimeout(() => { Mm.thumbT = null; const u = Mm.thumb(true), el = document.getElementById('mm-look-img'); if (u && el && UI.screen === 'title') el.outerHTML = `<img id="mm-look-img" src="${u}" alt="" style="width:108px;border-radius:12px">`; }, 1800); return html.replace(/<div class="foot">/, `<button class="pg-card" data-act="look" style="width:100%;color:#fff;font:inherit;cursor:pointer">${img ? `<img id="mm-look-img" src="${img}" alt="" style="width:108px;border-radius:12px">` : '<span class="em" id="mm-look-img">✨</span>'}<div><b>✨ ${t('mm_look')}</b><span>${esc(lk.name[L()])}</span></div><span class="btn gold sm" style="margin:0">${t('mm_want')}</span></button><div class="foot">`); }; }
 })();

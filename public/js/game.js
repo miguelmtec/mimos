@@ -441,7 +441,7 @@ function doSpecial(c) {
     for (const b of G.bullets) if (b.from === 'dog' && U.d2(b.x, b.y, c.x, c.y) < 210 * 210) b.life = 0;
     for (const k of G.cats) k.root = 0;
   } else {
-    if (!c.feastReady) { text(c.x, c.y - 50, tr('needFull'), '#ffb347', 13); return; }
+    if (!c.feastReady && c.belly < 99.5) { text(c.x, c.y - 50, tr('needFull'), '#ffb347', 13); return; }
     G.feast = 5 + pv('feastT', 0); c.belly = 55; c.feastReady = false; sfx('feast'); say(tr('feast') + '!', '#ffb347', 1.6); shake(6);
   }
 }

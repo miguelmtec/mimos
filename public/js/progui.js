@@ -57,7 +57,7 @@ function layout(G) {
   if (G.edge && free) { const pw = Math.min(w - 20 * k, 400 * k); b.edge = { x: w / 2 - pw / 2, y: H.h * 0.6, w: pw, h: 58 * k, rect: 1 }; }
   return b;
 }
-const hudOn = G => !!G && !G.tutorial && !G.trial && !G.over;
+const hudOn = G => !!G && !G.tutorial && !G.trial && !G.over && !G.online;
 P.hudHit = function (G, x, y) {
   if (!hudOn(G)) return null;
   const b = layout(G);

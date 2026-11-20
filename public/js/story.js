@@ -107,7 +107,7 @@ St.hoodOpen = function (d) {
 St.lockText = function (d) { const r = St.releaseOf('hood:' + d); return r && !St.released('hood:' + d) ? t('sy_worksCal', St.fmtDate(r.date)) : t('sy_works', St.NEED[d]); };
 St.freeSetup = function (G, B, sp, opts) {
   const W = G.W; G.lockedHoods = null;
-  if (W.real || opts.trial || opts.tour) return;
+  if (W.real || opts.trial || opts.tour || opts.online) return;
   // the shelter: a real place that grows with the story
   const lot = W.roles[5] && W.roles[5].garden;
   if (lot) { const x = lot.cx, y = lot.cy - 20, stage = St.stage(); Game.addProp({ k: 'shelter', x, y, stage }); const mk = { x: x, y: y + 150, k: 'shelter', col: '#ffd23f', lbl: '🏠 ' + t('sy_shelter') + ' · ' + t('sy_stage', stage), thin: true, quiet: true }; mk.act = () => { if (VP.Long && VP.Long.openShelter) VP.Long.openShelter(); else Game.fx.say('🏠 ' + t('sy_shelter') + ': ' + t('sy_stage', stage), '#ffd23f', 3); }; G.markers.push(mk); G.shelter = mk; }

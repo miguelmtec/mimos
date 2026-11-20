@@ -69,7 +69,7 @@ Veh.summon = function (type, G) {
 };
 // parked around town (only the kinds already unlocked) + the garage
 { const f0 = P.freeSetup; P.freeSetup = function (G, B, sp, opts) {
-    f0(G, B, sp, opts); const W = G.W; if (W.real || (opts && (opts.trial || opts.tour))) return;
+    f0(G, B, sp, opts); const W = G.W; if (W.real || (opts && (opts.trial || opts.tour || opts.online))) return;
     const ok = d => !(G.lockedHoods && G.lockedHoods[d]), put = (type, pt, dx, dy) => { if (Veh.unlocked(type)) { const x = pt.x + dx, y = pt.y + dy; if (!W.blocked(x, y, 16, 0)) Veh.spawn(type, x, y, 0); } };
     for (let d = 0; d <= 4; d++) if (ok(d)) { put('kart', W.front(W.roles[d].arena, 's'), 120, 30); put('bike', W.front(W.roles[d].plaza1, 's'), -90, 26); put('moto', W.front(W.roles[d].house, 'e'), 30, 90); }
     for (const d of [5, 6, 8]) if (ok(d) && W.roles[d].kiosk1) put('bike', W.front(W.roles[d].kiosk1, 'e'), 30, 60);

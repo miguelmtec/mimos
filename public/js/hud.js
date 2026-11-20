@@ -33,9 +33,9 @@ H.resize = function () {
 };
 H.hit = function (x, y) {
   const G = VP.Game.G; if (!G) return null;
-  if (VP.Prog) { const ph = VP.Prog.hudHit(G, x, y); if (ph) return ph; }
   if (H.emoOn(G)) { if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; if (U.d2(x, y, b.x, b.y) < (b.r + 4) * (b.r + 4)) return 'em_' + e[0]; } const b = H.btn.emo; if (U.d2(x, y, b.x, b.y) < (b.r + 8) * (b.r + 8)) return 'emo'; }
   if (G.online && VP.Online) { const o = VP.Online.hudHit(x, y); if (o) return o; }
+  if (VP.Prog) { const ph = VP.Prog.hudHit(G, x, y); if (ph) return ph; }
   for (const id of ['c0', 'c1', 'c2', 'pause', 'special', 'dash', 'ctx']) {
     const b = H.btn[id]; if (id === 'ctx' && !G.ctx) continue; if (id === 'dash' && G.car) continue;
     if (U.d2(x, y, b.x, b.y) < (b.r + 7) * (b.r + 7)) return id;

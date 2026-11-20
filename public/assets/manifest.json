@@ -1,0 +1,13 @@
+{
+  "_readme": "Optional art slots. Key -> file inside /assets. Remove a key (or the file) and the game falls back to built-in art. See DESIGN.md for sizes.",
+  "title_bg": "title_bg.jpg",
+  "share": "og_share.jpg",
+  "portrait_mimo": "portrait_mimo.jpg",
+  "portrait_mimosa": "portrait_mimosa.jpg",
+  "portrait_morticia": "portrait_morticia.jpg",
+  "boss_1": "boss_bulldog.jpg",
+  "boss_5": "boss_catcher.jpg",
+  "shop_vip": "shop_vip.jpg",
+  "shop_season": "shop_season.jpg",
+  "shop_apoio": "shop_apoio.jpg"
+}

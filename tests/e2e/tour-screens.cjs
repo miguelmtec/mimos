@@ -1,0 +1,33 @@
+const L = require('./lib.cjs'); const fs = require('fs');
+const mob = process.argv[2] !== 'd', P = mob ? 'm-' : 'd-';
+(async () => {
+  await L.serve();
+  const { browser, page, errors } = await L.open(mob);
+  await page.addScriptTag({ content: fs.readFileSync(__dirname + '/bot.cjs', 'utf8') });
+  await page.evaluate(() => { __vp.unlockAll(); VP.S.cash = 900; });
+  const tap = async sel => { await page.locator(sel).first().click({ force: true }); await page.waitForTimeout(350); };
+  await tap('[data-act=map]'); await L.shot(page, P + 'map');
+  await tap('[data-act=brief][data-n="5"]'); await L.shot(page, P + 'brief');
+  await tap('[data-act=start]'); await page.waitForTimeout(1500); await L.shot(page, P + 'm5-start');
+  await page.evaluate(() => { VP.I.bot = __bot.poll; });
+  await page.waitForTimeout(5000); await L.shot(page, P + 'm5-a');
+  await page.waitForTimeout(6000); await L.shot(page, P + 'm5-b');
+  await page.waitForTimeout(9000); await L.shot(page, P + 'm5-c');
+  await page.waitForFunction(() => __vp.state().screen === 'result', null, { timeout: 90000 }).catch(() => {});
+  await page.waitForTimeout(1500); await L.shot(page, P + 'm5-result');
+  console.log(JSON.stringify(await page.evaluate(() => __vp.state())));
+  // fight scene
+  await page.evaluate(() => { VP.I.bot = null; __vp.start(13); VP.I.bot = __bot.poll; });
+  await page.waitForTimeout(9000); await L.shot(page, P + 'm13-fight');
+  await page.evaluate(() => { VP.I.bot = null; __vp.start(10); VP.I.bot = __bot.poll; });
+  await page.waitForTimeout(8000); await L.shot(page, P + 'boss');
+  await page.evaluate(() => { VP.I.bot = null; VP.UI.act.title(); });
+  await page.waitForTimeout(400);
+  await tap('[data-act=wardrobe]'); await page.waitForTimeout(800); await L.shot(page, P + 'wardrobe');
+  await tap('[data-act=wdBack]');
+  await tap('[data-act=shop]'); await L.shot(page, P + 'shop');
+  await tap('[data-act=tryOn]'); await page.waitForTimeout(900); await L.shot(page, P + 'tryon');
+  console.log(JSON.stringify(await page.evaluate(() => ({ fps: VP.R3.fps, dc: VP.R3.draws }))));
+  console.log('ERRORS', errors.slice(0, 8));
+  await browser.close(); L.stop();
+})().catch(e => { console.error(e); L.stop(); process.exit(1); });

@@ -77,6 +77,40 @@ test('city pack waypoints exist in the city data', async () => {
   }
 });
 
+test('expansion 2 packs: ten hand-written missions each, places near the planned map centre', async () => {
+  const d = await json('citypacks.json'), { PLANNED, META } = await import('../tools/city-meta.mjs');
+  const KINDS = new Set(['race', 'photo', 'deliver', 'feast', 'chain', 'kites', 'parkour', 'brawl', 'rescue', 'escape', 'groceries', 'paws', 'football', 'volley', 'treats', 'fish', 'kiterun']);
+  for (const id of ['rio_urca', 'rio_lapa', 'rio_maracana', 'saopaulo', 'brasilia', 'salvador', 'rioverde', 'paris', 'toquio', 'newyork']) {
+    const pk = d.packs[id], row = PLANNED.find(r => r[0] === id); assert.ok(pk && row && META[id], id + ' has a pack, a planned map and a look');
+    assert.equal(pk.missions.length, 10, id + ' has 10 missions');
+    assert.equal(new Set(pk.missions.map(m => m.name.pt)).size, 10, id + ': mission names are unique');
+    assert.ok(new Set(pk.missions.map(m => m.kind)).size >= 6, id + ': at least 6 different kinds of mission');
+    const names = new Set(pk.places.map(p => p[0]));
+    for (const m of pk.missions) {
+      assert.ok(KINDS.has(m.kind), id + ': kind ' + m.kind);
+      assert.ok(m.story.pt.length > 30 && m.story.en.length > 30, id + ': story of ' + m.name.pt);
+      for (const a of m.at || []) assert.ok(names.has(a), id + ': "' + a + '" is not one of the pack places');
+      for (const t of m.needs || []) assert.ok(row[6].split(',').includes(t), id + ': needs tag ' + t + ' that the map will not have');
+    }
+    // every place within the planned extract (half-size in metres), so it can be snapped to a street
+    for (const [name, lat, lon] of pk.places) {
+      const mx = (lon - row[4]) * Math.cos(row[3] * Math.PI / 180) * 111320, mz = (lat - row[3]) * 110540;
+      assert.ok(Math.abs(mx) < row[5] - 25 && Math.abs(mz) < row[5] - 25, id + ': ' + name + ' falls outside the map (' + Math.round(mx) + ', ' + Math.round(mz) + ' m)');
+    }
+  }
+  // family friendly and affectionate: the hometown pack has no enemies at all
+  assert.ok(!d.packs.rioverde.missions.some(m => ['brawl', 'escape'].includes(m.kind)));
+});
+
+test('World Tour catalogue: Miami and Rio are free, everything else opens with stars, nothing is sold', async () => {
+  const { META, PLANNED } = await import('../tools/city-meta.mjs'), idx = await json('cities/index.json');
+  assert.equal(META.miami.stars, 0); assert.equal(META.rio.stars, 0);
+  for (const [id, m] of Object.entries(META)) { assert.ok(Number.isInteger(m.stars) && m.stars >= 0 && m.stars <= 60, id); assert.ok(!('price' in m) && !('grant' in m), id + ' must not be a paid city'); assert.ok(m.mood >= 0 && m.mood <= 6 && m.pal >= 0 && m.pal <= 4, id + ' look'); }
+  for (const r of PLANNED) assert.ok(META[r[0]], r[0] + ' has a look in META');
+  for (const c of idx.cities) assert.ok(typeof c.lat === 'number' && typeof c.lon === 'number', c.id + ' has coordinates for the map pin');
+  assert.ok(Array.isArray(idx.soon)); for (const s of idx.soon) assert.ok(!idx.cities.some(c => c.id === s.id) && typeof s.lat === 'number', s.id);
+});
+
 test('events.json: weekly events only touch coins', async () => {
   const d = await json('events.json');
   assert.ok(d.events.length >= 4 && /^\d{4}-\d\d-\d\d$/.test(d.epoch));

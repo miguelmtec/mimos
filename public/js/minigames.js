@@ -51,6 +51,40 @@ function route(B, from, n, dmin, dmax) {
 }
 const pathLen = (from, pts) => { let d = 0, c = from; for (const p of pts) { d += Math.hypot(p.x - c.x, p.y - c.y); c = p; } return d; };
 
+// Rooftop course for parkour missions: crates to climb, a low awning, a gap to hop, a roof, a jump pad and a higher roof,
+// laid out in a straight line on the longest clear stretch near `from` (see Game.addCourse). Returns null when the streets
+// around are too tight; then the mission is a plain checkpoint run. Call before B.begin; `build()` after it.
+function courseSite(B, from) {
+  const W = B.W, cands = [from]; for (let i = 0; i < 26; i++) { const q = B.rw(); if (Math.hypot(q.x - from.x, q.y - from.y) < 900) cands.push(q); }
+  let best = null;
+  for (const o of cands) for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    let n = 0; for (let d = 0; d <= 1010; d += 24) { const x = o.x + ux * d, y = o.y + uy * d; if (W.blocked(x, y, 47, 0) || (W.conn && W.conn[Math.floor(y / T) * W.W + Math.floor(x / T)] < 0)) break; n = d; }
+    const sc = Math.min(n, 1000) - Math.hypot(o.x - from.x, o.y - from.y) * 0.25; if (n >= 670 && (!best || sc > best.sc)) best = { o, ux, uy, n, sc };
+  }
+  return best;
+}
+function buildCourse(B, site) {
+  const G = B.G, { o, ux, uy } = site, full = site.n >= 1000, along = ux ? 'x' : 'y', LW = 44;
+  const at = s => ({ x: o.x + ux * s, y: o.y + uy * s }), rect = (s0, len, h, extra) => Object.assign({ x: o.x + ux * (s0 + len / 2), y: o.y + uy * (s0 + len / 2), hw: ux ? len / 2 : LW, hh: ux ? LW : len / 2, h, along }, extra);
+  const plats = []; let s = 70;
+  [0.7, 1.4, 2.1].forEach((h, i) => { plats.push(rect(s, 44, h, { style: 'crate', col: ['#c98f4b', '#b87f3f', '#d9a35c'][i] })); s += 44; });
+  const A = rect(s, 150, 2.1, { style: 'awning', solid: false, col: '#e01e37' }); plats.push(A); s += 150 + 80;
+  const Bp = rect(s, 140, 2.1, { style: 'roof', solid: false, col: '#2a6bff' }); plats.push(Bp); s += 140;
+  let Cp = null; const pads = [];
+  if (full) { const padAt = at(s - 24); s += 170; Cp = rect(s, 160, 3.3, { style: 'roof', solid: false, col: '#1fa85a', col2: '#ffd23f' }); plats.push(Cp); s += 160; pads.push({ x: padAt.x, y: padAt.y, to: { x: Cp.x, y: Cp.y } }); }
+  const pk = Game.addCourse(plats, pads), P = pk.plats;
+  if (full) { pk.pads[0].plat = P[4]; pk.pads[0].to.plat = P[5]; }
+  // nothing parked or driving through the course
+  for (const k of G.cars) { const t = (k.x - o.x) * ux + (k.y - o.y) * uy, l = Math.abs((k.x - o.x) * uy - (k.y - o.y) * ux); if (t > -60 && t < s + 160 && l < 120 && k !== G.car) k.dead = true; }
+  const on = pl => () => { const a = G.cats[G.active]; return !a.jump && a.plat === pl && U.d2(a.x, a.y, pl.x, pl.y) < 62 * 62; };
+  const cp = (txt, pl) => B.step({ txt, at: () => pl, done: on(pl), exit() { G.mtimer += 3; G.stat.cash += 30; VP.Audio.sfx('step'); Game.fx.burst(pl.x, pl.y - 10, 8, ['#2de2e6', '#fff'], 160, 'star', 6, 0.4); } });
+  // the run-up starts right at the foot of the first crate, on the axis: from there everything is straight ahead
+  { const foot = at(30); B.step({ txt: 'o_pkStart', at: () => foot, done: () => near(G, foot, 42) && !G.cats[G.active].plat }); }
+  cp('o_pkUp', P[3]); cp('o_pkGap', P[4]); if (full) cp('o_pkPad', P[5]);
+  const end = at(s + 100); B.goto(end, 'o_pkDown');
+  return { end, len: s + 100, full };
+}
+
 // ---------- reusable mini-games (home city and real cities) ----------
 // Kite festival: kites drift down with the wind; catch n before the clock runs out
 function kiteGame(B, c, n, o) {
@@ -215,10 +249,12 @@ Object.assign(TYPES, {
   // on foot only: checkpoints against the clock, a coffee on each one
   parkour: {
     setup(B) {
-      const p = B.p, G = B.G, start = startOf(B);
-      B.begin(start, { traffic: 6 }); G.noHeat = true; G.noPolice = true; G.noCars = true;
-      const pts = route(B, start, p.cps || 6, 300, 620);
-      G.mtimer = p.time || Math.round(pathLen(start, pts) / 120 + 14);
+      const p = B.p, G = B.G, start = startOf(B), site = p.flat ? null : courseSite(B, start);
+      B.begin(start, { traffic: site ? 0 : 6 }); G.noHeat = true; G.noPolice = true; G.noCars = true;
+      // rooftop stretch first (crates, gap, jump pad), then street checkpoints
+      G.mtimer = 0; const crs = site ? buildCourse(B, site) : null, from = crs ? crs.end : start;
+      const pts = route(B, from, crs ? Math.max(2, (p.cps || 6) - 3) : p.cps || 6, 300, 620);
+      G.mtimer = (p.time || Math.round(pathLen(from, pts) / 120 + 14)) + (crs ? Math.round((Math.hypot(site.o.x - start.x, site.o.y - start.y) * 1.5 + crs.len) / 90 + 14) : 0);
       pts.forEach((pt, i) => { if (i % 2 === 0) Game.addItem('coffee', pt.x + 20, pt.y); B.step({ txt: 'o_parkour', args: [i + 1, pts.length], at: () => pt, done: () => near(G, pt, 72), exit() { G.mtimer += p.bonus || 3; G.stat.cash += 25; G.cats[G.active].hopT = 0.5; VP.Audio.sfx('step'); Game.fx.burst(pt.x, pt.y - 10, 8, ['#2de2e6', '#fff'], 160, 'star', 6, 0.4); } }); });
     },
   },
@@ -334,7 +370,7 @@ TYPES.tour = {
     if (kind === 'race') {
       const car = Game.addCar(vehicle, start.x, start.y, 0); car.hp = car.max = 260; Game.enterCar(car); G.noHeat = true;
       let cur = start; const cps = []; for (let k = 0; k < (p.n || 5); k++) { const c = onRoad(way(k, cur)); cps.push(c); cur = c; }
-      G.mtimer = Math.round(pathLen(start, cps) / 24 / (vehicle === 'pickup' ? 5 : 7) + 45);
+      G.mtimer = Math.round(pathLen(start, cps) / 24 / (vehicle === 'pickup' ? 5 : 6) + 50);
       cps.forEach((pt, k) => B.step({ txt: 'o_tourCp', args: [k + 1, cps.length, pt.name], car: true, at: () => pt, done: () => !!G.car && U.d2(G.car.x, G.car.y, pt.x, pt.y) < 130 * 130 }));
     } else if (kind === 'deliver') {
       const dest = way(0, start); G.mtimer = Math.round(Math.hypot(dest.x - start.x, dest.y - start.y) / 24 / 3.2 + 50);
@@ -374,9 +410,10 @@ TYPES.tour = {
       pts.forEach((pt, i) => B.step({ txt: i % 2 ? 'o_dropoff' : 'o_pickup', args: [Math.floor(i / 2) + 1, Math.ceil(pts.length / 2)], car: !!p.car, at: () => pt, done: () => near(G, pt, p.car ? 120 : 85) && (!p.car || !!G.car), exit() { G.mtimer += 5; G.stat.cash += i % 2 ? 60 : 10; VP.Audio.sfx('cash', 0.05); Game.fx.text(pt.x, pt.y - 50, i % 2 ? '📦 ✔' : '📦', '#ffd23f', 18); } }));
       void car;
     } else if (kind === 'parkour') { // comunidade: up the stairways, always climbing when the map has hills
-      G.noCars = true; let cur = start; const pts = [];
-      for (let k = 0; k < (p.n || 5); k++) { let best = null, bs = -1e9; for (let i = 0; i < 24; i++) { const q = W.randWalk(B.rng), d = Math.hypot(q.x - cur.x, q.y - cur.y); if (d < 260 || d > 700) continue; const s = (W.hpx ? W.hpx(q.x, q.y) - W.hpx(cur.x, cur.y) : 0) * 12 - Math.abs(d - 450) * 0.02; if (s > bs) { bs = s; best = q; } } best = best || route(B, cur, 1, 260, 700)[0]; pts.push(best); cur = best; }
-      G.mtimer = Math.round(pathLen(start, pts) / 85 + 25);
+      G.noCars = true; G.mtimer = 0; const site = courseSite(B, start), crs = site ? buildCourse(B, site) : null;
+      let cur = crs ? crs.end : start; const pts = [], from = cur;
+      for (let k = 0; k < (crs ? Math.max(2, (p.n || 5) - 2) : p.n || 5); k++) { let best = null, bs = -1e9; for (let i = 0; i < 24; i++) { const q = W.randWalk(B.rng), d = Math.hypot(q.x - cur.x, q.y - cur.y); if (d < 260 || d > 700) continue; const s = (W.hpx ? W.hpx(q.x, q.y) - W.hpx(cur.x, cur.y) : 0) * 12 - Math.abs(d - 450) * 0.02; if (s > bs) { bs = s; best = q; } } best = best || route(B, cur, 1, 260, 700)[0]; pts.push(best); cur = best; }
+      G.mtimer = Math.round(pathLen(from, pts) / 85 + 25) + (crs ? Math.round((Math.hypot(site.o.x - start.x, site.o.y - start.y) * 1.5 + crs.len) / 80 + 16) : 0);
       pts.forEach((pt, i) => B.step({ txt: 'o_parkour', args: [i + 1, pts.length], at: () => pt, done: () => near(G, pt, 75), exit() { G.mtimer += 4; G.stat.cash += 25; G.cats[G.active].hopT = 0.5; VP.Audio.sfx('step'); } }));
     } else if (kind === 'paws') { // golden coins along the footways (stairways and alleys)
       const n = p.n || 12, feet = []; for (const i of W.walkList) if (W.gnd[i] === GT.G_WALK) feet.push(i);
@@ -405,5 +442,5 @@ TYPES.tour = {
     }
   },
 };
-M.helpers = { patch, freeNear, route, kiteGame, ballGame, fishGame, fishSpot };
+M.helpers = { patch, freeNear, route, kiteGame, ballGame, fishGame, fishSpot, courseSite, buildCourse };
 })();

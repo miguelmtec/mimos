@@ -2,6 +2,7 @@
 // Needs DATABASE_URL (set automatically by the Neon integration on Vercel).
 // Without it the game still works offline (progress stays on the device).
 import { neon } from '@neondatabase/serverless';
+import { cleanScore } from './_lib/score.js';
 
 let ready = null;
 
@@ -11,32 +12,28 @@ export default async function handler(req, res) {
   if (!url) return res.status(503).json({ error: 'leaderboard-offline' });
   const sql = neon(url);
   // vip is a cosmetic flag (crown next to the name); it grants nothing, so the client's word is enough
-  const top = () => sql`select name, score, level, stars, vip from vp_ranking order by score desc, updated_at asc limit 20`;
+  const top = () => sql`select name, score, level, stars, vip, missions from vp_ranking order by score desc, updated_at asc limit 20`;
   try {
     ready ??= sql`create table if not exists vp_ranking (
       name text primary key, score integer not null, level smallint not null,
       stars smallint not null default 0, updated_at timestamptz not null default now())`
-      .then(() => sql`alter table vp_ranking add column if not exists vip boolean not null default false`);
+      .then(() => sql`alter table vp_ranking add column if not exists vip boolean not null default false`)
+      .then(() => sql`alter table vp_ranking add column if not exists missions integer not null default 0`);
     await ready;
 
     if (req.method === 'GET') return res.status(200).json({ top: await top() });
 
     if (req.method === 'POST') {
       const b = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
-      const name = String(b.name || '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 12);
-      const score = Math.floor(Number(b.score));
-      const level = Math.floor(Number(b.level));
-      const stars = Math.floor(Number(b.stars));
-      const vip = b.vip === true;
-      // sanity: 50 missions, max 3 stars each, a single mission can't realistically pass ~25k points
-      const ok = name && Number.isFinite(score) && score >= 1 && level >= 1 && level <= 50 &&
-        stars >= 1 && stars <= Math.min(150, level * 3) && score <= level * 25000;
-      if (!ok) return res.status(400).json({ error: 'invalid' });
+      // the ranking counts every mission (story, chapters, bonus, World Tour); see _lib/score.js for the sanity rules
+      const e = cleanScore(b);
+      if (!e) return res.status(400).json({ error: 'invalid' });
+      const { name, score, level, stars, vip, missions } = e;
       // one row per name, keeps the best total
-      await sql`insert into vp_ranking (name, score, level, stars, vip) values (${name}, ${score}, ${level}, ${stars}, ${vip})
+      await sql`insert into vp_ranking (name, score, level, stars, vip, missions) values (${name}, ${score}, ${level}, ${stars}, ${vip}, ${missions})
         on conflict (name) do update set score = greatest(vp_ranking.score, excluded.score),
         level = greatest(vp_ranking.level, excluded.level), stars = greatest(vp_ranking.stars, excluded.stars),
-        vip = vp_ranking.vip or excluded.vip, updated_at = now()`;
+        vip = vp_ranking.vip or excluded.vip, missions = greatest(vp_ranking.missions, excluded.missions), updated_at = now()`;
       return res.status(200).json({ ok: true, top: await top() });
     }
     res.setHeader('allow', 'GET, POST');

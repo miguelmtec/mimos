@@ -23,7 +23,7 @@ public/
   js/shop.js      Loja dos Mimos (Pix), provador, restaurar, mural
   js/wardrobe.js  Guarda-roupa por slots
   js/accounts.js  login por código, Meus gatos (criador), save na nuvem, galeria
-  js/tour.js      Volta ao Mundo (mapas reais)
+  js/tour.js      Volta ao Mundo: mapa (Brasil/mundo), alfinetes, cartões por país com progresso, voo animado
   js/share.js     cartão PNG 1080×1350 para compartilhar e links "Desafie um amigo"
   js/gfx/models.js   modelos low-poly paramétricos (buildCat(spec), cachorros, carros, props) em geometria mesclada
   js/gfx/city.js     cidade 3D estática (chão, prédios, neon, palmeiras, céu, água)
@@ -32,6 +32,7 @@ public/
   js/gfx/render.js   renderizador: sincroniza a simulação com a cena, câmera, partículas, qualidade automática
 api/              funções Vercel: scores, pix/*, auth, me, cats, save (ver docs/ACCOUNTS.md)
 tools/build-cities.mjs  copia os extratos OSM e gera data/cities/index.json
+tools/city-meta.mjs     visual de cada cidade (META) e destinos previstos (PLANNED); usado pelo build e pelos testes
 tools/gen-missions.mjs  tabelas dos 15 capítulos -> data/missions.json (calibra o tempo-alvo com os resultados do bot)
 tools/gen-packs.mjs     pacotes de missões por cidade e eventos semanais -> data/citypacks.json, data/events.json
 ```
@@ -56,12 +57,21 @@ Dependência real: Mimo acerta **botões** à distância (lasers/cofres); Mimosa
 
 Um mapa contínuo de 12×8 quarteirões (352×240 m): **Sunset Beach**, **Neon Downtown**, **Palm Harbor**, **Storm Docks** (chuva e raios) e **Vice Heights**. Cada bairro tem papéis fixos usados pelas missões: `arena`, `house`, `plaza1-3`, `park`, `compA-D` (cercados configuráveis por missão: portão `fence|switch|gap|key|open`, cofre opcional). Céu, neblina e luzes mudam por bairro. No mundo livre: feixes de missão, loja, contra-relógios, NPCs com missões de bairro, 25 patinhas douradas, tráfego, carros para dirigir, nível de procurado com bulldogs e viaturas.
 
+**Cidades esparsas (preenchimento procedural).** Muitas cidades têm todas as ruas no OpenStreetMap e quase nenhum prédio (Rio Verde: 162 ruas, 22 prédios). `World.fromCity` mede a fração construída (`w.builtRatio`); abaixo de 5% (ou com a tag `infill`; `noinfill` ou `"infill": false` desligam) chama `World.infill(C, w, occ)`: percorre cada rua por comprimento de arco, dos dois lados, e encaixa lotes retangulares na testada (recuo de calçada, sem cobrir rua, beco, água, parque, praia nem prédio mapeado; células de 120 m que já têm prédios do OSM ficam como estão). Cada lote vira `house`, `shop` ou `block` conforme o estilo (`World.STYLES`, escolhido por país/tags em `World.styleOf`): `br_interior` (casas coloridas com muro e portão, telha de barro, lojas com toldo, ipês), `br_coast`, `us`, `eu`, `asia` (letreiros neon), `desert`. Tudo sai de `U.rng(hash(id))`, então a cidade é igual para todo mundo; as ruas mais centrais são preenchidas primeiro (teto de 1300 lotes). Os lotes entram na grade da simulação (colisão) e `realcity.js` desenha os mesmos lotes (`W.infill`, `W.infillTrees`); quintais longe de qualquer rua viram grama. Para dar um estilo a uma cidade específica: `"style": "eu"` no JSON.
+
+**Horizonte.** `SKYLINE` em `realcity.js` lista marcos (hoje Cristo Redentor e Pão de Açúcar) que aparecem como silhueta low-poly fora do mapa, na direção real, em qualquer cidade a menos de 14 km (sem neblina, desenhados depois do céu). Ao chegar numa cidade real a câmera começa baixa, olhando o horizonte (e o marco, se houver), e sobe em ~4 s (`R.arrive`).
+
 **Volta ao Mundo.** `World.fromCity(json)` rasteriza um extrato do OpenStreetMap (3 m por tile) na mesma grade da simulação; `realcity.js` constrói o 3D (terreno com `elev`, vias em fitas, prédios extrudados, marcos como faróis). Mapas com tag `comunidade` não têm polícia, procurado, trânsito nem cachorros hostis: só missões positivas (ver §6, regra aplicada no código, não só nos dados). Atribuição "© OpenStreetMap contributors" aparece na tela de viagem e no HUD dos mapas reais.
+
+**Parkour de telhado.** `Game.addCourse(plats, pads)` cria um percurso sem sair da simulação 2D: plataformas são retângulos com altura (`{x, y, hw, hh, h, solid}`), o gato líder sobe qualquer degrau de até 0,85 só andando (`pkMove`), salta sozinho um vão de até 150 px quando sai da borda em direção a outra plataforma, cai sem dano em qualquer outro caso, e os trampolins (`pads`) lançam em arco até a plataforma de destino. Caixotes sempre podem ser escalados a partir da rua (o percurso nunca fecha a passagem); toldos e telhados ficam sobre postes e deixam passar por baixo: o caminho para cima é o percurso. `minigames.js` (`courseSite` + `buildCourse`) procura o trecho reto livre mais longo perto da largada (670 px mínimo; com 1000 px entra o trampolim e o telhado alto) e monta: 3 caixotes, toldo, vão, telhado, trampolim, telhado alto. Vale para o tipo `parkour` da cidade e para o `kind: parkour` das cidades reais; `params.flat: true` desliga. Sem botão de pulo: mesma jogabilidade no toque e no teclado. O bot joga o percurso pelos mesmos passos.
 
 ## 4. Controles
 
 - **Celular (retrato):** analógico esquerdo anda (relativo à câmera); direito mira/ataca (segurar = mira automática); botões: especial, dash, ação (reanimar / entrar e sair do carro); toque nos retratos troca de gato; pausa.
 - **PC:** WASD/setas, mouse mira, clique ataca, Espaço especial, Shift dash, E ação, 1/2/3 ou Q troca, botão direito gira a câmera, P pausa, M mudo.
+- **Emotes:** `Game.emote('miau'|'dance'|'sit'|'wave')` no gato ativo; no celular o botão 😺 (só na cidade livre e nas visitas, a pé) abre quatro botões grandes; no PC, Z X C V. Andar ou atacar encerra o gesto. O emote viaja em `Game.snapshot()` (`cats[i].e`), pronto para o mundo compartilhado.
+- **Vibração:** `VP.haptic(ms)` (golpes dados e recebidos, batidas, trampolim) usa `navigator.vibrate` quando existe e a tela é de toque; iOS ignora em silêncio. Liga/desliga em Ajustes (`vp_haptic`).
+- **HUD no celular:** a caixa do objetivo fica abaixo do minimapa e do nome do bairro, com letra um pouco maior; rótulos do mundo (missões, loja, cartões-postais) não se sobrepõem nem passam por baixo do HUD; a seta do objetivo fica acima dos botões; seguidores que entram na frente da câmera somem do quadro.
 
 ## 5. Loja (honesta)
 
@@ -103,6 +113,15 @@ Gerados por `node tools/build-cities.mjs <pasta com os JSON do OSM>`. Cada cidad
 - **`data/citypacks.json`**: `{templates: [10], comunidade: [10], packs: {id: {places: [[nome, lat, lon]], missions: [{kind, name, story, params?, at?: [nomes de marcos/lugares], needs?: [tags], par?}]}}}`. Cidade com pacote usa o pacote; sem pacote usa `templates` (ou `comunidade`), então toda cidade nova já chega com 10 missões. `kind`: `race, photo, deliver, feast, chain, kites, parkour, brawl, rescue, escape, groceries, paws, football, volley, treats, fish, kiterun`. Os `places` (aproximados) são encaixados na rua mais próxima e servem de destino das missões. O número da missão é `1000 + ordem da cidade em META × 10 + k`.
 - **Rio Verde (`rioverde`)**: cidade natal do dono, com pacote próprio de 10 missões amistosas, caminhonetes (trânsito, estacionadas e nas missões de carro), feira agropecuária ao lado da chegada (barracas, fardos de feno, gado, bandeirinhas), gatos fazendeiros e a faixa sertaneja (`song` 7). Basta o arquivo chegar em `vp_art/cities/` e rodar `node tools/build-cities.mjs`.
 - Nomes de lugares passam por um filtro de classificação livre antes de aparecer na tela.
+
+### Volta ao Mundo: catálogo, progresso e destravamento
+`index.json` (versão 2) traz, por cidade, `lat`/`lon` (alfinete no mapa), `flag`, `mood`, `pal`, `palms`, `stars` (estrelas para abrir; Miami e Rio = 0, cidade natal = 0) e uma lista `soon` com os destinos previstos que ainda não chegaram (pontos "em breve"). `Tour.progress(c)` soma as estrelas das 10 missões (`M.tourBase`), as 5 patinhas (`S.paws[id_i]`) e os cartões-postais vistos. A tela agrupa por país (Brasil primeiro, cidade natal no topo), o mapa é um SVG equiretangular com contornos low-poly desenhados à mão (`LAND`, `BRAZIL` em `tour.js`), e `Tour.flight` anima o avião numa curva enquanto `Tour.load` baixa o mapa. Nenhuma cidade é vendida.
+
+### Pacotes de cidade antes do mapa chegar
+Os pacotes usam `places: [[nome, lat, lon]]` (encaixados na rua ligada mais próxima, raio de ~165 m) e `at: [nomes]` nas missões; como não dependem dos nomes do extrato, podem ser escritos antes do arquivo existir e passam a valer quando ele aparece. `tests/helpers/planned.cjs` monta um mapa substituto com as coordenadas previstas (`tools/city-meta.mjs` → `PLANNED`) e `tests/e2e/packs.cjs` joga as 10 missões de cada pacote com o bot, no mapa real quando existe. Rio Verde não usa coordenadas de propósito: os destinos saem dos marcos do próprio extrato, para não rotular errado a cidade natal.
+
+### Ranking e galeria
+O ranking soma todas as missões: o cliente envia `score` (soma de `S.best`), `stars` (todas), `missions` (quantas missões diferentes têm estrela) e `level` (última da história, só para exibir em linhas antigas). `api/_lib/score.js` valida (até 3 estrelas e 25 mil pontos por missão; clientes antigos sem `missions` seguem a regra das 50). A tela "Cidade dos Gatos" (`accounts.js`) lista `/api/cats/public` com um retrato 3D por gato (`R3.snapshot`), abre cada um no palco 3D e leva para a cidade, onde os mesmos gatos passeiam.
 
 ### Slots de arte (`public/assets/manifest.json`)
 `title_bg` (640×960), `portrait_mimo|mimosa|morticia` (512²), `boss_1` … `boss_5` (512², chefões das missões 10-50), `share`/`og_share` (1200×630), `shop_vip`, `shop_season`, `shop_apoio` (512²). Chave ausente = arte procedural.
@@ -208,4 +227,4 @@ Chefões: 10 **Delegado Bulldogão** (investida, pancada, redes, reforços) · 2
 
 ## 9. Testes
 
-Scripts Playwright em `tests/e2e/` (ver README): bot que joga todas as missões de forma acelerada (`missions.cjs`), testes de controles (teclado/mouse/toque), loja e contas com API simulada, `expansion.cjs` (modelos novos, diário/semanal, treino no toque, relevo e regras de comunidade com um mapa sintético de `tests/helpers/elev-fixture.cjs` servido por rota sem tocar no arquivo real, Rio Verde com mapa substituto, cartão de compartilhar, pacotes, orçamento de triângulos), `perf.cjs` e `shots.cjs`. `npm test` também valida o conteúdo (`tests/data.test.mjs`): 200+ missões, capítulos, catálogo da loja x preços do cliente, guarda-roupa, pacotes de cidade e eventos.
+Scripts Playwright em `tests/e2e/` (ver README): bot que joga todas as missões de forma acelerada (`missions.cjs`), testes de controles (teclado/mouse/toque), loja e contas com API simulada, `expansion.cjs` (modelos novos, diário/semanal, treino no toque, relevo e regras de comunidade com um mapa sintético de `tests/helpers/elev-fixture.cjs` servido por rota sem tocar no arquivo real, Rio Verde com mapa substituto, cartão de compartilhar, pacotes, orçamento de triângulos), `perf.cjs` e `shots.cjs`. `npm test` também valida o conteúdo (`tests/data.test.mjs`): 200+ missões, capítulos, catálogo da loja x preços do cliente, guarda-roupa, pacotes de cidade e eventos. `expansion2.cjs` cobre a expansão 2 (preenchimento procedural determinístico e sem cobrir ruas, estilos por país, horizonte do Rio, mapa-múndi no toque e no desktop, ranking, galeria, emotes, vibração, parkour de telhado, HUD no celular e o peso da primeira carga, abaixo de 2,5 MB sem baixar cidade nenhuma); `packs.cjs` joga todos os pacotes de cidade; `tests/score.test.mjs` valida as regras do ranking.

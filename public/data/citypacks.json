@@ -683,8 +683,8 @@
       "en": "Pickup Truck Rally"
      },
      "story": {
-      "pt": "Na capital do agro, corrida boa é de caminhonete. Cinco pontos da cidade, poeira e sertanejo no rádio.",
-      "en": "In the farming capital, a proper race is a pickup race. Five spots around town, dust and country music on the radio."
+      "pt": "Na capital do agro, corrida boa é de caminhonete. Cinco pontos da cidade, poeira vermelha e modão no rádio. Buzina pros conhecidos!",
+      "en": "In the farming capital, a proper race is a pickup race. Five spots around town, red dust and country classics on the radio. Honk at the neighbours!"
      },
      "params": {
       "car": 2
@@ -697,8 +697,8 @@
       "en": "Feed for the Fair"
      },
      "story": {
-      "pt": "A feira agropecuária abre hoje e falta ração. Carregue a caçamba e entregue nos estandes.",
-      "en": "The livestock fair opens today and feed is short. Load the truck bed and deliver to the stands."
+      "pt": "A exposição agropecuária abre hoje e faltou ração nos estandes. Carregue a caçamba e salve a festa.",
+      "en": "The livestock fair opens today and the stands ran out of feed. Load the truck bed and save the party."
      },
      "params": {
       "n": 4,
@@ -708,12 +708,12 @@
     {
      "kind": "photo",
      "name": {
-      "pt": "Fotos na Exposição",
-      "en": "Photos at the Fair"
+      "pt": "Retratos da Terrinha",
+      "en": "Hometown Portraits"
      },
      "story": {
-      "pt": "Tem gado premiado, trator brilhando e barraca de pamonha. A Mimosa quer foto com tudo.",
-      "en": "Prize cattle, shiny tractors and a corn-cake stall. Mimosa wants a photo with everything."
+      "pt": "Tem gado premiado, trator brilhando e a praça onde todo mundo se conhece. A Mimosa quer foto de tudo pra mandar pra família.",
+      "en": "Prize cattle, shiny tractors and the square where everybody knows everybody. Mimosa wants photos of it all for the family album."
      },
      "par": 280,
      "params": {
@@ -724,11 +724,11 @@
      "kind": "feast",
      "name": {
       "pt": "Pamonha, Pequi e Churrasco",
-      "en": "Corn Cakes and Barbecue"
+      "en": "Corn Cakes, Pequi and Barbecue"
      },
      "story": {
-      "pt": "Comida goiana de verdade. A Mortícia nunca foi tão feliz (cuidado com o caroço do pequi!).",
-      "en": "Real Goiás food. Morticia has never been happier (mind the pequi stone!)."
+      "pt": "Comida goiana de verdade, feita com carinho. A Mortícia nunca foi tão feliz (cuidado com o caroço do pequi!).",
+      "en": "Real Goiás food, made with love. Morticia has never been happier (mind the pequi stone!)."
      },
      "params": {
       "n": 24
@@ -741,36 +741,36 @@
       "en": "Grandma's Market Run"
      },
      "story": {
-      "pt": "A vovó gata comprou queijo, doce de leite e mais um tanto. Acompanhe ela até em casa.",
-      "en": "Grandma cat bought cheese, milk caramel and a whole lot more. Walk her home."
+      "pt": "A vovó gata comprou queijo fresco, doce de leite e mais um tanto. Acompanhe ela até em casa, sem pressa: aqui todo mundo para pra prosear.",
+      "en": "Grandma cat bought fresh cheese, milk caramel and a whole lot more. Walk her home, no rush: here everyone stops for a chat."
      }
     },
     {
      "kind": "kites",
      "name": {
-      "pt": "Pipas no Cerrado",
-      "en": "Kites over the Cerrado"
+      "pt": "Pipas no Céu do Cerrado",
+      "en": "Kites in the Cerrado Sky"
      },
      "story": {
-      "pt": "Céu aberto do cerrado e vento bom. Dia perfeito pra soltar pipa.",
-      "en": "Wide open savanna sky and a good wind. A perfect day for kites."
+      "pt": "O céu de Rio Verde é o maior do mundo (palavra de quem nasceu aqui). Vento bom, dia perfeito pra pipa.",
+      "en": "The Rio Verde sky is the biggest in the world (so say the people born here). Good wind, a perfect day for kites."
      },
      "params": {
       "n": 9
      }
     },
     {
-     "kind": "paws",
+     "kind": "football",
      "name": {
-      "pt": "Patinhas na Praça",
-      "en": "Paws in the Square"
+      "pt": "Pelada no Campinho",
+      "en": "Kickabout at the Little Pitch"
      },
      "story": {
-      "pt": "Espalharam patinhas douradas pelo centro. Quem conhece a cidade acha todas.",
-      "en": "Golden paws are scattered across the town centre. Those who know the town will find them all."
+      "pt": "Fim de tarde, bola rolando e o sol descendo atrás da soja. Não deixe a bola cair!",
+      "en": "Late afternoon, the ball rolling and the sun going down behind the soy fields. Do not let the ball drop!"
      },
      "params": {
-      "n": 12
+      "n": 8
      }
     },
     {
@@ -780,8 +780,8 @@
       "en": "The Cowboy's Dash"
      },
      "story": {
-      "pt": "Corrida a pé de checkpoint em checkpoint. O prêmio é um chapéu (e muito orgulho).",
-      "en": "A run on foot from checkpoint to checkpoint. The prize is a hat (and a lot of pride)."
+      "pt": "Corrida a pé de checkpoint em checkpoint pelas ruas do centro. O prêmio é um chapéu (e muito orgulho).",
+      "en": "A run on foot from checkpoint to checkpoint through the town centre. The prize is a hat (and a lot of pride)."
      },
      "params": {
       "n": 6
@@ -794,20 +794,1903 @@
       "en": "Kitten on the Silo"
      },
      "story": {
-      "pt": "Um filhote subiu no ponto mais alto pra ver a plantação e travou. Bora buscar.",
-      "en": "A kitten climbed the highest spot to see the fields and froze. Let us fetch it."
+      "pt": "Um filhote subiu no ponto mais alto pra ver a plantação e travou. Ninguém fica pra trás, muito menos em casa.",
+      "en": "A kitten climbed the highest spot to see the fields and froze. No cat left behind, least of all at home."
+     }
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Patinhas da Saudade",
+      "en": "Paws of Home"
+     },
+     "story": {
+      "pt": "Alguém espalhou patinhas douradas pelas ruas de sempre. Quem tem saudade de Rio Verde acha todas.",
+      "en": "Someone scattered golden paws along the old familiar streets. Anyone who misses Rio Verde will find them all."
+     },
+     "params": {
+      "n": 12
+     }
+    }
+   ]
+  },
+  "rio_urca": {
+   "places": [
+    [
+     "Praia Vermelha",
+     -22.9553,
+     -43.165
+    ],
+    [
+     "Estação do Bondinho",
+     -22.9555,
+     -43.1662
+    ],
+    [
+     "Pista Cláudio Coutinho",
+     -22.9547,
+     -43.1632
+    ],
+    [
+     "Mureta da Urca",
+     -22.9478,
+     -43.1632
+    ],
+    [
+     "Praia da Urca",
+     -22.9482,
+     -43.1641
+    ],
+    [
+     "Quadrado da Urca",
+     -22.9452,
+     -43.1612
+    ],
+    [
+     "Praça General Tibúrcio",
+     -22.9551,
+     -43.1668
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Cartão-Postal do Pão de Açúcar",
+      "en": "Sugarloaf Postcard"
+     },
+     "story": {
+      "pt": "O bondinho sobe, o sol desce e a Mimosa quer as duas coisas na mesma foto. Praia Vermelha primeiro!",
+      "en": "The cable car goes up, the sun goes down and Mimosa wants both in the same photo. Praia Vermelha first!"
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Praia Vermelha",
+      "Estação do Bondinho",
+      "Mureta da Urca",
+      "Praia da Urca"
+     ]
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Bilhete do Bondinho",
+      "en": "Cable Car Ticket"
+     },
+     "story": {
+      "pt": "A vovó gata sonha em subir de bondinho. Leve o bilhete até a estação antes da última viagem.",
+      "en": "Grandma cat dreams of riding the cable car. Get her ticket to the station before the last ride."
+     },
+     "at": [
+      "Estação do Bondinho"
+     ]
+    },
+    {
+     "kind": "volley",
+     "name": {
+      "pt": "Vôlei na Praia Vermelha",
+      "en": "Volleyball at Praia Vermelha"
+     },
+     "story": {
+      "pt": "A praia mais calminha do Rio, com o Pão de Açúcar de plateia. Oito pontos!",
+      "en": "The calmest beach in Rio, with Sugarloaf as the audience. Eight points!"
+     },
+     "params": {
+      "n": 8
+     },
+     "needs": [
+      "beach"
+     ]
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Trilha da Pista Cláudio Coutinho",
+      "en": "Cláudio Coutinho Trail Run"
+     },
+     "story": {
+      "pt": "Corrida a pé pela beira do morro, com micos assistindo. O Mimo jura que viu um bocejar.",
+      "en": "A run on foot along the foot of the hill, with marmosets watching. Mimo swears one of them yawned."
+     },
+     "params": {
+      "n": 5
+     },
+     "at": [
+      "Pista Cláudio Coutinho"
+     ]
+    },
+    {
+     "kind": "fish",
+     "name": {
+      "pt": "Pescaria na Mureta",
+      "en": "Fishing at the Sea Wall"
+     },
+     "story": {
+      "pt": "Na Mureta da Urca todo mundo pesca, conversa e vê o pôr do sol. Espere o ❗ e puxe!",
+      "en": "At the Urca sea wall everybody fishes, chats and watches the sunset. Wait for the ❗ and pull!"
+     },
+     "params": {
+      "n": 5
+     }
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Pastel na Mureta",
+      "en": "Snacks on the Sea Wall"
+     },
+     "story": {
+      "pt": "Pastel de camarão, empada e caldo de cana. A Mortícia pediu um de cada. Depois outro de cada.",
+      "en": "Shrimp pastries, little pies and sugarcane juice. Morticia ordered one of each. Then another of each."
+     },
+     "params": {
+      "n": 22
+     }
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Entregas do Bairro Tranquilo",
+      "en": "Quiet Neighbourhood Deliveries"
+     },
+     "story": {
+      "pt": "Na Urca todo mundo se conhece e todo mundo pediu sachê. Busque na praia e entregue no Quadrado.",
+      "en": "In Urca everybody knows everybody and everybody ordered treats. Pick up at the beach and deliver to the harbour square."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Praia da Urca",
+      "Quadrado da Urca",
+      "Mureta da Urca",
+      "Praia Vermelha"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas ao Pé do Morro",
+      "en": "Kites at the Foot of the Hill"
+     },
+     "story": {
+      "pt": "O vento desce do Pão de Açúcar e leva as pipas pra areia. Corre!",
+      "en": "The wind comes down from Sugarloaf and carries the kites to the sand. Run!"
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "rescue",
+     "name": {
+      "pt": "Gatinho no Caminho do Morro",
+      "en": "Kitten on the Hill Path"
+     },
+     "story": {
+      "pt": "Um filhote seguiu os turistas morro acima e ficou com medo de descer. Suba e traga ele no colo.",
+      "en": "A kitten followed the tourists up the hill and got scared to come down. Climb up and carry it back."
+     }
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Volta da Urca",
+      "en": "Urca Loop"
+     },
+     "story": {
+      "pt": "Um passeio de conversível pela orla mais bonita da cidade. Devagar nas curvas: tem pescador na mureta!",
+      "en": "A convertible ride along the prettiest shore in town. Easy on the bends: there are anglers on the sea wall!"
+     },
+     "at": [
+      "Praia da Urca",
+      "Mureta da Urca",
+      "Quadrado da Urca",
+      "Praça General Tibúrcio",
+      "Praia Vermelha"
+     ]
+    }
+   ]
+  },
+  "rio_lapa": {
+   "places": [
+    [
+     "Arcos da Lapa",
+     -22.9131,
+     -43.18
+    ],
+    [
+     "Escadaria Selarón",
+     -22.9153,
+     -43.1792
+    ],
+    [
+     "Catedral Metropolitana",
+     -22.9108,
+     -43.1808
+    ],
+    [
+     "Theatro Municipal",
+     -22.909,
+     -43.1766
+    ],
+    [
+     "Cinelândia",
+     -22.9104,
+     -43.1757
+    ],
+    [
+     "Circo Voador",
+     -22.9126,
+     -43.1806
+    ],
+    [
+     "Passeio Público",
+     -22.9135,
+     -43.1765
+    ],
+    [
+     "Sala Cecília Meireles",
+     -22.9138,
+     -43.1778
+    ],
+    [
+     "Estação do Bonde",
+     -22.9103,
+     -43.1795
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Sob os Arcos",
+      "en": "Under the Arches"
+     },
+     "story": {
+      "pt": "Os Arcos da Lapa, a escadaria colorida, a catedral em forma de cone e o teatro dourado. Quatro fotos, zero filtro.",
+      "en": "The Lapa Arches, the colourful stairway, the cone-shaped cathedral and the golden theatre. Four photos, zero filters."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Arcos da Lapa",
+      "Escadaria Selarón",
+      "Catedral Metropolitana",
+      "Theatro Municipal"
+     ]
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Degrau por Degrau",
+      "en": "Step by Step"
+     },
+     "story": {
+      "pt": "A escadaria tem 215 degraus e azulejo do mundo inteiro. Corrida a pé até o topo, sem pisar nas obras de arte!",
+      "en": "The stairway has 215 steps and tiles from all over the world. A run on foot to the top, mind the art!"
+     },
+     "params": {
+      "n": 5
+     },
+     "at": [
+      "Escadaria Selarón"
+     ]
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Azulejos Dourados",
+      "en": "Golden Tiles"
+     },
+     "story": {
+      "pt": "Entre um azulejo e outro alguém escondeu patinhas douradas. Olho vivo nos becos da Lapa.",
+      "en": "Between one tile and the next someone hid golden paws. Keep your eyes open in the alleys of Lapa."
+     },
+     "params": {
+      "n": 12
      }
     },
     {
      "kind": "deliver",
      "name": {
-      "pt": "Encomenda da Fazenda",
-      "en": "Parcel from the Farm"
+      "pt": "Violão para a Roda de Samba",
+      "en": "A Guitar for the Samba Circle"
      },
      "story": {
-      "pt": "Queijo fresco da fazenda pro centro da cidade. Chega inteiro se a Mortícia colaborar.",
-      "en": "Fresh farm cheese for the town centre. It arrives whole if Morticia cooperates."
+      "pt": "A roda de samba vai começar e o violão ficou em casa. Leve até o Circo Voador sem desafinar.",
+      "en": "The samba circle is about to start and the guitar was left at home. Get it to Circo Voador in tune."
+     },
+     "at": [
+      "Circo Voador"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Feira da Lapa",
+      "en": "Lapa Street Fair"
+     },
+     "story": {
+      "pt": "Tapioca, pastel e brigadeiro de colher. A Mortícia vai de barraca em barraca no ritmo do pandeiro.",
+      "en": "Tapioca, pastries and spoon brigadeiro. Morticia goes from stall to stall to the beat of the tambourine."
+     },
+     "params": {
+      "n": 24
      }
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Bondinho de Santa Teresa",
+      "en": "The Santa Teresa Tram"
+     },
+     "story": {
+      "pt": "O bonde amarelo passa por cima dos Arcos e as encomendas vão junto. Busque na estação e entregue na praça.",
+      "en": "The yellow tram rides over the Arches and the parcels go with it. Pick up at the station and deliver to the square."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Estação do Bonde",
+      "Arcos da Lapa",
+      "Cinelândia",
+      "Passeio Público"
+     ]
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali do Centro Histórico",
+      "en": "Old Town Rally"
+     },
+     "story": {
+      "pt": "Da Cinelândia aos Arcos, passando pela catedral. O Mimo dirige e a Mimosa canta samba no banco de trás.",
+      "en": "From Cinelândia to the Arches, past the cathedral. Mimo drives and Mimosa sings samba in the back seat."
+     },
+     "at": [
+      "Cinelândia",
+      "Theatro Municipal",
+      "Catedral Metropolitana",
+      "Arcos da Lapa",
+      "Passeio Público"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas sobre os Arcos",
+      "en": "Kites over the Arches"
+     },
+     "story": {
+      "pt": "O vento encana por baixo dos Arcos e as pipas vêm parar na praça. Pegue todas!",
+      "en": "The wind funnels under the Arches and the kites end up in the square. Catch them all!"
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "groceries",
+     "name": {
+      "pt": "A Vovó vai ao Teatro",
+      "en": "Grandma Goes to the Theatre"
+     },
+     "story": {
+      "pt": "A vovó gata tem ingresso pro balé e quer chegar elegante. Acompanhe ela até o Theatro Municipal.",
+      "en": "Grandma cat has a ticket for the ballet and wants to arrive in style. Walk her to the Theatro Municipal."
+     },
+     "at": [
+      "Theatro Municipal"
+     ]
+    },
+    {
+     "kind": "brawl",
+     "name": {
+      "pt": "Vira-latas do Passeio",
+      "en": "Mutts in the Park"
+     },
+     "story": {
+      "pt": "Uns vira-latas tomaram o coreto do Passeio Público e não deixam ninguém dançar. A Mimosa resolve.",
+      "en": "Some mutts took over the bandstand at Passeio Público and will not let anyone dance. Mimosa will sort it out."
+     },
+     "at": [
+      "Passeio Público"
+     ]
+    }
+   ]
+  },
+  "rio_maracana": {
+   "places": [
+    [
+     "Estádio do Maracanã",
+     -22.9121,
+     -43.2302
+    ],
+    [
+     "Maracanãzinho",
+     -22.914,
+     -43.229
+    ],
+    [
+     "Estátua do Bellini",
+     -22.9119,
+     -43.2281
+    ],
+    [
+     "Estação Maracanã",
+     -22.9093,
+     -43.233
+    ],
+    [
+     "Parque Aquático",
+     -22.9133,
+     -43.2318
+    ],
+    [
+     "Pista de Atletismo",
+     -22.9112,
+     -43.232
+    ],
+    [
+     "Praça Varnhagen",
+     -22.9165,
+     -43.2278
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "football",
+     "name": {
+      "pt": "Embaixadinhas no Maraca",
+      "en": "Keepie-Uppies at the Maracanã"
+     },
+     "story": {
+      "pt": "Na porta do maior estádio do Brasil ninguém deixa a bola cair. Dez toques e a torcida vai à loucura!",
+      "en": "At the gates of the biggest stadium in Brazil nobody lets the ball drop. Ten touches and the crowd goes wild!"
+     },
+     "params": {
+      "n": 10
+     }
+    },
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Tour do Torcedor",
+      "en": "The Fan's Tour"
+     },
+     "story": {
+      "pt": "A estátua do Bellini levantando a taça, o Maracanãzinho e o estádio inteiro. Foto pra todo lado!",
+      "en": "The statue of Bellini lifting the cup, the Maracanãzinho arena and the whole stadium. Photos everywhere!"
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Estátua do Bellini",
+      "Estádio do Maracanã",
+      "Maracanãzinho",
+      "Pista de Atletismo"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Pipoca pra Torcida",
+      "en": "Popcorn for the Fans"
+     },
+     "story": {
+      "pt": "Dia de clássico! Busque a pipoca na estação e entregue nos portões antes do apito.",
+      "en": "Derby day! Pick up the popcorn at the station and deliver to the gates before kick-off."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Estação Maracanã",
+      "Estádio do Maracanã",
+      "Praça Varnhagen",
+      "Maracanãzinho"
+     ]
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Volta Olímpica",
+      "en": "Lap of Honour"
+     },
+     "story": {
+      "pt": "Uma volta a pé em torno do estádio, como os campeões. O Mimo pediu maca na metade.",
+      "en": "A lap on foot around the stadium, like champions do. Mimo asked for a stretcher halfway."
+     },
+     "params": {
+      "n": 6
+     },
+     "at": [
+      "Estátua do Bellini",
+      "Pista de Atletismo",
+      "Estação Maracanã",
+      "Parque Aquático",
+      "Maracanãzinho",
+      "Estádio do Maracanã"
+     ]
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "A Bola do Jogo",
+      "en": "The Match Ball"
+     },
+     "story": {
+      "pt": "O juiz esqueceu a bola! Leve até o estádio antes de os times entrarem em campo.",
+      "en": "The referee forgot the ball! Get it to the stadium before the teams walk out."
+     },
+     "at": [
+      "Estádio do Maracanã"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Lanche do Intervalo",
+      "en": "Half-Time Snack"
+     },
+     "story": {
+      "pt": "Cachorro-quente, pipoca e mate gelado. A Mortícia tem quinze minutos e muita fome.",
+      "en": "Hot dogs, popcorn and iced tea. Morticia has fifteen minutes and a big appetite."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Bandeiras ao Vento",
+      "en": "Flags in the Wind"
+     },
+     "story": {
+      "pt": "A torcida soltou pipas com as cores do time. Pegue as que caírem antes do segundo tempo!",
+      "en": "The fans are flying kites in team colours. Catch the ones that fall before the second half!"
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali do Clássico",
+      "en": "Derby Day Rally"
+     },
+     "story": {
+      "pt": "Trânsito de dia de jogo é pra profissional. Cinco paradas em volta do estádio, de conversível.",
+      "en": "Match-day traffic is for professionals. Five stops around the stadium, in the convertible."
+     },
+     "at": [
+      "Estação Maracanã",
+      "Estátua do Bellini",
+      "Praça Varnhagen",
+      "Maracanãzinho",
+      "Estádio do Maracanã"
+     ]
+    },
+    {
+     "kind": "rescue",
+     "name": {
+      "pt": "Mascote Perdido",
+      "en": "The Lost Mascot"
+     },
+     "story": {
+      "pt": "O gatinho mascote do time se perdeu da torcida. Encontre o filhote e leve de volta pro portão.",
+      "en": "The team mascot kitten got separated from the fans. Find it and bring it back to the gate."
+     }
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Caça ao Troféu",
+      "en": "Trophy Hunt"
+     },
+     "story": {
+      "pt": "Espalharam patinhas douradas em volta do estádio. Quem achar todas levanta a taça!",
+      "en": "Golden paws are scattered around the stadium. Whoever finds them all lifts the cup!"
+     },
+     "params": {
+      "n": 12
+     }
+    }
+   ]
+  },
+  "saopaulo": {
+   "places": [
+    [
+     "MASP",
+     -23.5614,
+     -46.6559
+    ],
+    [
+     "Parque Trianon",
+     -23.5619,
+     -46.6578
+    ],
+    [
+     "Conjunto Nacional",
+     -23.5587,
+     -46.66
+    ],
+    [
+     "Prédio da FIESP",
+     -23.5631,
+     -46.6543
+    ],
+    [
+     "Estação Trianon-MASP",
+     -23.5627,
+     -46.6552
+    ],
+    [
+     "Parque Mário Covas",
+     -23.5601,
+     -46.659
+    ],
+    [
+     "Rua Augusta",
+     -23.5583,
+     -46.661
+    ],
+    [
+     "Mirante 9 de Julho",
+     -23.5604,
+     -46.6551
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Selfie no Vão do MASP",
+      "en": "Selfie under the MASP"
+     },
+     "story": {
+      "pt": "O museu que flutua em cima de quatro pernas vermelhas. A Mimosa quer foto embaixo, do lado e em cima.",
+      "en": "The museum that floats on four red legs. Mimosa wants a photo under it, beside it and above it."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "MASP",
+      "Parque Trianon",
+      "Conjunto Nacional",
+      "Prédio da FIESP"
+     ]
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Paulista Aberta",
+      "en": "Open Avenue"
+     },
+     "story": {
+      "pt": "Domingo a Paulista fecha pros carros e abre pros gatos. Corrida a pé de ponta a ponta!",
+      "en": "On Sundays the avenue closes to cars and opens to cats. A run on foot from end to end!"
+     },
+     "params": {
+      "n": 6
+     },
+     "at": [
+      "Estação Trianon-MASP",
+      "MASP",
+      "Parque Mário Covas",
+      "Conjunto Nacional",
+      "Rua Augusta",
+      "Parque Trianon"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Motoboy da Paulista",
+      "en": "Avenue Courier"
+     },
+     "story": {
+      "pt": "São Paulo não para e o delivery também não. Busque no Conjunto Nacional e entregue na FIESP. Rápido!",
+      "en": "São Paulo never stops and neither does delivery. Pick up at Conjunto Nacional and drop at the FIESP building. Quick!"
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Conjunto Nacional",
+      "Prédio da FIESP",
+      "Rua Augusta",
+      "MASP"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Feirinha do MASP",
+      "en": "The Sunday Market"
+     },
+     "story": {
+      "pt": "Pastel de feira, caldo de cana e coxinha. A Mortícia chegou cedo pra não pegar fila.",
+      "en": "Street-market pastries, sugarcane juice and coxinhas. Morticia got there early to beat the queue."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Quadro para o Museu",
+      "en": "A Painting for the Museum"
+     },
+     "story": {
+      "pt": "O MASP encomendou um retrato de gato. A tinta ainda está fresca: nada de correr com ele debaixo da pata!",
+      "en": "The MASP ordered a cat portrait. The paint is still wet: no running with it under your paw!"
+     },
+     "at": [
+      "MASP"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas entre os Prédios",
+      "en": "Kites between the Towers"
+     },
+     "story": {
+      "pt": "O vento encana entre os arranha-céus e as pipas descem girando. Fique de olho!",
+      "en": "The wind funnels between the skyscrapers and the kites come spinning down. Eyes up!"
+     },
+     "params": {
+      "n": 8
+     }
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali da Garoa",
+      "en": "Drizzle Rally"
+     },
+     "story": {
+      "pt": "Chuvinha fina, semáforo e buzina: o trânsito de Sampa em cinco checkpoints.",
+      "en": "Fine rain, traffic lights and horns: São Paulo traffic in five checkpoints."
+     },
+     "at": [
+      "Rua Augusta",
+      "Conjunto Nacional",
+      "MASP",
+      "Prédio da FIESP",
+      "Mirante 9 de Julho"
+     ]
+    },
+    {
+     "kind": "groceries",
+     "name": {
+      "pt": "A Vovó no Trianon",
+      "en": "Grandma at the Park"
+     },
+     "story": {
+      "pt": "A vovó gata quer sentar na sombra do Parque Trianon, um pedacinho de mata no meio do concreto.",
+      "en": "Grandma cat wants to sit in the shade of Trianon Park, a little patch of forest in the middle of the concrete."
+     },
+     "at": [
+      "Parque Trianon"
+     ]
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Patinhas na Calçada",
+      "en": "Paws on the Pavement"
+     },
+     "story": {
+      "pt": "Tem patinha dourada escondida entre os artistas de rua. Ache todas antes que o show acabe.",
+      "en": "There are golden paws hidden among the street performers. Find them all before the show ends."
+     },
+     "params": {
+      "n": 12
+     }
+    },
+    {
+     "kind": "escape",
+     "name": {
+      "pt": "Hora do Rush",
+      "en": "Rush Hour"
+     },
+     "story": {
+      "pt": "A carrocinha ficou presa no trânsito, mas não por muito tempo. Aguente e suma pelo Mirante.",
+      "en": "The dog catchers are stuck in traffic, but not for long. Hold on, then vanish by the lookout."
+     },
+     "at": [
+      "Mirante 9 de Julho"
+     ]
+    }
+   ]
+  },
+  "brasilia": {
+   "places": [
+    [
+     "Congresso Nacional",
+     -15.7997,
+     -47.8641
+    ],
+    [
+     "Praça dos Três Poderes",
+     -15.8008,
+     -47.8607
+    ],
+    [
+     "Palácio do Planalto",
+     -15.799,
+     -47.8608
+    ],
+    [
+     "Supremo Tribunal Federal",
+     -15.8022,
+     -47.8615
+    ],
+    [
+     "Palácio Itamaraty",
+     -15.8009,
+     -47.8672
+    ],
+    [
+     "Palácio da Justiça",
+     -15.7972,
+     -47.8662
+    ],
+    [
+     "Esplanada dos Ministérios",
+     -15.7985,
+     -47.869
+    ],
+    [
+     "Mastro da Bandeira",
+     -15.8007,
+     -47.8595
+    ],
+    [
+     "Panteão da Pátria",
+     -15.8011,
+     -47.8589
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "As Cúpulas e as Torres",
+      "en": "The Domes and the Towers"
+     },
+     "story": {
+      "pt": "Uma cúpula pra cima, uma pra baixo e duas torres no meio. A Mimosa acha que são tigelas de ração gigantes.",
+      "en": "One dome up, one dome down and two towers in between. Mimosa thinks they are giant food bowls."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Congresso Nacional",
+      "Praça dos Três Poderes",
+      "Palácio Itamaraty",
+      "Palácio do Planalto"
+     ]
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali do Eixo Monumental",
+      "en": "Monumental Axis Rally"
+     },
+     "story": {
+      "pt": "A avenida mais larga que os gatos já viram. Cinco paradas pela Esplanada, de conversível e vento no bigode.",
+      "en": "The widest avenue the cats have ever seen. Five stops along the Esplanade, top down and wind in the whiskers."
+     },
+     "at": [
+      "Esplanada dos Ministérios",
+      "Palácio da Justiça",
+      "Congresso Nacional",
+      "Palácio do Planalto",
+      "Praça dos Três Poderes"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Ofício Urgente",
+      "en": "Urgent Paperwork"
+     },
+     "story": {
+      "pt": "Um papel importantíssimo precisa de quatro carimbos em quatro prédios. Bem-vindo à capital!",
+      "en": "A very important paper needs four stamps in four buildings. Welcome to the capital!"
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Palácio da Justiça",
+      "Palácio Itamaraty",
+      "Congresso Nacional",
+      "Supremo Tribunal Federal"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas no Céu de Brasília",
+      "en": "Kites in the Brasília Sky"
+     },
+     "story": {
+      "pt": "Dizem que o céu de Brasília é o mar da cidade. Hoje ele está cheio de pipa.",
+      "en": "They say the sky is the sea of Brasília. Today it is full of kites."
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Corrida da Esplanada",
+      "en": "Esplanade Run"
+     },
+     "story": {
+      "pt": "Gramado a perder de vista e prédios iguaizinhos em fila. Corrida a pé (o Mimo contou os ministérios e dormiu).",
+      "en": "Lawn as far as the eye can see and identical buildings in a row. A run on foot (Mimo counted the ministries and fell asleep)."
+     },
+     "params": {
+      "n": 6
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Bandeira Nova",
+      "en": "A New Flag"
+     },
+     "story": {
+      "pt": "A bandeira gigante da praça vai ser trocada hoje. Leve a nova até o mastro sem deixar arrastar no chão.",
+      "en": "The giant flag in the square is being replaced today. Carry the new one to the flagpole without letting it touch the ground."
+     },
+     "at": [
+      "Mastro da Bandeira"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Piquenique no Gramado",
+      "en": "Picnic on the Lawn"
+     },
+     "story": {
+      "pt": "Pão de queijo, pamonha e suco de caju no gramado da Esplanada. A Mortícia estendeu a toalha.",
+      "en": "Cheese bread, corn cakes and cashew juice on the Esplanade lawn. Morticia has spread the blanket."
+     },
+     "params": {
+      "n": 22
+     }
+    },
+    {
+     "kind": "football",
+     "name": {
+      "pt": "Altinha na Praça",
+      "en": "Keepie-Uppie in the Square"
+     },
+     "story": {
+      "pt": "Praça enorme, chão liso e nenhum carro: lugar perfeito pra uma altinha.",
+      "en": "A huge square, smooth ground and no cars: the perfect place for keepie-uppie."
+     },
+     "params": {
+      "n": 8
+     }
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Patinhas Modernistas",
+      "en": "Modernist Paws"
+     },
+     "story": {
+      "pt": "O arquiteto escondeu patinhas douradas nas curvas dos prédios. Siga as linhas!",
+      "en": "The architect hid golden paws in the curves of the buildings. Follow the lines!"
+     },
+     "params": {
+      "n": 12
+     }
+    },
+    {
+     "kind": "rescue",
+     "name": {
+      "pt": "Gatinho na Cúpula",
+      "en": "Kitten on the Dome"
+     },
+     "story": {
+      "pt": "Um filhote achou que a cúpula era um escorregador. Agora não sabe descer. Busque ele!",
+      "en": "A kitten thought the dome was a slide. Now it can not get down. Go fetch it!"
+     },
+     "at": [
+      "Congresso Nacional"
+     ]
+    }
+   ]
+  },
+  "salvador": {
+   "places": [
+    [
+     "Largo do Pelourinho",
+     -12.9712,
+     -38.509
+    ],
+    [
+     "Elevador Lacerda",
+     -12.9744,
+     -38.5133
+    ],
+    [
+     "Mercado Modelo",
+     -12.973,
+     -38.5141
+    ],
+    [
+     "Terreiro de Jesus",
+     -12.9728,
+     -38.5096
+    ],
+    [
+     "Igreja de São Francisco",
+     -12.9745,
+     -38.5088
+    ],
+    [
+     "Praça da Sé",
+     -12.9737,
+     -38.5113
+    ],
+    [
+     "Casa de Jorge Amado",
+     -12.9712,
+     -38.5087
+    ],
+    [
+     "Praça Municipal",
+     -12.9747,
+     -38.5127
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Cores do Pelô",
+      "en": "Colours of the Pelourinho"
+     },
+     "story": {
+      "pt": "Sobrado azul, sobrado amarelo, sobrado rosa. A Mimosa quer uma foto combinando com cada um.",
+      "en": "A blue townhouse, a yellow one, a pink one. Mimosa wants a matching photo with each."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Largo do Pelourinho",
+      "Casa de Jorge Amado",
+      "Terreiro de Jesus",
+      "Igreja de São Francisco"
+     ]
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Sobe e Desce do Elevador",
+      "en": "Up and Down the Lift"
+     },
+     "story": {
+      "pt": "A encomenda é da Cidade Baixa pra Cidade Alta. O Elevador Lacerda resolve em trinta segundos.",
+      "en": "The parcel goes from the Lower Town to the Upper Town. The Lacerda Lift does it in thirty seconds."
+     },
+     "at": [
+      "Elevador Lacerda"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Acarajé da Baiana",
+      "en": "Acarajé from the Baiana"
+     },
+     "story": {
+      "pt": "Acarajé quentinho, cocada e água de coco. A Mortícia pediu \"sem pimenta\" e se arrependeu de nada.",
+      "en": "Hot acarajé, coconut sweets and coconut water. Morticia asked for \"no pepper\" and regrets nothing."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Ladeira Acima",
+      "en": "Up the Slope"
+     },
+     "story": {
+      "pt": "As ladeiras do Pelourinho são de pedra e sobem sem dó. Corrida a pé no ritmo do tambor!",
+      "en": "The Pelourinho slopes are cobbled and climb without mercy. A run on foot to the beat of the drums!"
+     },
+     "params": {
+      "n": 5
+     },
+     "at": [
+      "Largo do Pelourinho"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Fitinhas do Bonfim",
+      "en": "Bonfim Ribbons"
+     },
+     "story": {
+      "pt": "Cada fitinha dá direito a três pedidos. Busque no mercado e entregue pra quem está precisando de sorte.",
+      "en": "Each ribbon grants three wishes. Pick them up at the market and deliver them to those in need of luck."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Mercado Modelo",
+      "Praça Municipal",
+      "Praça da Sé",
+      "Terreiro de Jesus"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas na Baía",
+      "en": "Kites over the Bay"
+     },
+     "story": {
+      "pt": "O vento da Baía de Todos-os-Santos sobe a encosta e traz as pipas junto.",
+      "en": "The wind from the Bay of All Saints climbs the hillside and brings the kites with it."
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "groceries",
+     "name": {
+      "pt": "A Vovó e o Tabuleiro",
+      "en": "Grandma's Tray"
+     },
+     "story": {
+      "pt": "A vovó gata vende cocada no Terreiro de Jesus. Ajude a levar o tabuleiro ladeira acima.",
+      "en": "Grandma cat sells coconut sweets at Terreiro de Jesus. Help her carry the tray up the slope."
+     },
+     "at": [
+      "Terreiro de Jesus"
+     ]
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Patinhas no Paralelepípedo",
+      "en": "Paws on the Cobblestones"
+     },
+     "story": {
+      "pt": "Tem patinha dourada escondida entre as pedras das ladeiras. Devagar pra não escorregar!",
+      "en": "There are golden paws hidden between the cobblestones. Slow down or you will slip!"
+     },
+     "params": {
+      "n": 12
+     }
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali da Cidade Alta",
+      "en": "Upper Town Rally"
+     },
+     "story": {
+      "pt": "Da Praça Municipal à igreja toda de ouro, com o mar lá embaixo. Cuidado nas ladeiras!",
+      "en": "From the town square to the church covered in gold, with the sea down below. Careful on the slopes!"
+     },
+     "at": [
+      "Praça Municipal",
+      "Praça da Sé",
+      "Terreiro de Jesus",
+      "Igreja de São Francisco",
+      "Largo do Pelourinho"
+     ]
+    },
+    {
+     "kind": "rescue",
+     "name": {
+      "pt": "Gatinho no Sobrado",
+      "en": "Kitten on the Townhouse"
+     },
+     "story": {
+      "pt": "Um filhote subiu no telhado de um sobrado pra ouvir a batucada de perto. Hora de descer, pequeno.",
+      "en": "A kitten climbed a townhouse roof to hear the drumming up close. Time to come down, little one."
+     },
+     "at": [
+      "Largo do Pelourinho"
+     ]
+    }
+   ]
+  },
+  "paris": {
+   "places": [
+    [
+     "Torre Eiffel",
+     48.8584,
+     2.2945
+    ],
+    [
+     "Champ de Mars",
+     48.8556,
+     2.2986
+    ],
+    [
+     "Trocadéro",
+     48.8616,
+     2.2893
+    ],
+    [
+     "Pont d'Iéna",
+     48.8598,
+     2.2924
+    ],
+    [
+     "Carrossel da Torre",
+     48.8592,
+     2.2926
+    ],
+    [
+     "École Militaire",
+     48.8525,
+     2.3035
+    ],
+    [
+     "Museu do Quai Branly",
+     48.8609,
+     2.2977
+    ],
+    [
+     "Muro da Paz",
+     48.8538,
+     2.302
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Oui, Oui, Miau",
+      "en": "Oui, Oui, Meow"
+     },
+     "story": {
+      "pt": "A torre de ferro mais famosa do mundo, vista de quatro ângulos. A Mimosa ensaiou o biquinho.",
+      "en": "The most famous iron tower in the world, from four angles. Mimosa has rehearsed her pout."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Torre Eiffel",
+      "Trocadéro",
+      "Champ de Mars",
+      "Pont d'Iéna"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Croissant, s'il vous plaît",
+      "en": "Croissant, s'il vous plaît"
+     },
+     "story": {
+      "pt": "Croissant, macaron e queijo, muito queijo. A Mortícia descobriu que nasceu pra ser parisiense.",
+      "en": "Croissants, macarons and cheese, lots of cheese. Morticia has found out she was born to be Parisian."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Baguete Quentinha",
+      "en": "A Warm Baguette"
+     },
+     "story": {
+      "pt": "A baguete saiu do forno agora e tem que chegar quentinha no piquenique do Champ de Mars.",
+      "en": "The baguette is fresh out of the oven and must arrive warm at the picnic on the Champ de Mars."
+     },
+     "at": [
+      "Champ de Mars"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas no Champ de Mars",
+      "en": "Kites on the Champ de Mars"
+     },
+     "story": {
+      "pt": "O gramado embaixo da torre é o melhor lugar de Paris pra soltar pipa. E pra correr atrás delas.",
+      "en": "The lawn under the tower is the best place in Paris to fly kites. And to chase them."
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Corrida do Trocadéro",
+      "en": "Trocadéro Run"
+     },
+     "story": {
+      "pt": "Da torre até os jardins do outro lado do rio, atravessando a ponte a pé. O Mimo quer um café au lait.",
+      "en": "From the tower to the gardens across the river, crossing the bridge on foot. Mimo wants a café au lait."
+     },
+     "params": {
+      "n": 5
+     },
+     "at": [
+      "Torre Eiffel",
+      "Carrossel da Torre",
+      "Pont d'Iéna",
+      "Trocadéro",
+      "Museu do Quai Branly"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Le Petit Motoboy",
+      "en": "Le Petit Courier"
+     },
+     "story": {
+      "pt": "Flores pra cá, pão pra lá, perfume pra acolá. Paris inteira pediu entrega.",
+      "en": "Flowers here, bread there, perfume over yonder. All of Paris ordered delivery."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "École Militaire",
+      "Muro da Paz",
+      "Champ de Mars",
+      "Torre Eiffel"
+     ]
+    },
+    {
+     "kind": "fish",
+     "name": {
+      "pt": "Pescaria no Sena",
+      "en": "Fishing on the Seine"
+     },
+     "story": {
+      "pt": "Na beira do rio, com a torre atrás. Peixe francês também morde: espere o ❗.",
+      "en": "On the riverbank, with the tower behind you. French fish bite too: wait for the ❗."
+     },
+     "params": {
+      "n": 5
+     }
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali da Cidade Luz",
+      "en": "City of Light Rally"
+     },
+     "story": {
+      "pt": "Cinco cartões-postais de conversível. Não vale parar pra comprar miniatura da torre.",
+      "en": "Five postcards by convertible. No stopping to buy miniature towers."
+     },
+     "at": [
+      "École Militaire",
+      "Champ de Mars",
+      "Torre Eiffel",
+      "Museu do Quai Branly",
+      "Trocadéro"
+     ]
+    },
+    {
+     "kind": "groceries",
+     "name": {
+      "pt": "Madame Vovó",
+      "en": "Madame Grandma"
+     },
+     "story": {
+      "pt": "A vovó gata parisiense leva flores e pão pra casa todo dia. Acompanhe a madame até o carrossel.",
+      "en": "The Parisian grandma cat takes flowers and bread home every day. Walk madame to the carousel."
+     },
+     "at": [
+      "Carrossel da Torre"
+     ]
+    },
+    {
+     "kind": "brawl",
+     "name": {
+      "pt": "Poodles da Torre",
+      "en": "Poodles of the Tower"
+     },
+     "story": {
+      "pt": "Uma turma de poodles metidos não deixa ninguém chegar perto da torre. A Mimosa não fala francês, mas rosna.",
+      "en": "A gang of snooty poodles will not let anyone near the tower. Mimosa does not speak French, but she growls."
+     },
+     "at": [
+      "Torre Eiffel"
+     ]
+    }
+   ]
+  },
+  "toquio": {
+   "places": [
+    [
+     "Cruzamento de Shibuya",
+     35.6595,
+     139.7005
+    ],
+    [
+     "Estátua do Hachiko",
+     35.6591,
+     139.7007
+    ],
+    [
+     "Shibuya 109",
+     35.6596,
+     139.6988
+    ],
+    [
+     "Center Gai",
+     35.6602,
+     139.6989
+    ],
+    [
+     "Estação de Shibuya",
+     35.6581,
+     139.7016
+    ],
+    [
+     "Parque Miyashita",
+     35.662,
+     139.702
+    ],
+    [
+     "Shibuya Hikarie",
+     35.659,
+     139.7034
+    ],
+    [
+     "Dogenzaka",
+     35.6585,
+     139.6975
+    ],
+    [
+     "Spain-zaka",
+     35.6612,
+     139.6991
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "O Cruzamento Mais Cheio do Mundo",
+      "en": "The World's Busiest Crossing"
+     },
+     "story": {
+      "pt": "Mil pessoas atravessam de uma vez e ninguém esbarra. A Mimosa quer foto bem no meio.",
+      "en": "A thousand people cross at once and nobody bumps. Mimosa wants a photo right in the middle."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Cruzamento de Shibuya",
+      "Estátua do Hachiko",
+      "Shibuya 109",
+      "Center Gai"
+     ]
+    },
+    {
+     "kind": "groceries",
+     "name": {
+      "pt": "Amigos do Hachiko",
+      "en": "Friends of Hachiko"
+     },
+     "story": {
+      "pt": "O cachorro mais leal do Japão virou estátua, e desse a gente gosta. Leve a vovó gata pra deixar flores.",
+      "en": "The most loyal dog in Japan became a statue, and this one we like. Walk grandma cat there to leave flowers."
+     },
+     "at": [
+      "Estátua do Hachiko"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Sushi no Trilho",
+      "en": "Conveyor Sushi"
+     },
+     "story": {
+      "pt": "O sushi passa na esteira e a Mortícia passa a pata. Vinte e quatro pratinhos antes do relógio!",
+      "en": "The sushi goes by on the belt and Morticia goes by with her paw. Twenty-four plates before the clock!"
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Corrida dos Neons",
+      "en": "Neon Run"
+     },
+     "story": {
+      "pt": "Becos estreitos, letreiros gigantes e escadinhas escondidas. Corrida a pé por Shibuya!",
+      "en": "Narrow alleys, giant signs and hidden steps. A run on foot through Shibuya!"
+     },
+     "params": {
+      "n": 6
+     },
+     "at": [
+      "Center Gai",
+      "Spain-zaka",
+      "Parque Miyashita",
+      "Shibuya Hikarie",
+      "Estação de Shibuya",
+      "Dogenzaka"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Bentô Expresso",
+      "en": "Bento Express"
+     },
+     "story": {
+      "pt": "Marmitas japonesas pra quem trabalha até tarde. Busque na estação e entregue antes de esfriar.",
+      "en": "Japanese lunch boxes for people working late. Pick up at the station and deliver before they go cold."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Estação de Shibuya",
+      "Shibuya Hikarie",
+      "Dogenzaka",
+      "Shibuya 109"
+     ]
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Maneki-neko",
+      "en": "Lucky Cats"
+     },
+     "story": {
+      "pt": "Os gatinhos da sorte esconderam moedas douradas pelas ruas. Acene de volta e pegue todas!",
+      "en": "The lucky cats have hidden golden coins around the streets. Wave back and grab them all!"
+     },
+     "params": {
+      "n": 12
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Fita de Karaokê",
+      "en": "Karaoke Tape"
+     },
+     "story": {
+      "pt": "A Mimosa vai cantar hoje e a música dela tem que chegar ao Center Gai. Ninguém está pronto.",
+      "en": "Mimosa is singing tonight and her song must reach Center Gai. Nobody is ready."
+     },
+     "at": [
+      "Center Gai"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Koinobori",
+      "en": "Koinobori"
+     },
+     "story": {
+      "pt": "Pipas em forma de carpa colorida voam sobre o Parque Miyashita. Pegue as que escaparem!",
+      "en": "Kites shaped like colourful carp fly over Miyashita Park. Catch the ones that get away!"
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali de Shibuya",
+      "en": "Shibuya Rally"
+     },
+     "story": {
+      "pt": "Cinco checkpoints entre telões e letreiros. Semáforo vermelho no cruzamento vale pra gato também.",
+      "en": "Five checkpoints between video walls and signs. Red lights at the crossing apply to cats too."
+     },
+     "at": [
+      "Dogenzaka",
+      "Shibuya 109",
+      "Cruzamento de Shibuya",
+      "Parque Miyashita",
+      "Shibuya Hikarie"
+     ]
+    },
+    {
+     "kind": "rescue",
+     "name": {
+      "pt": "Gatinho no Letreiro",
+      "en": "Kitten on the Sign"
+     },
+     "story": {
+      "pt": "Um filhote subiu num letreiro de neon pra ver a cidade brilhar. Agora quer colo.",
+      "en": "A kitten climbed a neon sign to watch the city glow. Now it wants to be carried."
+     }
+    }
+   ]
+  },
+  "newyork": {
+   "places": [
+    [
+     "Times Square",
+     40.758,
+     -73.9855
+    ],
+    [
+     "Escadaria Vermelha",
+     40.759,
+     -73.9851
+    ],
+    [
+     "One Times Square",
+     40.7565,
+     -73.9862
+    ],
+    [
+     "Bryant Park",
+     40.754,
+     -73.9836
+    ],
+    [
+     "Radio City",
+     40.76,
+     -73.98
+    ],
+    [
+     "Shubert Alley",
+     40.758,
+     -73.9872
+    ],
+    [
+     "Teatro New Amsterdam",
+     40.7561,
+     -73.9879
+    ],
+    [
+     "Terminal de Ônibus",
+     40.757,
+     -73.9903
+    ],
+    [
+     "Rua dos Diamantes",
+     40.7571,
+     -73.9806
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Luzes da Broadway",
+      "en": "Broadway Lights"
+     },
+     "story": {
+      "pt": "Telões do tamanho de prédios e a escadaria vermelha no meio. A Mimosa já se vê num deles.",
+      "en": "Screens the size of buildings and the red steps in the middle. Mimosa can already see herself on one."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Times Square",
+      "Escadaria Vermelha",
+      "One Times Square",
+      "Shubert Alley"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Hot Dog de Carrocinha",
+      "en": "Street Cart Hot Dogs"
+     },
+     "story": {
+      "pt": "A única carrocinha de que gato gosta: a de hot dog. Pretzel e pizza em fatia também contam.",
+      "en": "The only cart a cat likes: the hot dog cart. Pretzels and pizza slices count too."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "O Figurino da Estreia",
+      "en": "Opening Night Costume"
+     },
+     "story": {
+      "pt": "O musical \"Gatos\" estreia hoje (claro) e falta um figurino. Leve até o teatro antes de a cortina subir.",
+      "en": "The musical about cats opens tonight (of course) and a costume is missing. Get it to the theatre before the curtain rises."
+     },
+     "at": [
+      "Teatro New Amsterdam"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Táxi Amarelo",
+      "en": "Yellow Cab"
+     },
+     "story": {
+      "pt": "Passageiro aqui, passageiro ali. Hoje o conversível é táxi e o taxímetro está rodando.",
+      "en": "A passenger here, a passenger there. Today the convertible is a cab and the meter is running."
+     },
+     "params": {
+      "n": 4,
+      "car": 1
+     },
+     "at": [
+      "Terminal de Ônibus",
+      "Times Square",
+      "Radio City",
+      "Bryant Park"
+     ]
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Corrida dos Quarteirões",
+      "en": "Block by Block"
+     },
+     "story": {
+      "pt": "Rua, avenida, rua, avenida. Corrida a pé pelo tabuleiro de xadrez de Manhattan.",
+      "en": "Street, avenue, street, avenue. A run on foot across the Manhattan chessboard."
+     },
+     "params": {
+      "n": 6
+     },
+     "at": [
+      "Shubert Alley",
+      "Times Square",
+      "Rua dos Diamantes",
+      "Radio City",
+      "Escadaria Vermelha",
+      "One Times Square"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Confete de Ano Novo",
+      "en": "New Year Confetti"
+     },
+     "story": {
+      "pt": "Na virada do ano chove papel picado em Times Square. Hoje chovem pipas: pegue antes de a bola descer!",
+      "en": "On New Year's Eve it rains confetti in Times Square. Today it rains kites: catch them before the ball drops!"
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "groceries",
+     "name": {
+      "pt": "A Vovó no Parque",
+      "en": "Grandma in the Park"
+     },
+     "story": {
+      "pt": "A vovó gata quer ler o jornal no Bryant Park, longe do barulho. Acompanhe ela pelos quarteirões.",
+      "en": "Grandma cat wants to read the paper in Bryant Park, away from the noise. Walk her across the blocks."
+     },
+     "at": [
+      "Bryant Park"
+     ]
+    },
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali da Big Apple",
+      "en": "Big Apple Rally"
+     },
+     "story": {
+      "pt": "Cinco checkpoints no trânsito mais buzinado do planeta. O Mimo buzina de volta, dormindo.",
+      "en": "Five checkpoints in the most honked traffic on the planet. Mimo honks back in his sleep."
+     },
+     "at": [
+      "Terminal de Ônibus",
+      "Teatro New Amsterdam",
+      "Times Square",
+      "Rua dos Diamantes",
+      "Radio City"
+     ]
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Estrelas da Calçada",
+      "en": "Sidewalk Stars"
+     },
+     "story": {
+      "pt": "Alguém colou patinhas douradas nas calçadas da Broadway. Só os gatos mais famosos acham todas.",
+      "en": "Someone stuck golden paws on the Broadway sidewalks. Only the most famous cats find them all."
+     },
+     "params": {
+      "n": 12
+     }
+    },
+    {
+     "kind": "escape",
+     "name": {
+      "pt": "Fuga da Rua 42",
+      "en": "42nd Street Getaway"
+     },
+     "story": {
+      "pt": "A carrocinha de Nova York não dorme nunca. Aguente firme e suma no meio da multidão.",
+      "en": "The New York dog catchers never sleep. Hold on, then vanish into the crowd."
+     },
+     "at": [
+      "Times Square"
+     ]
     }
    ]
   }

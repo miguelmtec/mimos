@@ -310,6 +310,89 @@ function finalize(w) {
 }
 
 
+// ---------- procedural infill for sparsely mapped cities ----------
+// OpenStreetMap has every street of most towns but, in many of them (Rio Verde: 162 roads, 22 buildings), almost no buildings.
+// Where a stretch of street has no mapped buildings we line it with plausible low-rise lots: houses, shops and small blocks.
+// The look comes from the country and tags; everything is seeded by the city id, so every player sees the same town.
+// mix = share of [house, shop, block]; lot = frontage in metres; floors = storeys of the small blocks.
+const STYLES = World.STYLES = {
+  br_interior: { walls: 1, roof: 'clay', mix: [0.62, 0.27, 0.11], lot: [9, 14], floors: [2, 4], flora: 'ipe', floraP: 0.3,
+    cols: ['#ffd76a', '#ff9d6e', '#7fd6c2', '#8fc4ff', '#f7a6c4', '#b8e986', '#fff3d6', '#ffb35c', '#9fe0ff', '#e6c7ff'], trim: ['#ffffff', '#fff3d6', '#ffe9a8', '#d8f0ff'] },
+  br_coast: { walls: 1, roof: 'clay', mix: [0.5, 0.3, 0.2], lot: [9, 14], floors: [2, 4], flora: 'palm', floraP: 0.3,
+    cols: ['#ffffff', '#fff3d6', '#9fe0ff', '#ffd76a', '#7fd6c2', '#ffb7a0', '#f7a6c4'], trim: ['#ffffff', '#d8f0ff', '#fff3d6'] },
+  us: { walls: 0, roof: 'gray', mix: [0.55, 0.3, 0.15], lot: [11, 16], floors: [2, 3], flora: 'tree', floraP: 0.3,
+    cols: ['#f4efe6', '#d8e6f0', '#f2d9c4', '#cfe3d0', '#e8d7f0', '#f7e7a8'], trim: ['#ffffff'] },
+  eu: { walls: 0, roof: 'clay', mix: [0.12, 0.33, 0.55], lot: [10, 15], floors: [3, 5], flora: 'tree', floraP: 0.2,
+    cols: ['#f1e2c4', '#e8cfa6', '#f4d9b0', '#e2c3a0', '#f6ecd9', '#d9c7b0'], trim: ['#ffffff', '#f6ecd9'] },
+  asia: { walls: 0, roof: 'flat', mix: [0.15, 0.45, 0.4], lot: [7, 11], floors: [2, 4], flora: 'tree', floraP: 0.12, sign: 1,
+    cols: ['#e6e9ef', '#d6dbe6', '#f2efe6', '#c9d2e0', '#e9dfd2'], trim: ['#ffffff'] },
+  desert: { walls: 1, roof: 'flat', mix: [0.6, 0.28, 0.12], lot: [10, 15], floors: [2, 3], flora: 'palm', floraP: 0.15,
+    cols: ['#e8d2a6', '#dcc090', '#f0deb8', '#d2b384', '#f4e6c8'], trim: ['#f4e6c8', '#ffffff'] },
+};
+World.styleOf = function (C) {
+  const c = (C.country || '').toLowerCase(), tags = C.tags || [];
+  if (C.style && STYLES[C.style]) return C.style;
+  if (/bra[sz]il|m[eé]xico|argentin|col[oô]mbia|peru|chile|urugua/.test(c)) return tags.includes('beach') ? 'br_coast' : 'br_interior';
+  if (/jap|cor[eé]ia|korea|china/.test(c)) return 'asia';
+  if (/egito|egypt|emirad|marroc|ar[aá]bia/.test(c)) return 'desert';
+  if (/fran|reino|it[aá]lia|portugal|espanha|alemanha|spain|germany|italy|holanda|gr[eé]cia/.test(c)) return 'eu';
+  return 'us';
+};
+const idHash = id => { let h = 7; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) % 1000003; return h; };
+// occ: 1 where OSM has a building. Marks the new lots in grid/gnd and returns { lots, trees }.
+World.infill = function (C, w, occ) {
+  const { W, H, grid, gnd } = w, MPT = World.MPT, half = C.half, key = World.styleOf(C), st = STYLES[key], rng = U.rng(idHash(C.id) + 11);
+  const CELL = 40, cw = Math.ceil(W / CELL), dense = new Uint16Array(cw * cw);
+  for (let i = 0; i < W * H; i++) if (occ[i]) dense[Math.floor(Math.floor(i / W) / CELL) * cw + Math.floor((i % W) / CELL)]++;
+  const isDense = (x, y) => dense[Math.floor(y / CELL) * cw + Math.floor(x / CELL)] > CELL * CELL * 0.05;
+  const lots = [], trees = [], tiles = [];
+  // tiles whose centre falls inside the rotated rectangle (centre cx, cz in metres; tangent ux, uz; half sizes hw, hd)
+  const rect = (cx, cz, ux, uz, hw, hd, fn) => {
+    const r = Math.hypot(hw, hd), x0 = Math.floor((cx - r + half) / MPT), x1 = Math.floor((cx + r + half) / MPT), y0 = Math.floor((cz - r + half) / MPT), y1 = Math.floor((cz + r + half) / MPT);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const mx = (x + 0.5) * MPT - half - cx, mz = (y + 0.5) * MPT - half - cz; if (Math.abs(mx * ux + mz * uz) <= hw && Math.abs(-mx * uz + mz * ux) <= hd) if (fn(x, y) === false) return false; }
+    return true;
+  };
+  const free = (x, y) => x > 3 && y > 3 && x < W - 4 && y < H - 4 && grid[y * W + x] === FLOOR && gnd[y * W + x] === G_LOT && !occ[y * W + x] && !isDense(x, y);
+  // nearest streets to the centre first: if the cap is reached, only the far edge of the map stays empty
+  const MAXL = 1300, mid = R => { const k = 2 + ((R.length - 2) >> 2) * 2; return Math.hypot(R[k], R[k + 1]); };
+  for (const R of C.roads.slice().sort((a, b) => mid(a) - mid(b))) {
+    if (R[1] === 1 || R[0] < 4 || lots.length >= MAXL) continue;
+    const main = R[0] >= 9;
+    // walk the whole polyline by arc length, so short segments and gentle bends still get a continuous row of lots
+    const cum = [0]; for (let i = 2; i + 3 < R.length; i += 2) cum.push(cum[cum.length - 1] + Math.hypot(R[i + 2] - R[i], R[i + 3] - R[i + 1]));
+    const total = cum[cum.length - 1]; if (total < 12) continue;
+    const at = (s, o) => { let k = 0; while (k < cum.length - 2 && cum[k + 1] < s) k++; const i = 2 + k * 2, len = cum[k + 1] - cum[k] || 1, f = (s - cum[k]) / len; o.x = R[i] + (R[i + 2] - R[i]) * f; o.z = R[i + 1] + (R[i + 3] - R[i + 1]) * f; o.ux = (R[i + 2] - R[i]) / len; o.uz = (R[i + 3] - R[i + 1]) / len; return o; };
+    const o = {};
+    for (const side of [1, -1]) {
+      let s = rng.range(0, 5);
+      while (s < total && lots.length < MAXL) {
+        const q = rng(), mix = main ? [st.mix[0] * 0.45, st.mix[1] * 1.5, st.mix[2] * 1.6] : st.mix, tot = mix[0] + mix[1] + mix[2];
+        const k = q * tot < mix[0] ? 'house' : q * tot < mix[0] + mix[1] ? 'shop' : 'block';
+        const fw = Math.round(rng.range(st.lot[0], st.lot[1]) * (k === 'block' ? 1.25 : 1)), d = k === 'house' ? rng.range(13, 16) : k === 'shop' ? rng.range(9, 12) : rng.range(12, 16);
+        if (s + fw > total + 2) break;
+        at(s + fw / 2, o); const ux = o.ux, uz = o.uz, nx = -uz * side, nz = ux * side, off = R[0] / 2 + 3.2 + d / 2, cx = o.x + nx * off, cz = o.z + nz * off;
+        // the lot plus a little margin must be empty ground: no street, footpath, water, park, beach or mapped building
+        if (Math.abs(cx) < half - 16 && Math.abs(cz) < half - 16 && rect(cx, cz, ux, uz, fw / 2 + 0.6, d / 2 + 1.4, (x, y) => free(x, y))) {
+          const floors = k === 'block' ? Math.round(rng.range(st.floors[0], st.floors[1])) : 1, h = k === 'house' ? 3.3 : k === 'shop' ? 4.3 : floors * 3 + 1;
+          rect(cx, cz, ux, uz, fw / 2 - 0.2, d / 2, (x, y) => { tiles.push(y * W + x); occ[y * W + x] = 2; });
+          lots.push({ k, x: Math.round(cx * 10) / 10, z: Math.round(cz * 10) / 10, ux, uz, fx: -nx, fz: -nz, w: fw, d: Math.round(d * 10) / 10, h, s: Math.floor(rng() * 1e6) });
+          if (st.flora && rng() < st.floraP) { at(s + fw * 0.3, o); trees.push([Math.round((o.x + nx * (R[0] / 2 + 1.5)) * 10) / 10, Math.round((o.z + nz * (R[0] / 2 + 1.5)) * 10) / 10, st.flora === 'ipe' ? (rng() < 0.2 ? 'palm' : 'ipe') : st.flora, Math.floor(rng() * 4)]); }
+          s += fw + (rng() < 0.25 ? rng.range(1.5, 5) : 0.4);
+        } else s += 3;
+      }
+    }
+  }
+  for (const i of tiles) { grid[i] = WALL; gnd[i] = G_ROOF; }
+  // backyards: empty ground well away from any street turns green instead of staying paved
+  if (lots.length) {
+    const dist = new Int8Array(W * H).fill(-1), q = [];
+    for (let i = 0; i < W * H; i++) if (gnd[i] === G_ROAD || gnd[i] === G_WALK) { dist[i] = 0; q.push(i); }
+    for (let h = 0; h < q.length; h++) { const i = q[h], d = dist[i] + 1, x = i % W; if (d > 4) continue; for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) if (j >= 0 && j < W * H && dist[j] < 0) { dist[j] = d; q.push(j); } }
+    for (let i = 0; i < W * H; i++) if (dist[i] < 0 && gnd[i] === G_LOT && grid[i] === FLOOR && !isDense(i % W, Math.floor(i / W))) gnd[i] = G_GRASS;
+  }
+  return { lots, trees, style: key };
+};
+
 // ---------- real cities (OpenStreetMap extracts, see data/cities/) ----------
 // Rasterises the vector map onto the same tile grid the simulation uses, so every system (AI, cars, police) works unchanged.
 World.MPT = 3; // metres per tile in real cities
@@ -361,6 +444,14 @@ World.fromCity = function (C, meta) {
     line(R, 2, hw, i => { grid[i] = FLOOR; if (gnd[i] !== G_ROAD) gnd[i] = foot ? G_WALK : G_ROAD; });
     if (!foot) { const pts = []; for (let i = 2; i + 1 < R.length; i += 2) if (Math.abs(R[i]) < half - 6 && Math.abs(R[i + 1]) < half - 6) pts.push({ x: px(R[i]), y: px(R[i + 1]) }); let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); if (pts.length >= 2 && len > 500) w.roads.push({ pts, len, w: R[0] }); }
   }
+  // sparse maps (few mapped buildings for the land they cover) get procedural street frontage, see World.infill
+  { const occ = new Uint8Array(W * H); let built = 0, land = 0;
+    for (const B of C.buildings) fillPoly(B, 1, i => { if (!occ[i]) { occ[i] = 1; built++; } });
+    for (let i = 0; i < W * H; i++) if (grid[i] !== WATER) land++;
+    w.builtRatio = built / Math.max(1, land);
+    const tg = C.tags || [], want = C.infill !== false && !tg.includes('noinfill') && (tg.includes('infill') || w.builtRatio < 0.05);
+    const fill = want ? World.infill(C, w, occ) : { lots: [], trees: [], style: World.styleOf(C) };
+    w.infill = fill.lots; w.infillTrees = fill.trees; w.style = fill.style; }
   for (const B of C.buildings) fillPoly(B, 1, i => { if (gnd[i] !== G_ROAD && gnd[i] !== G_WALK) { grid[i] = WALL; gnd[i] = G_ROOF; } });
   // terrain height from the elevation grid (n x n, row-major, j south / i east, metres above elev.min): bilinear, in 3D units
   const E = C.elev && C.elev.data && C.elev.n > 1 ? C.elev : null, KU = 2 / MPT, ES = E ? (E.size || half * 2) : 1;

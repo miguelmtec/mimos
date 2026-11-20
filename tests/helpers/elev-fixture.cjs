@@ -13,8 +13,11 @@ exports.build = function () {
   return C;
 };
 exports.meta = C => ({ id: C.id, name: C.name, country: 'Teste', file: C.id + '.json', kb: 100, landmarks: C.landmarks.length, tags: C.tags, order: 950, flag: '🧪', mood: 2, pal: 2, palms: 1, stars: 0 });
-// Stand-in for the Rio Verde extract (not delivered yet): the Miami map served under the id "rioverde", tagged hometown.
-exports.buildAgro = function () { const C = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../public/data/cities/miami.json'), 'utf8')); C.id = 'rioverde'; C.name = 'Rio Verde (fixture)'; C.country = 'Brasil'; C.tags = ['hometown']; return C; };
+// Stand-in for the Rio Verde extract (not delivered yet): the Miami street grid served under the id "rioverde", tagged hometown.
+exports.buildAgro = function () { const C = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../public/data/cities/miami.json'), 'utf8')); C.id = 'rioverde'; C.name = 'Rio Verde (fixture)'; C.country = 'Brasil'; C.tags = ['hometown'];
+  // sparse like the real extract (22 buildings, plenty of streets, no sea): the procedural infill has to build the town
+  C.buildings = C.buildings.filter((b, i) => i % 27 === 0).slice(0, 22); C.coast = []; C.beach = []; C.water = []; C.green = C.green.slice(0, 6);
+  C.roads = C.roads.filter(r => r[1] !== 1 && r[0] >= 5); return C; };
 exports.agroRoutes = async function (page) {
   const C = exports.buildAgro();
   await page.route('**/api/**', r => r.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"offline"}' }));

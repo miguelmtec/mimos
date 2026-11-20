@@ -224,7 +224,7 @@ export function skyWater(city, scene, VP, cx, cz, waterY) {
     vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: 'uniform vec3 top; uniform vec3 hor; uniform vec3 sunC; uniform vec3 sunDir; uniform float night; varying vec3 vD;\nfloat h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid main(){ vec3 d = normalize(vD); float h = clamp(d.y*1.6+0.08, 0.0, 1.0); vec3 c = mix(hor, top, pow(h, 0.55)); float s = max(dot(d, sunDir), 0.0); c += sunC * (pow(s, 380.0)*1.6 + pow(s, 12.0)*0.35 + pow(s, 3.0)*0.12); float band = smoothstep(0.0,0.04,abs(fract(d.y*26.0+0.5)-0.5)); if (s > 0.9965 && d.y < sunDir.y) c = mix(c, hor, (1.0-band)*0.8); vec2 g = floor(d.xz/max(d.y,0.05)*42.0); float st = step(0.985, h21(g)) * step(0.12, d.y) * night; c += vec3(st)*0.7; gl_FragColor = vec4(c, 1.0); }',
   });
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 20, 12), city.skyMat); sky.frustumCulled = false; scene.add(sky); city.sky = sky;
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 20, 12), city.skyMat); sky.frustumCulled = false; sky.renderOrder = -10; scene.add(sky); city.sky = sky; // drawn first, so distant backdrops beyond the dome still show
 }
 export { canvasTex, lin };
 export function glowMaterial() {

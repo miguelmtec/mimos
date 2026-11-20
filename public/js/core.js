@@ -67,7 +67,7 @@ const A = VP.Assets = {
 const I = VP.I = {
   keys: {}, touch: false, useMouse: false,
   mx: 0, my: 0, attack: false, aim: null, yaw: -Math.PI / 2, mw: null, look: 0, bot: null,
-  pressed: { special: false, dash: false, ctx: false, pause: false, sw: -1, cycle: false },
+  pressed: { special: false, dash: false, ctx: false, pause: false, sw: -1, cycle: false, emote: false },
   ctxHeld: false,
   mouse: { x: 0, y: 0, down: false },
   stick: { id: -1, ox: 0, oy: 0, x: 0, y: 0 },
@@ -77,6 +77,7 @@ const I = VP.I = {
 };
 try { I.touch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window; } catch (e) { I.touch = false; }
 const KEYMAP = { ' ': 'special', shift: 'dash', e: 'ctx', r: 'ctx', f: 'ctx' };
+const EMOTE_KEYS = { z: 'miau', x: 'dance', c: 'sit', v: 'wave' };
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if (e.target && e.target.tagName === 'INPUT') return;
@@ -86,6 +87,7 @@ addEventListener('keydown', e => {
   if (KEYMAP[k]) I.pressed[KEYMAP[k]] = true;
   if (k === '1' || k === '2' || k === '3') I.pressed.sw = +k - 1;
   if (k === 'q' || k === 'tab') I.pressed.cycle = true;
+  if (EMOTE_KEYS[k]) I.pressed.emote = EMOTE_KEYS[k];
   if (k === 'p' || k === 'escape') I.pressed.pause = true;
   if (k === 'm' && VP.Audio) VP.Audio.toggleMute();
 });
@@ -106,6 +108,8 @@ I.bind = function (cv) {
     if (hit) {
       if (hit === 'atk') { I.atk.id = e.pointerId; I.atk.ox = I.atk.x = p.x; I.atk.oy = I.atk.y = p.y; }
       else if (hit === 'pause') I.pressed.pause = true;
+      else if (hit === 'emo') { VP.HUD.emoOpen = VP.HUD.emoOpen > 0 ? 0 : 4.5; }
+      else if (hit.slice(0, 3) === 'em_') { I.pressed.emote = hit.slice(3); VP.HUD.emoOpen = 0; }
       else if (hit.length === 2 && hit[0] === 'c') I.pressed.sw = +hit[1];
       else { I.pressed[hit] = true; I.held[hit] = e.pointerId; }
       return;
@@ -133,7 +137,7 @@ I.bind = function (cv) {
 };
 I.reset = function () {
   I.stick.id = I.atk.id = -1; I.held = {}; I.mouse.down = false; I.keys = {};
-  const p = I.pressed; p.special = p.dash = p.ctx = p.pause = p.cycle = false; p.sw = -1;
+  const p = I.pressed; p.special = p.dash = p.ctx = p.pause = p.cycle = p.emote = false; p.sw = -1;
 };
 // Called once per frame: resolves all devices into one state.
 I.poll = function () {
@@ -158,6 +162,14 @@ I.poll = function () {
     if (Math.hypot(dx, dy) > 16) I.aim = Math.atan2(fy * -dy + fx * dx, fx * -dy - fy * dx);
   }
   I.ctxHeld = !!(k.e || k.r || k.f || I.held.ctx !== undefined);
+};
+// Haptic feedback on hits (Android browsers; iOS has no navigator.vibrate and simply ignores this). Off in Settings.
+VP.haptic = function (ms, gap) {
+  try {
+    if (!I.touch || I.bot || !navigator.vibrate || VP.ls.get('vp_haptic') === '0') return false;
+    const now = performance.now(); if (now - (VP._hapT || 0) < (gap || 70)) return false; // rapid fire must not turn into a constant buzz
+    VP._hapT = now; navigator.vibrate(ms); VP.haptics = (VP.haptics || 0) + 1; return true;
+  } catch (e) { return false; }
 };
 I.take = function (name) { const v = I.pressed[name]; I.pressed[name] = name === 'sw' ? -1 : false; return v; };
 })();

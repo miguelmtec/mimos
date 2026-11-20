@@ -1,11 +1,13 @@
 {
- "version": 1,
+ "version": 2,
  "attribution": "© OpenStreetMap contributors (ODbL)",
  "cities": [
   {
    "id": "miami",
    "name": "Miami Beach",
    "country": "EUA",
+   "lat": 25.779,
+   "lon": -80.1315,
    "file": "miami.json",
    "kb": 132,
    "landmarks": 72,
@@ -24,6 +26,8 @@
    "id": "rio",
    "name": "Rio de Janeiro — Copacabana",
    "country": "Brasil",
+   "lat": -22.97,
+   "lon": -43.184,
    "file": "rio.json",
    "kb": 116,
    "landmarks": 8,
@@ -42,6 +46,8 @@
    "id": "rio_vidigal",
    "name": "Rio — Vidigal e Leblon",
    "country": "Brasil",
+   "lat": -22.9905,
+   "lon": -43.23,
    "file": "rio_vidigal.json",
    "kb": 211,
    "landmarks": 1,
@@ -62,6 +68,8 @@
    "id": "rio_santamarta",
    "name": "Rio — Morro Santa Marta (Botafogo)",
    "country": "Brasil",
+   "lat": -22.9475,
+   "lon": -43.1935,
    "file": "rio_santamarta.json",
    "kb": 185,
    "landmarks": 3,
@@ -76,6 +84,264 @@
    "pal": 2,
    "palms": 1,
    "stars": 6
+  }
+ ],
+ "soon": [
+  {
+   "id": "rio_urca",
+   "name": "Rio — Urca e Pão de Açúcar",
+   "country": "Brasil",
+   "lat": -22.95,
+   "lon": -43.162,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "rio_lapa",
+   "name": "Rio — Lapa e Centro",
+   "country": "Brasil",
+   "lat": -22.913,
+   "lon": -43.18,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "rio_maracana",
+   "name": "Rio — Maracanã",
+   "country": "Brasil",
+   "lat": -22.9122,
+   "lon": -43.2302,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "saopaulo",
+   "name": "São Paulo — Av. Paulista",
+   "country": "Brasil",
+   "lat": -23.5614,
+   "lon": -46.6559,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "brasilia",
+   "name": "Brasília — Esplanada",
+   "country": "Brasil",
+   "lat": -15.7975,
+   "lon": -47.8645,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "rioverde",
+   "name": "Rio Verde — Centro",
+   "country": "Brasil",
+   "lat": -17.798,
+   "lon": -50.928,
+   "flag": "🏡"
+  },
+  {
+   "id": "goiania",
+   "name": "Goiânia — Praça Cívica",
+   "country": "Brasil",
+   "lat": -16.6799,
+   "lon": -49.255,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "salvador",
+   "name": "Salvador — Pelourinho",
+   "country": "Brasil",
+   "lat": -12.9714,
+   "lon": -38.5108,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "bh",
+   "name": "Belo Horizonte — Praça da Liberdade",
+   "country": "Brasil",
+   "lat": -19.932,
+   "lon": -43.938,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "recife",
+   "name": "Recife — Marco Zero",
+   "country": "Brasil",
+   "lat": -8.0631,
+   "lon": -34.8711,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "fortaleza",
+   "name": "Fortaleza — Beira-Mar",
+   "country": "Brasil",
+   "lat": -3.725,
+   "lon": -38.495,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "natal",
+   "name": "Natal — Ponta Negra",
+   "country": "Brasil",
+   "lat": -5.88,
+   "lon": -35.17,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "belem",
+   "name": "Belém — Ver-o-Peso",
+   "country": "Brasil",
+   "lat": -1.453,
+   "lon": -48.504,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "manaus",
+   "name": "Manaus — Teatro Amazonas",
+   "country": "Brasil",
+   "lat": -3.1303,
+   "lon": -60.0234,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "floripa",
+   "name": "Florianópolis — Centro",
+   "country": "Brasil",
+   "lat": -27.596,
+   "lon": -48.549,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "curitiba",
+   "name": "Curitiba — Centro",
+   "country": "Brasil",
+   "lat": -25.429,
+   "lon": -49.271,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "portoalegre",
+   "name": "Porto Alegre — Centro Histórico",
+   "country": "Brasil",
+   "lat": -30.0277,
+   "lon": -51.2287,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "newyork",
+   "name": "Nova York — Times Square",
+   "country": "EUA",
+   "lat": 40.758,
+   "lon": -73.9855,
+   "flag": "🇺🇸"
+  },
+  {
+   "id": "paris",
+   "name": "Paris — Torre Eiffel",
+   "country": "França",
+   "lat": 48.857,
+   "lon": 2.297,
+   "flag": "🇫🇷"
+  },
+  {
+   "id": "londres",
+   "name": "Londres — Westminster",
+   "country": "Reino Unido",
+   "lat": 51.5007,
+   "lon": -0.1246,
+   "flag": "🇬🇧"
+  },
+  {
+   "id": "toquio",
+   "name": "Tóquio — Shibuya",
+   "country": "Japão",
+   "lat": 35.6595,
+   "lon": 139.7005,
+   "flag": "🇯🇵"
+  },
+  {
+   "id": "roma",
+   "name": "Roma — Coliseu",
+   "country": "Itália",
+   "lat": 41.8902,
+   "lon": 12.4922,
+   "flag": "🇮🇹"
+  },
+  {
+   "id": "buenosaires",
+   "name": "Buenos Aires — Obelisco",
+   "country": "Argentina",
+   "lat": -34.6037,
+   "lon": -58.3816,
+   "flag": "🇦🇷"
+  },
+  {
+   "id": "lisboa",
+   "name": "Lisboa — Baixa",
+   "country": "Portugal",
+   "lat": 38.71,
+   "lon": -9.137,
+   "flag": "🇵🇹"
+  },
+  {
+   "id": "cdmx",
+   "name": "Cidade do México — Zócalo",
+   "country": "México",
+   "lat": 19.4326,
+   "lon": -99.1332,
+   "flag": "🇲🇽"
+  },
+  {
+   "id": "dubai",
+   "name": "Dubai — Burj Khalifa",
+   "country": "Emirados",
+   "lat": 25.1972,
+   "lon": 55.2744,
+   "flag": "🇦🇪"
+  },
+  {
+   "id": "madri",
+   "name": "Madri — Puerta del Sol",
+   "country": "Espanha",
+   "lat": 40.4168,
+   "lon": -3.7038,
+   "flag": "🇪🇸"
+  },
+  {
+   "id": "berlim",
+   "name": "Berlim — Portão de Brandemburgo",
+   "country": "Alemanha",
+   "lat": 52.5163,
+   "lon": 13.3777,
+   "flag": "🇩🇪"
+  },
+  {
+   "id": "cairo",
+   "name": "Gizé — Pirâmides",
+   "country": "Egito",
+   "lat": 29.9773,
+   "lon": 31.1325,
+   "flag": "🇪🇬"
+  },
+  {
+   "id": "sydney",
+   "name": "Sydney — Opera House",
+   "country": "Austrália",
+   "lat": -33.859,
+   "lon": 151.21,
+   "flag": "🇦🇺"
+  },
+  {
+   "id": "seul",
+   "name": "Seul — Myeongdong",
+   "country": "Coreia do Sul",
+   "lat": 37.5636,
+   "lon": 126.985,
+   "flag": "🇰🇷"
+  },
+  {
+   "id": "lasvegas",
+   "name": "Las Vegas — Strip",
+   "country": "EUA",
+   "lat": 36.1147,
+   "lon": -115.1728,
+   "flag": "🇺🇸"
   }
  ]
 }

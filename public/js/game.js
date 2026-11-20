@@ -44,7 +44,7 @@ function burst(x, y, n, col, spd, k, size, life) {
 }
 function poof(x, y, n, col) { burst(x, y, n || 8, col || '#fff', 70, 'puff', 12, 0.5); }
 function text(x, y, txt, col, size) { G.texts.push({ x: x + U.rand(-6, 6), y, txt, col: col || '#fff', t: 0, size: size || 16 }); if (G.texts.length > 40) G.texts.shift(); }
-function shake(v) { G.shake = Math.max(G.shake, v); }
+function shake(v) { G.shake = Math.max(G.shake, v); VP.haptic(v >= 10 ? 32 : 16); }
 function hitstop(v) { G.hitstop = Math.max(G.hitstop, v); }
 function say(txt, col, dur) { G.banner = { txt, col: col || '#fff', t: 0, dur: dur || 2.4 }; }
 Game.fx = { part, burst, poof, text, shake, say };
@@ -219,6 +219,7 @@ Game.healTeam = healTeam;
 // src: 'bolt' | 'bite' | 'snatch' | 'car' | 'hair' | 'roar'
 function hurtDog(e, dmg, src, fx, fy, kb) {
   if (e.dead) return;
+  VP.haptic(e.isBoss ? 14 : 9, 170);
   if (G.catnip > 0) dmg *= 1.6;
   let shown = dmg, tink = false;
   const exposed = e.isBoss && e.boss.phase === 'exposed';
@@ -431,6 +432,65 @@ function doSpecial(c) {
   }
 }
 Game.special = doSpecial;
+// ---------- parkour course: low roofs, crates, gaps and jump pads ----------
+// The simulation stays 2D: a course is a set of rectangles ("platforms") with a height. The leading cat climbs anything up to
+// CLIMB higher than where it stands just by walking into it (crates can be scrambled up from the street at any height), hops over short gaps on its own when it walks off an edge
+// towards another platform, and is launched by jump pads. Walking off anywhere else is a harmless drop. No jump button:
+// it plays the same on touch and keyboard. plats: {x, y, hw, hh (px), h (3D units), solid}, pads: {x, y, plat, to: {x, y, plat}}.
+const CLIMB = 0.85, HOP = 150;
+Game.addCourse = function (plats, pads) {
+  G.pk = { plats: [], pads: [] };
+  for (const o of plats) { const p = Game.addProp(Object.assign({ k: 'pkplat', solid: true }, o)); G.pk.plats.push(p); }
+  for (const o of pads || []) { const p = Game.addProp(Object.assign({ k: 'pkpad' }, o)); G.pk.pads.push(p); }
+  return G.pk;
+};
+function platAt(x, y, m) { let best = null; m = m || 0; for (const p of G.pk.plats) if (Math.abs(x - p.x) <= p.hw + m && Math.abs(y - p.y) <= p.hh + m && (!best || p.h > best.h)) best = p; return best; }
+Game.platAt = (x, y) => (G && G.pk ? platAt(x, y) : null);
+function startJump(c, to, dur, arc) { c.jump = { t: 0, dur, arc, fx: c.x, fy: c.y, fp: c.plat || null, tx: to.x, ty: to.y, tp: to.plat || null }; c.emote = null; sfx('dash', 0.05); }
+function pkJump(c, dt) {
+  const j = c.jump; j.t += dt; const f = Math.min(1, j.t / j.dur);
+  c.x = U.lerp(j.fx, j.tx, f); c.y = U.lerp(j.fy, j.ty, f); c.walk = 1;
+  if (f >= 1) { c.plat = j.tp; c.jump = null; poof(c.x, c.y - 6, 5, '#fff'); sfx('step', 0.05); VP.haptic(10); }
+}
+// one movement step of the leading cat on a map with a course
+function pkMove(c, dx, dy, mode) {
+  const cur = c.plat || null, ch = cur ? cur.h : 0, nx = c.x + dx, ny = c.y + dy, np = platAt(nx, ny);
+  if (np && np !== cur && np.h > ch + 0.01) {
+    // low enough: climb. Crates (solid) can always be scrambled up from the street, so a course never blocks the way.
+    if (np.h - ch <= CLIMB || (np.solid && !cur)) { c.x = nx; c.y = ny; c.plat = np; c.climbT = np.h - ch <= CLIMB ? 0.18 : 0.3; sfx('step', 0.08); return false; }
+    if (!cur) return step(c, dx, dy, mode);            // awnings and roofs on posts: walk underneath
+  }
+  if (cur) {
+    if (np === cur || (np && np.h <= ch)) { c.x = nx; c.y = ny; if (np !== cur) { c.plat = np; c.dropH = ch - np.h; c.dropT = 0.16; } return false; }
+    if (!np) { // walking off the edge: hop to a platform straight ahead, otherwise drop to the ground
+      const l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l;
+      for (let d = 24; d <= HOP; d += 8) { const q = platAt(c.x + ux * d, c.y + uy * d); if (q && q !== cur && q.h - ch <= CLIMB + 0.1) { const lx = U.clamp(c.x + ux * (d + 30), q.x - q.hw + 14, q.x + q.hw - 14), ly = U.clamp(c.y + uy * (d + 30), q.y - q.hh + 14, q.y + q.hh - 14); startJump(c, { x: lx, y: ly, plat: q }, 0.4, 0.9); return false; } }
+      if (W.blocked(nx, ny, c.r, mode)) return true;
+      c.x = nx; c.y = ny; c.plat = null; c.dropH = ch; c.dropT = 0.26; poof(c.x, c.y - 6, 4, '#fff'); return false;
+    }
+    return true; // a taller platform ahead while up here: blocked
+  }
+  return step(c, dx, dy, mode);
+}
+// keep cats consistent after dashes, knockbacks or a switch; fire jump pads
+function pkTick(c, dt) {
+  if (c.climbT > 0) c.climbT -= dt; if (c.dropT > 0) c.dropT -= dt;
+  if (c.plat && !c.jump && (Math.abs(c.x - c.plat.x) > c.plat.hw + 3 || Math.abs(c.y - c.plat.y) > c.plat.hh + 3)) { const q = platAt(c.x, c.y); if (q && q.h <= c.plat.h + CLIMB) c.plat = q; else { c.dropH = c.plat.h; c.dropT = 0.26; c.plat = null; } }
+  if (!c.jump && c.idx === G.active && !c.down) for (const p of G.pk.pads) if ((p.plat || null) === (c.plat || null) && U.d2(c.x, c.y, p.x, p.y) < 34 * 34) { startJump(c, p.to, 0.85, 2.6); p.flash = 0.4; burst(p.x, p.y - 10, 8, ['#2de2e6', '#fff'], 180, 'star', 6, 0.4); VP.haptic(18); break; }
+}
+// Emotes: little gestures of the active cat (HUD buttons or Z X C V). Pure fun today; they travel in Game.snapshot()
+// so other players will see them when the shared world arrives.
+const EMOTES = Game.EMOTES = { miau: 1.3, dance: 3.2, sit: 5, wave: 1.9 };
+Game.emote = function (k, c) {
+  if (!G || G.over || G.car || !EMOTES[k]) return false;
+  c = c || active(); if (c.down || c.dashT > 0) return false;
+  c.emote = { k, t: EMOTES[k] }; G.stat.emotes = (G.stat.emotes || 0) + 1;
+  if (k === 'miau') { c.mouth = 1; text(c.x, c.y - 62, tr('em_miau_say'), '#fff', 18); part({ x: c.x, y: c.y - 30, k: 'ring', col: '#ffffff', size: 10, life: 0.45, grow: 120 }); sfx('paw', 0.1); }
+  else if (k === 'dance') { burst(c.x, c.y - 30, 8, ['#ff4fb8', '#2de2e6', '#ffd23f'], 150, 'star', 6, 0.6); sfx('star', 0.1); }
+  else if (k === 'wave') { text(c.x, c.y - 62, '👋', '#fff', 22); sfx('sw', 0.1); }
+  else sfx('step', 0.1);
+  return true;
+};
 function updCat(c, dt) {
   const isA = c.idx === G.active;
   c.t += dt; c.walk = 0;
@@ -476,10 +536,12 @@ function updCat(c, dt) {
   let spd = c.spd * pace * (c.exhausted ? 0.62 : 1) * (c.root > 0 ? 0 : 1);
   if (c.name === 'morticia' && c.belly <= 0) spd *= 0.8;
   if (c.hopT > 0) c.hopT -= dt;
+  if (G.pk) { pkTick(c, dt); if (c.jump) { pkJump(c, dt); return; } }
+  if (c.emote) { c.emote.t -= dt; if (c.emote.t <= 0 || (isA && (Math.hypot(I.mx, I.my) > 0.3 || I.attack))) c.emote = null; else if (c.emote.k === 'miau') c.mouth = Math.max(c.mouth, 0.6); } // moving or attacking ends the gesture
   if (isA) {
     const m = Math.hypot(I.mx, I.my);
     if (m > 0.12 && spd > 0) spd *= slopeMul(c.x, c.y, I.mx / m, I.my / m);
-    if (m > 0.12 && spd > 0) { step(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); c.walk = 1; if (!I.attack && Math.abs(I.mx) > 0.15) c.face = I.mx > 0 ? 1 : -1; if (Math.random() < dt * 9) part({ x: c.x - I.mx * 8, y: c.y - 1, k: 'puff', size: 5, life: 0.3, col: 'rgba(255,255,255,.5)' }); }
+    if (m > 0.12 && spd > 0) { if (G.pk) pkMove(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); else step(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); c.walk = 1; if (!I.attack && Math.abs(I.mx) > 0.15) c.face = I.mx > 0 ? 1 : -1; if (Math.random() < dt * 9) part({ x: c.x - I.mx * 8, y: c.y - 1, k: 'puff', size: 5, life: 0.3, col: 'rgba(255,255,255,.5)' }); }
     // aim
     const range = c.name === 'mimo' ? 520 : 120, kind = c.name === 'mimo' ? 'bolt' : c.name === 'mimosa' ? 'bite' : 'snatch';
     let ang = null;
@@ -1065,6 +1127,7 @@ Game.update = function (dt) {
   updContext(dt);
   if (I.take('special')) { if (G.car) { sfx(G.car.type === 'gold' ? 'viphorn' : 'honk', 0.6); } else doSpecial(active()); }
   if (I.take('dash')) { if (!G.car) doDash(active()); }
+  { const em = I.take('emote'); if (em) Game.emote(em); }
   for (const c of G.cats) updCat(c, dt);
   // friends follow
   for (const f of G.friends) {
@@ -1122,6 +1185,6 @@ Game.snapshot = function () {
   if (!G) return null;
   const r = v => Math.round(v);
   return { t: +G.real.toFixed(2), a: G.active, car: G.car ? { k: G.car.type, x: r(G.car.x), y: r(G.car.y), a: +G.car.a.toFixed(2), v: r(G.car.spd) } : null,
-    cats: G.cats.map(c => ({ n: c.name, x: r(c.x), y: r(c.y), h: +(c.aim || 0).toFixed(2), w: c.walk ? 1 : 0, s: c.down ? 'down' : c.atk > 0.1 ? 'atk' : c.dashT > 0 ? 'dash' : 'idle', hp: r(c.hp) })) };
+    cats: G.cats.map(c => ({ n: c.name, x: r(c.x), y: r(c.y), h: +(c.aim || 0).toFixed(2), w: c.walk ? 1 : 0, s: c.down ? 'down' : c.atk > 0.1 ? 'atk' : c.dashT > 0 ? 'dash' : 'idle', hp: r(c.hp), e: c.emote ? c.emote.k : undefined })) };
 };
 })();

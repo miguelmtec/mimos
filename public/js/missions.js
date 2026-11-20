@@ -381,8 +381,8 @@ M.startFree = function (pos, opts) {
   return G;
 };
 // ---------- Volta ao Mundo (real cities) ----------
-M.cities = [];
-M.loadCities = idx => { M.cities = (idx && idx.cities) || []; M.osm = (idx && idx.attribution) || '© OpenStreetMap contributors'; };
+M.cities = []; M.soon = [];
+M.loadCities = idx => { M.cities = (idx && idx.cities) || []; M.soon = (idx && idx.soon) || []; M.osm = (idx && idx.attribution) || '© OpenStreetMap contributors'; };
 // City mission packs (data/citypacks.json): hand-written packs per city, a default template of 10 for any new city,
 // and a positive-only template for maps tagged "comunidade".
 M.packs = { templates: [], comunidade: [], packs: {} };
@@ -413,11 +413,11 @@ M.startTour = function (id) {
     W.walkList = W.walkList.filter(i => conn[i] >= 0);
     // comunidade: arrive in the middle of the houses (the densest reachable spot), not on the avenue below
     if (comu && W.walkList.length) { const rs = U.rng(77); let bi = -1, bs = -1; for (let k = 0; k < 260; k++) { const i = W.walkList[Math.floor(rs() * W.walkList.length)], x = i % W.W, y = Math.floor(i / W.W); if (x < 12 || y < 12 || x > W.W - 12 || y > W.H - 12) continue; let s = 0; for (let dy = -8; dy <= 8; dy += 2) for (let dx = -8; dx <= 8; dx += 2) if (W.gnd[(y + dy) * W.W + x + dx] === 9) s++; if (s > bs) { bs = s; bi = i; } } if (bi >= 0) { best = { x: (bi % W.W + 0.5) * T, y: (Math.floor(bi / W.W) + 0.5) * T }; W.tourStart = best; } }
-    const snapC = (x, y) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < 30; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W.W - 2 && Y < W.H - 2 && conn[Y * W.W + X] >= 0 && W.gnd[Y * W.W + X] <= 2) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };
+    const snapC = (x, y, rmax) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < (rmax || 30); r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W.W - 2 && Y < W.H - 2 && conn[Y * W.W + X] >= 0 && W.gnd[Y * W.W + X] <= 2) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };
     W.landmarks = W.landmarks.filter(l => { const q = snapC(l.x, l.y); if (!q) return false; l.gx = q.x; l.gy = q.y; return true; });
     // extra named places of the city pack (lat/lon -> map), used as mission waypoints
     const pk = M.packs.packs[id], C0 = W.real, half = C0.half, MPT = World.MPT;
-    W.places = ((pk && pk.places) || []).map(pl => { const mx = (pl[2] - C0.lon) * Math.cos(C0.lat * Math.PI / 180) * 111320, mz = -(pl[1] - C0.lat) * 110540; if (Math.abs(mx) > half - 25 || Math.abs(mz) > half - 25) return null; const q = snapC((mx + half) / MPT * T, (mz + half) / MPT * T); return q ? { name: pl[0], x: q.x, y: q.y, gx: q.x, gy: q.y, h: 8, place: true } : null; }).filter(Boolean);
+    W.places = ((pk && pk.places) || []).map(pl => { const mx = (pl[2] - C0.lon) * Math.cos(C0.lat * Math.PI / 180) * 111320, mz = -(pl[1] - C0.lat) * 110540; if (Math.abs(mx) > half - 25 || Math.abs(mz) > half - 25) return null; const q = snapC((mx + half) / MPT * T, (mz + half) / MPT * T, 55); return q ? { name: pl[0], x: q.x, y: q.y, gx: q.x, gy: q.y, h: 8, place: true } : null; }).filter(Boolean);
     for (const rd of W.roads) rd.pts = rd.pts.filter(q => conn[Math.floor(q.y / T) * W.W + Math.floor(q.x / T)] >= 0);
     W.roads = W.roads.filter(rd => rd.pts.length >= 2);
   }

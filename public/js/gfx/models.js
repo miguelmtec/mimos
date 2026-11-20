@@ -187,6 +187,9 @@ export function animCat(g, st) {
   const k = 1 + (st.mouth || 0) * 0.08, hs = u.hs || [1, 1, 1]; u.head.scale.set(k * hs[0], k * hs[1], k * hs[2]);
   u.body.position.z = atk * 0.1;
   if (u.tool) { u.tool.position.z = 0.42 - (st.recoil || 0) * 0.16; u.tool.rotation.x = -(st.recoil || 0) * 0.5; }
+  // emotes: sit (haunches down, leaning back) and wave (front paws up, swaying)
+  if (st.sit) { u.inner.rotation.x = -0.34; u.inner.position.y = -0.12 * u.size; u.legsA.rotation.x = 0.3; u.legsB.rotation.x = 1.25; u.tail.rotation.z = Math.sin(t * 2.2) * 0.5; }
+  if (st.wave) { u.body.rotation.z = Math.sin(t * 9) * 0.16; u.legsA.rotation.x = -1.25 + Math.sin(t * 16) * 0.45; u.head.rotation.z = Math.sin(t * 9) * 0.14; }
   if (st.down) { u.inner.rotation.z = Math.PI / 2 * 0.92; u.inner.position.y = 0.38 * u.size; u.legsA.rotation.x = 0.4; u.legsB.rotation.x = -0.3; } else u.inner.rotation.z = 0;
 }
 
@@ -333,6 +336,19 @@ export function buildProp(p, pal) {
   const b = new GB(); let alt = null, mat = MAT.flat;
   const neon = pal ? pal.neon : ['#ff4fb8', '#2de2e6', '#ffd23f'];
   switch (p.k) {
+    case 'pkplat': { // parkour platform: a crate, a low roof on posts or a striped awning; top at p.h, footprint 2*hw x 2*hh px
+      const w = p.hw / 12, d = p.hh / 12, h = p.h, st = p.style || 'crate';
+      if (st === 'crate') { b.box(p.col || '#c98f4b', 0, h / 2, 0, w, h, d); b.box('#8a5a2b', 0, h - 0.06, 0, w + 0.06, 0.12, d + 0.06); b.box('#8a5a2b', 0, 0.06, 0, w + 0.06, 0.12, d + 0.06); for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box('#8a5a2b', sx * (w / 2 - 0.05), h / 2, sz * (d / 2 - 0.05), 0.14, h, 0.14); }
+      else { // roof on posts (walk underneath); the top is the running surface
+        const c1 = p.col || '#e01e37', c2 = p.col2 || '#ffffff', n = Math.max(2, Math.round((p.along === 'y' ? d : w) / 0.9));
+        for (let i = 0; i < n; i++) { const f = (i + 0.5) / n - 0.5; if (p.along === 'y') b.box(i % 2 ? c1 : c2, 0, h - 0.09, f * d, w, 0.18, d / n + 0.01); else b.box(i % 2 ? c1 : c2, f * w, h - 0.09, 0, w / n + 0.01, 0.18, d); }
+        b.box('#3a2a4a', 0, h - 0.24, 0, w + 0.12, 0.12, d + 0.12);
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl('#59536b', sx * (w / 2 - 0.15), (h - 0.2) / 2, sz * (d / 2 - 0.15), 0.09, h - 0.2, 0.09);
+        if (st === 'roof') { b.box('#6b7280', w * 0.22, h + 0.3, -d * 0.18, 0.7, 0.6, 0.7); b.cyl('#9aa3b2', -w * 0.25, h + 0.25, d * 0.2, 0.22, 0.5, 0.22); }
+      }
+      break;
+    }
+    case 'pkpad': { b.cyl('#1d1530', 0, 0.08, 0, 0.9, 0.16, 0.9); b.cyl('#2de2e6', 0, 0.2, 0, 0.74, 0.1, 0.74); b.cyl('#ffffff', 0, 0.27, 0, 0.42, 0.06, 0.42); b.cone('#ffd23f', 0, 0.62, 0, 0.26, 0.5, 0.26); mat = MAT.glow; break; }
     case 'stand': {
       const cols = { hotdog: ['#ff4f5e', '#ffffff'], sushi: ['#2de2e6', '#ffffff'], donut: ['#ff7ac0', '#fff3a8'] }[p.food] || ['#ff4f5e', '#fff'];
       b.box('#f4e3c1', 0, 0.6, 0, 2.0, 0.8, 1.0); b.box('#d9b47c', 0, 1.02, 0, 2.1, 0.08, 1.1);

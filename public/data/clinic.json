@@ -1,0 +1,30 @@
+{
+  "_doc": "Clínica veterinária do jogo. 'sponsor' é o espaço de patrocinador (uma clínica real no futuro): preencha name/logo/url e active=true SOMENTE com aprovação do dono. Nenhum valor aqui.",
+  "id": "patinhas",
+  "name": { "pt": "Clínica Patinhas", "en": "Little Paws Clinic" },
+  "district": 0, "lot": "park", "footprint": [1, 0, 4, 2],
+  "colors": { "wall": "#fdf6ff", "roof": "#2de2e6", "trim": "#ff4fb8", "cross": "#7CFF6B" },
+  "sponsor": {
+    "active": false, "awaitingOwnerApproval": true,
+    "name": null, "tagline": { "pt": null, "en": null }, "logo": null, "url": null, "color": "#ffd23f",
+    "placeholder": { "pt": "ESPAÇO DO PATROCINADOR", "en": "SPONSOR SPACE" }
+  },
+  "vet": { "name": { "pt": "Dra. Bigodes", "en": "Dr. Whiskers" }, "spec": { "size": 0.95, "fur": "#ffffff", "fur2": "#ffffff", "pattern": "tuxedo", "eye": "#3fa9f5", "earIn": "#f4a9b8", "face": "round", "acc": { "jacket": "#ffffff", "shirt": "#bff4ff", "glasses": "#2de2e6", "collar": "#ff4fb8" } } },
+  "services": {
+    "heal": { "icon": "❤️", "name": { "pt": "Curar corações", "en": "Heal hearts" }, "desc": { "pt": "Vida cheia para os três gatos. Quem desmaiou acorda.", "en": "Full health for all three cats. Anyone who fainted wakes up." } },
+    "checkup": { "icon": "🩺", "cooldown": 600, "buffSeconds": 300, "speed": 1.1, "regen": 1.5, "noItch": true, "name": { "pt": "Check-up", "en": "Check-up" }, "desc": { "pt": "Bônus \"Saúde em dia\": mais rápido, recupera vida aos poucos e sem coceira de pulga por 5 minutos.", "en": "\"Healthy\" buff: faster, slow health regen and no flea itch for 5 minutes." } },
+    "vaccine": { "icon": "💉", "count": 3, "holdRadius": 18, "coins": 40, "allCoins": 100, "name": { "pt": "Vacina", "en": "Vaccine" }, "desc": { "pt": "Fique paradinho enquanto a doutora conta 3, 2, 1. Uma vez por dia para cada gato.", "en": "Hold still while the vet counts 3, 2, 1. Once a day for each cat." } }
+  },
+  "tips": [
+    { "icon": "💧", "pt": "Água fresca todo dia! Gato que bebe água cuida dos rins.", "en": "Fresh water every day! Cats that drink water keep their kidneys healthy." },
+    { "icon": "💉", "pt": "Vacina em dia protege o seu gato e os amigos dele.", "en": "Up-to-date vaccines protect your cat and its friends." },
+    { "icon": "✂️", "pt": "Castrar é um ato de amor: evita ninhadas sem lar e faz bem para a saúde.", "en": "Spaying and neutering is an act of love: fewer homeless litters and better health." },
+    { "icon": "🏠", "pt": "Não compre, adote! Tem muito gatinho esperando uma família.", "en": "Adopt, don't shop! Many kittens are waiting for a family." },
+    { "icon": "🩺", "pt": "Leve seu gato ao veterinário uma vez por ano, mesmo que ele pareça bem.", "en": "Take your cat to the vet once a year, even if it looks fine." },
+    { "icon": "🦟", "pt": "Pulga se evita com antipulgas indicado pelo veterinário.", "en": "Prevent fleas with a treatment recommended by your vet." },
+    { "icon": "🪟", "pt": "Tela nas janelas salva vidas: gato curioso não sabe voar.", "en": "Window screens save lives: curious cats can't fly." },
+    { "icon": "🍫", "pt": "Chocolate, cebola e uva fazem mal para gatos. Petisco de gente não é petisco de gato.", "en": "Chocolate, onion and grapes are bad for cats. People snacks are not cat snacks." },
+    { "icon": "🪪", "pt": "Coleira com plaquinha ou microchip ajudam o gato perdido a voltar para casa.", "en": "A collar tag or a microchip helps a lost cat get home." },
+    { "icon": "🧶", "pt": "Brincar todo dia deixa o gato feliz e em forma.", "en": "Playing every day keeps a cat happy and fit." }
+  ]
+}

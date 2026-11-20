@@ -162,7 +162,7 @@ World.hoodKey = d => (d > 4 ? 'hood' + d : 'd' + d);
 // Soft edges: which side of the map the point is leaving through (n/s/e/w), or null well inside it.
 // Home city: the rim beyond the outer ring road. Real cities: the last metres of the extract.
 World.edgeAt = (w, px, py) => {
-  const x = px / T, y = py / T, m = w.real ? 7 : MG - 0.6;
+  const x = px / T, y = py / T, m = w.real ? 7 : MG + 0.2;
   if (y < m) return 'n'; if (y > w.H - m) return 's'; if (x < m) return 'w'; if (x > w.W - m) return 'e';
   return null;
 };
@@ -175,7 +175,7 @@ function rim(w, set) {
   // south: boardwalk, then beach + sea (Beach, Calçadão) or quay + water with dock fingers (Harbor, Docks)
   for (let x = 0; x < W; x++) {
     const d = dAt(U.clamp(x, x0, x1 - 1), y1 - 1), beach = d === 0 || d === 5, cx = x - x0;
-    for (let k = 0; k < MG; k++) { const y = y1 + k; if (k < 2) set(x, y, FLOOR, G_WOOD); else if (beach && k < 6) set(x, y, FLOOR, G_SAND); else set(x, y, WATER, G_BORDER); }
+    for (let k = 0; k < MG; k++) { const y = y1 + k; if (x < x0 - 4 || x > x1) set(x, y, x > x1 ? WALL : WATER, x > x1 ? G_GRASS : G_BORDER); else if (k < 2) set(x, y, FLOOR, G_WOOD); else if (beach && k < 6) set(x, y, FLOOR, G_SAND); else set(x, y, WATER, G_BORDER); }
   }
   for (let x = x0; x < x1; x++) {
     const d = dAt(x, y1 - 1), beach = d === 0 || d === 5, cx = x - x0;
@@ -190,7 +190,7 @@ function rim(w, set) {
     }
   }
   // north: a strip of grass with trees, then the hills
-  for (let x = 0; x < W; x++) for (let k = 0; k < MG; k++) { const y = y0 - 1 - k; if (k < 3) set(x, y, FLOOR, G_GRASS); else set(x, y, WALL, G_GRASS); }
+  for (let x = 0; x < W; x++) for (let k = 0; k < MG; k++) { const y = y0 - 1 - k; if (k < 3 && x > 0 && x < W - 1) set(x, y, FLOOR, G_GRASS); else set(x, y, WALL, G_GRASS); }
   for (let x = 2; x < W - 2; x += 5) { w.trees.push({ x: (x + r2.range(0, 3)) * T, y: (y0 - 2.6 - r2.range(0, 0.5)) * T, s: r2.range(0.9, 1.4) }); if (x % 3 === 0) w.spawn.treats.push({ x: (x + 0.5) * T, y: (y0 - 1.5) * T }); }
   for (let x = -6; x < W + 6; x += 7) w.deco.push({ k: 'hill', x: (x + r2.range(0, 4)) * T, y: (y0 - 6.5 - r2.range(0, 2)) * T, r: r2.range(9, 15), h: r2.range(7, 16) });
   // west: promenade and the bay

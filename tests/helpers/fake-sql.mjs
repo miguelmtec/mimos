@@ -8,14 +8,17 @@ const HOUR = 3600e3, DAY = 24 * HOUR;
 
 export function createFakeBackend() {
   let t, seq, last;
-  const reset = () => { t = { users: [], codes: [], sessions: [], cats: [], saves: [], presence: [], reports: [] }; seq = 0; last = 0; };
+  const reset = () => { t = { users: [], codes: [], sessions: [], cats: [], saves: [], presence: [], reports: [], tokens: [], guardians: [], ranking: [] }; seq = 0; last = 0; };
   reset();
   // strictly increasing clock, so "order by created_at" is deterministic
   const now = () => new Date((last = Math.max(last + 1, Date.now())));
+  const newUser = (email, lang) => ({ id: randomUUID(), email, lang, status: 'active', google_sub: null, birth_enc: null, age_band: null, created_at: now(), last_login_at: now() });
+  const userRow = (u) => ({ id: u.id, email: u.email, lang: u.lang, created_at: u.created_at, status: u.status, birth_enc: u.birth_enc, google_sub: u.google_sub });
   const catRow = (c) => ({ ...c, spec: structuredClone(c.spec) });
 
   const handlers = [
-    [/^create (unlogged )?(table|index) if not exists /, () => []],
+    [/^create (unlogged )?(table|index|unique index) if not exists /, () => []],
+    [/^alter table vp_users add column if not exists /, () => []],
 
     [/^delete from vp_login_codes where created_at < now\(\) - interval '1 day'$/, () => {
       t.codes = t.codes.filter((c) => c.created_at > Date.now() - DAY);
@@ -52,9 +55,61 @@ export function createFakeBackend() {
     [/^insert into vp_users \(email, lang\) values \(\?, \?\) on conflict \(email\) do update set /, ([email, lang]) => {
       let u = t.users.find((x) => x.email === email);
       if (u) { u.lang = lang; u.last_login_at = now(); }
-      else { u = { id: randomUUID(), email, lang, created_at: now(), last_login_at: now() }; t.users.push(u); }
-      return [{ id: u.id, email: u.email, lang: u.lang, created_at: u.created_at }];
+      else { u = newUser(email, lang); t.users.push(u); }
+      return [userRow(u)];
     }],
+    [/^insert into vp_users \(email, lang, google_sub\) values \(\?, \?, \?\) on conflict \(email\) do update set /, ([email, lang, sub]) => {
+      let u = t.users.find((x) => x.email === email);
+      if (u) { u.last_login_at = now(); u.google_sub = u.google_sub ?? sub; }
+      else { u = newUser(email, lang); u.google_sub = sub; t.users.push(u); }
+      if (u.google_sub && t.users.some((o) => o !== u && o.google_sub === u.google_sub)) { u.google_sub = null; throw Object.assign(new Error('duplicate key'), { code: '23505' }); }
+      return [userRow(u)];
+    }],
+    [/^select id, email, lang, created_at, status, birth_enc, google_sub from vp_users where google_sub = \?$/, ([sub]) => t.users.filter((u) => u.google_sub === sub).map(userRow)],
+    [/^select id, email, lang, created_at, status, birth_enc, google_sub from vp_users where email = \?$/, ([email]) => t.users.filter((u) => u.email === email).map(userRow)],
+    [/^update vp_users set last_login_at = now\(\) where id = \?$/, ([id]) => { const u = t.users.find((x) => x.id === id); if (u) u.last_login_at = now(); return []; }],
+    [/^update vp_users set birth_enc = \?, age_band = \?, status = \? where id = \? and birth_enc is null returning id$/, ([enc, band, status, id]) => {
+      const u = t.users.find((x) => x.id === id && !x.birth_enc);
+      if (!u) return [];
+      Object.assign(u, { birth_enc: enc, age_band: band, status });
+      return [{ id }];
+    }],
+    [/^update vp_users set status = 'active' where id = \? and status = 'awaiting_guardian' returning id, email, lang$/, ([id]) => {
+      const u = t.users.find((x) => x.id === id && x.status === 'awaiting_guardian');
+      if (!u) return [];
+      u.status = 'active';
+      return [{ id: u.id, email: u.email, lang: u.lang }];
+    }],
+    [/^delete from vp_sessions where user_id = \?$/, ([id]) => { t.sessions = t.sessions.filter((x) => x.user_id !== id); return []; }],
+    [/^delete from vp_tokens where expires_at < now\(\) - interval '1 day'$/, () => { t.tokens = t.tokens.filter((k) => k.expires_at >= Date.now() - DAY); return []; }],
+    [/^update vp_tokens set used_at = now\(\) where user_id = \? and purpose = 'guardian' and used_at is null$/, ([id]) => {
+      for (const k of t.tokens) if (k.user_id === id && !k.used_at) k.used_at = now();
+      return [];
+    }],
+    [/^insert into vp_tokens \(token_hash, user_id, purpose, expires_at\) values \(\?, \?, 'guardian', now\(\) \+ make_interval\(days => \?::int\)\)$/, ([token_hash, user_id, days]) => {
+      t.tokens.push({ token_hash, user_id, purpose: 'guardian', expires_at: new Date(Date.now() + days * DAY), used_at: null, created_at: now() });
+      return [];
+    }],
+    [/^update vp_tokens set used_at = now\(\) where token_hash = \? and purpose = 'guardian' and used_at is null and expires_at > now\(\) returning user_id$/, ([h]) => {
+      const k = t.tokens.find((x) => x.token_hash === h && !x.used_at && x.expires_at > Date.now());
+      if (!k) return [];
+      k.used_at = now();
+      return [{ user_id: k.user_id }];
+    }],
+    [/^select count\(\*\)::int as n from vp_tokens where user_id = \? and purpose = 'guardian' and created_at > now\(\) - interval '1 hour'$/, ([id]) =>
+      [{ n: t.tokens.filter((k) => k.user_id === id && k.created_at > Date.now() - HOUR).length }]],
+    [/^insert into vp_guardians \(user_id, enc, ghash\) values \(\?, \?, \?\) on conflict \(user_id\) do update set /, ([user_id, enc, ghash]) => {
+      t.guardians = t.guardians.filter((g) => g.user_id !== user_id);
+      t.guardians.push({ user_id, enc, ghash, approved_at: null, created_at: now() });
+      return [];
+    }],
+    [/^select enc from vp_guardians where user_id = \?$/, ([id]) => t.guardians.filter((g) => g.user_id === id).map((g) => ({ enc: g.enc }))],
+    [/^select count\(\*\)::int as n from vp_guardians where ghash = \? and created_at > now\(\) - interval '1 day'$/, ([h]) =>
+      [{ n: t.guardians.filter((g) => g.ghash === h && g.created_at > Date.now() - DAY).length }]],
+    [/^update vp_guardians set approved_at = now\(\) where user_id = \?$/, ([id]) => { for (const g of t.guardians) if (g.user_id === id) g.approved_at = now(); return []; }],
+    [/^select name from vp_cats where user_id = \?$/, ([uid]) => t.cats.filter((c) => c.user_id === uid).map((c) => ({ name: c.name }))],
+    [/^update vp_ranking set name = \? where name = \?$/, ([to, from]) => { for (const r of t.ranking) if (r.name === from) r.name = to; return []; }],
+    [/^delete from vp_presence where user_id = \?$/, ([uid]) => { t.presence = t.presence.filter((p) => p.user_id !== uid); return []; }],
     [/^insert into vp_sessions \(token_hash, user_id, expires_at\) values /, ([token_hash, user_id, days]) => {
       t.sessions.push({ token_hash, user_id, expires_at: new Date(Date.now() + days * DAY), created_at: now() });
       return [];
@@ -63,14 +118,14 @@ export function createFakeBackend() {
       t.sessions = t.sessions.filter((s) => s.token_hash !== h);
       return [];
     }],
-    [/^select u\.id, u\.email, u\.lang, u\.created_at from vp_sessions s join vp_users u on u\.id = s\.user_id where s\.token_hash = \? and s\.expires_at > now\(\)$/, ([h]) => {
+    [/^select u\.id, u\.email, u\.lang, u\.created_at, u\.status, u\.birth_enc from vp_sessions s join vp_users u on u\.id = s\.user_id where s\.token_hash = \? and s\.expires_at > now\(\)$/, ([h]) => {
       const s = t.sessions.find((x) => x.token_hash === h && x.expires_at > Date.now());
       const u = s && t.users.find((x) => x.id === s.user_id);
-      return u ? [{ id: u.id, email: u.email, lang: u.lang, created_at: u.created_at }] : [];
+      return u ? [{ id: u.id, email: u.email, lang: u.lang, created_at: u.created_at, status: u.status, birth_enc: u.birth_enc }] : [];
     }],
     [/^delete from vp_users where id = \?$/, ([id]) => {
       t.users = t.users.filter((u) => u.id !== id);
-      for (const k of ['sessions', 'cats', 'saves']) t[k] = t[k].filter((r) => r.user_id !== id);   // cascade
+      for (const k of ['sessions', 'cats', 'saves', 'tokens', 'guardians']) t[k] = t[k].filter((r) => r.user_id !== id);   // cascade
       return [];
     }],
     [/^delete from vp_login_codes where email = \?$/, ([email]) => {
@@ -183,12 +238,14 @@ export function createFakeBackend() {
     return hit[1](params);
   };
 
-  const TABLES = { vp_users: 'users', vp_login_codes: 'codes', vp_sessions: 'sessions', vp_cats: 'cats', vp_saves: 'saves', vp_presence: 'presence', vp_online_reports: 'reports' };
+  const TABLES = { vp_users: 'users', vp_login_codes: 'codes', vp_sessions: 'sessions', vp_cats: 'cats', vp_saves: 'saves', vp_presence: 'presence', vp_online_reports: 'reports', vp_tokens: 'tokens', vp_guardians: 'guardians', vp_ranking: 'ranking' };
   return {
     name: 'fake',
     sql,
     reset: async () => reset(),
     rows: async (table) => structuredClone(t[TABLES[table]]),
+    expireTokens: async () => { for (const k of t.tokens) k.expires_at = new Date(Date.now() - 1000); },
+    seedRanking: async (rows) => { t.ranking = structuredClone(rows); },
     expireCodes: async () => { for (const c of t.codes) c.expires_at = new Date(Date.now() - 1000); },
     expireSessions: async () => { for (const s of t.sessions) s.expires_at = new Date(Date.now() - 1000); },
     agePresence: async (ms) => { for (const p of t.presence) p.updated_at -= ms; },

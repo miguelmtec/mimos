@@ -6,7 +6,7 @@
 // it at production.
 import net from 'node:net';
 
-const TABLES = ['vp_saves', 'vp_cats', 'vp_sessions', 'vp_login_codes', 'vp_users', 'vp_presence', 'vp_online_reports'];
+const TABLES = ['vp_tokens', 'vp_guardians', 'vp_saves', 'vp_cats', 'vp_sessions', 'vp_login_codes', 'vp_users', 'vp_presence', 'vp_online_reports'];
 
 function cstr(s) { return Buffer.concat([Buffer.from(String(s), 'utf8'), Buffer.from([0])]); }
 function msg(type, ...parts) {

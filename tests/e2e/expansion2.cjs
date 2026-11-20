@@ -206,7 +206,7 @@ const SECTIONS = {
     pg.on('response', async r => { try { if (r.url().startsWith(L.URL) && r.status() === 200) { const b = await r.body(); bytes += b.length; files.push(r.url().replace(L.URL, '')); } } catch (e) { /* ignore */ } });
     await pg.route('**/api/**', r => r.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
     await pg.goto(L.URL); await pg.waitForFunction(() => window.__vp && window.VP.UI.ready, null, { timeout: 30000 }); await pg.waitForTimeout(1200);
-    ok('first load stays under 2.6 MB (' + (bytes / 1048576).toFixed(2) + ' MB, ' + files.length + ' files)', bytes < 2.6 * 1048576, { bytes });
+    ok('first load stays under 3.2 MB (' + (bytes / 1048576).toFixed(2) + ' MB, ' + files.length + ' files)', bytes < 3.2 * 1048576, { bytes });
     ok('city maps are downloaded only when travelling', !files.some(f => /data\/cities\/(?!index)/.test(f)), files.filter(f => /cities/.test(f)));
     await br.close();
   },

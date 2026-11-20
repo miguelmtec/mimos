@@ -595,7 +595,7 @@ UI.SCREENS.online = {
     }
   },
 };
-UI.act.online = () => { const G = Game.G; if (G && G.tour && !O.G) O.sel.room = G.tour; else if (O.G) O.sel.room = O.G.online.base; UI.show('online'); };
+UI.act.online = () => { if (VP.Acct && VP.Acct.minorBlock && VP.Acct.minorBlock()) { UI.toast(t('ac_guardBlock'), 3500); return; } const G = Game.G; if (G && G.tour && !O.G) O.sel.room = G.tour; else if (O.G) O.sel.room = O.G.online.base; UI.show('online'); };
 UI.act.onCat = el => { O.sel.cat = el.dataset.k; const s = document.getElementById('onroom'); if (s) O.sel.room = s.value; UI.show('online'); };
 UI.act.onEnter = el => { const s = document.getElementById('onroom'); if (s) O.sel.room = s.value; el.disabled = true; el.textContent = '… ' + t('on_connecting'); O.enter(O.sel.room).then(() => { if (UI.screen === 'online' && !O.G) UI.show('online'); }); };
 UI.act.onSolo = () => UI.free();

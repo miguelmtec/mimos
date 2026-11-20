@@ -306,7 +306,7 @@ function applyMood(idx, dt) {
   city.waterMat.color.copy(c.water).multiplyScalar(0.9);
   mood.i = idx;
 }
-R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && (G.m.d === 5 || G.m.d === 6) && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active]; return VP.World.distAt(W, a.x, a.y); };
+R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && (G.m.d === 5 || G.m.d === 6) && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active], d = VP.World.distAt(W, a.x, a.y), P = VP.World.PAL[d]; return P && P.mood !== undefined ? P.mood : d; };
 
 // ---------- Natal Neon: seasonal decorations for the home city (trees, light strings); snow comes from the mood ----------
 let xmas = null;

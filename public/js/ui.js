@@ -332,7 +332,7 @@ function frame(ts) {
     if (!UI.paused && !UI.screen) {
       I.poll();
       if (I.take('pause')) UI.pause(); else Game.update(dt);
-      if (G && G.free && !G.tour) { const d = VP.World.distAt(G.W, G.cats[G.active].x, G.cats[G.active].y); if (d !== UI.songD) { UI.songD = d; VP.Audio.music(M.DIST[d].song); } }
+      if (G && G.free && !G.tour) { const d = VP.World.distAt(G.W, G.cats[G.active].x, G.cats[G.active].y); if (d !== UI.songD) { UI.songD = d; VP.Audio.music(M.DIST[VP.World.baseOf(d)].song); } }
     }
     if (G && G.over) { G.real += dt; for (const c of G.cats) c.t += dt; }
   }

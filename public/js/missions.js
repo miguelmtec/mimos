@@ -203,7 +203,7 @@ const TYPES = {
       compGuards(B, lot, gsize(B), p.heavy ? ['heavy'] : []);
       B.dogs({ x: lot.frontX + 120, y: lot.frontY + 30 }, pack(B, 1));
       const gp = gateSteps(B, lot, p.gate);
-      const hl = B.W.roles[0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
+      const hl = B.W.roles[World.HOME[B.geo] || 0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
       B.step({ txt: 'o_enterTruck', act: 'ctx', enter() { truck.locked = false; }, tick() { if (gp && gp.done) truck.locked = false; }, at: () => truck, done: () => G.car === truck });
       B.step({ txt: 'o_driveTruck', car: true, enter() { B.wantedOn(p.wanted); }, at: () => dest, done: () => G.car === truck && U.d2(truck.x, truck.y, dest.x, dest.y) < 110 * 110, fail: () => truck.dead ? 'truck' : null });
       B.step({ txt: 'o_done', enter() { G.minWanted = 0; G.heat = 0; G.noPolice = true; }, done: () => true, at: () => null });
@@ -233,7 +233,7 @@ const TYPES = {
       if (p.survive) B.step({ txt: 'o_survive', t: 0, fight: true, tick(dt) { this.t += dt; }, done() { return this.t >= p.survive; }, prog() { return [Math.floor(this.t), p.survive]; }, at: () => null, roam: true });
       if (p.car) {
         const cp = B.ix(B.cols - 1, B.rows - 1, 48, -120), car = Game.addCar(B.getaway(), cp.x, cp.y, -Math.PI / 2);
-        const hl = W.roles[B.geo === 0 ? 2 : 0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
+        const hl = W.roles[World.AWAY[B.geo] === undefined ? 0 : World.AWAY[B.geo]].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
         B.step({ txt: 'o_enterCar', act: 'ctx', at: () => car, done: () => G.car === car, fail: () => car.dead ? 'car' : null });
         B.step({ txt: 'o_driveSafe', car: true, at: () => dest, done: () => !!G.car && U.d2(G.car.x, G.car.y, dest.x, dest.y) < 110 * 110 });
       } else B.goto(B.corner(B.cols - 1, 0, 's'), 'o_hideout');

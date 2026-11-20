@@ -139,13 +139,16 @@ Game.populate = function (o) {
   for (const l of W.comps) for (const p of l.props) Game.addProp(p);
   // coffee + extras scattered on sidewalks
   const rng = U.rng(G.id * 31 + 5);
-  const nCoffee = o.coffee === undefined ? 16 : o.coffee;
+  const dens = W.real ? 1 : (W.cols * W.rows) / 96; // the home city grew: keep the same density of pick-ups and traffic per block
+  const nCoffee = Math.round((o.coffee === undefined ? 16 : o.coffee) * dens);
   for (let i = 0; i < nCoffee; i++) { const p = W.randWalk(rng); Game.addItem('coffee', p.x, p.y); }
   for (let i = 0; i < (W.real ? 130 : W.cols * W.rows * 2); i++) { const p = W.randWalk(rng); Game.addItem(rng() < 0.25 ? 'cash' : 'treat', p.x, p.y); }
-  if (rng() < 0.7) { const p = W.randWalk(rng); Game.addItem('catnip', p.x, p.y); }
-  if (rng() < 0.5) { const p = W.randWalk(rng); Game.addItem('milk', p.x, p.y); }
+  for (let i = 0; i < Math.round(dens); i++) {
+    if (rng() < 0.7) { const p = W.randWalk(rng); Game.addItem('catnip', p.x, p.y); }
+    if (rng() < 0.5) { const p = W.randWalk(rng); Game.addItem('milk', p.x, p.y); }
+  }
   // traffic
-  const nT = o.traffic === undefined ? 20 : o.traffic;
+  const nT = Math.round((o.traffic === undefined ? 20 : o.traffic) * dens);
   for (let i = 0; i < (o.paws || 0); i++) { const p = W.randWalk(rng); Game.addItem('paw', p.x, p.y); }
   for (let i = 0; i < nT; i++) spawnTraffic(rng);
   if (W.real) for (let i = 0; i < (o.parked === undefined ? 14 : o.parked); i++) { const p = W.randWalk(rng); if (W.gnd[Math.floor(p.y / T) * W.W + Math.floor(p.x / T)] === 1 && !W.blocked(p.x, p.y, 40, 3)) Game.addCar(rng.pick(W.real.id === 'rioverde' ? ['pickup', 'pickup', 'sedan'] : ['sedan', 'sport', 'taxi', 'sedan']), p.x, p.y, rng() * 6.283); }
@@ -899,10 +902,14 @@ function updCar(c, dt, rdt) {
     if (m > 0.15) {
       const want = Math.atan2(I.my, I.mx), diff = U.angDiff(c.a, want);
       const turn = 3.4 * (0.35 + Math.min(1, Math.abs(c.spd) / 120) * 0.65);
+      c.wantA = want;
+      if (c.revT > 0) { c.revT -= rdt; c.spd += (-140 - c.spd) * Math.min(1, rdt * 5); } // wedged nose-first (alley, dead end): back out
+      else {
       c.a += U.clamp(diff, -turn * rdt, turn * rdt);
       const align = Math.max(0.25, Math.cos(diff));
       const hill = W.hpx ? slopeMul(c.x, c.y, Math.cos(c.a), Math.sin(c.a)) : 1;
       c.spd += (c.top * m * align * (0.6 + 0.4 * hill) - c.spd) * Math.min(1, rdt * 1.9);
+      }
     } else c.spd *= Math.pow(0.25, rdt);
     dt = rdt;
     VP.Audio.engine(c.spd, true);
@@ -916,7 +923,7 @@ function updCar(c, dt, rdt) {
   else if (c.ai === 'target') updTargetCar(c, dt);
   else { c.spd *= Math.pow(0.05, dt); }
   if (c.ai !== 'traffic' || driven) {
-    if (c.a !== a0 && carBlocked(c, c.x, c.y)) { c.a = a0; if (carBlocked(c, c.x, c.y)) { for (let i = 0; i < 8; i++) { const an = i * 0.785, qx = c.x + Math.cos(an) * 10, qy = c.y + Math.sin(an) * 10; if (!carBlocked(c, qx, qy)) { c.x = qx; c.y = qy; break; } } } }
+    if (c.a !== a0 && carBlocked(c, c.x, c.y)) { c.a = a0; if (driven && Math.abs(c.spd) < 60 && Math.abs(U.angDiff(c.a, c.wantA === undefined ? c.a : c.wantA)) > 0.9) { c.wedge = (c.wedge || 0) + rdt; if (c.wedge > 0.35) { c.revT = 0.8; c.wedge = 0; } } if (carBlocked(c, c.x, c.y)) { for (let i = 0; i < 8; i++) { const an = i * 0.785, qx = c.x + Math.cos(an) * 10, qy = c.y + Math.sin(an) * 10; if (!carBlocked(c, qx, qy)) { c.x = qx; c.y = qy; break; } } } }
     const nx = c.x + Math.cos(c.a) * c.spd * dt + c.px * dt, ny = c.y + Math.sin(c.a) * c.spd * dt + c.py * dt;
     c.px *= Math.pow(0.02, dt); c.py *= Math.pow(0.02, dt);
     if (!carBlocked(c, nx, c.y)) c.x = nx; else bump(c);

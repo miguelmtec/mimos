@@ -226,7 +226,9 @@ Object.assign(TYPES, {
       const p = B.p, G = B.G, start = startOf(B);
       B.begin(start, {}); G.noHeat = true;
       let car = null; if (p.car) { car = Game.addCar(p.car === 2 ? 'pickup' : B.getaway(), start.x, start.y, 0); Game.enterCar(car); }
-      const pts = route(B, start, p.stops || 4, p.car ? 700 : 380, p.car ? 1500 : 800);
+      let pts = route(B, start, p.stops || 4, p.car ? 700 : 380, p.car ? 1500 : 800);
+      // car deliveries stop on the street itself (a stop on the sidewalk by an alley mouth could wedge the car between two buildings)
+      if (p.car && !B.W.real) pts = pts.map(q => { const W = B.W, cx = Math.floor(q.x / T), cy = Math.floor(q.y / T); for (let r = 0; r < 5; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (W.gnd[Y * W.W + X] === 1 && W.grid[Y * W.W + X] === 0) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return q; });
       G.mtimer = p.time || Math.round(pathLen(start, pts) / (p.car ? 170 : 105) + 25);
       pts.forEach((pt, i) => B.step({
         txt: i % 2 ? 'o_dropoff' : 'o_pickup', args: [Math.floor(i / 2) + 1, Math.ceil(pts.length / 2)], car: !!p.car, at: () => pt, done: () => near(G, pt, p.car ? 105 : 80) && (!p.car || !!G.car),

@@ -19,6 +19,10 @@ export const MOODS = [
   { top: '#1a0638', hor: '#ff4fb8', sunC: '#ff9fe0', fog: '#8a2a8a', hs: '#ffa8f0', hg: '#3a1458', sun: 0.8, night: 0.9, water: '#2de2e6', fogN: 50, fogF: 280 },     // Vice Heights
   { top: '#6a3a9a', hor: '#ffd27a', sunC: '#fff0b0', fog: '#ffc98a', hs: '#fff0c8', hg: '#8a6a4a', sun: 1.5, night: 0.3, water: '#39d0c8', fogN: 80, fogF: 340 },     // Marina Dourada (VIP, golden hour)
   { top: '#06122e', hor: '#2a5a8a', sunC: '#dff3ff', fog: '#24406a', hs: '#bfe0ff', hg: '#20304a', sun: 0.6, night: 1, water: '#1b3a6b', fogN: 35, fogF: 220 },      // Natal Neon (snow)
+  { top: '#5a2a8a', hor: '#ffa070', sunC: '#ffe0a0', fog: '#f5a088', hs: '#ffd8b8', hg: '#8a5a80', sun: 1.35, night: 0.35, water: '#ff9fb0', fogN: 70, fogF: 320 },   // 7 Calçadão
+  { top: '#3a8ad8', hor: '#d8f0c8', sunC: '#fff6d0', fog: '#c8ecd8', hs: '#ffffff', hg: '#6fb88a', sun: 1.5, night: 0.08, water: '#2fb8d8', fogN: 80, fogF: 340 },   // 8 Parque da Lagoa
+  { top: '#2a2430', hor: '#c8703a', sunC: '#ffb060', fog: '#6a5048', hs: '#e0b090', hg: '#3a3038', sun: 0.8, night: 0.6, water: '#27455a', fogN: 40, fogF: 230 },    // 9 Zona Industrial
+  { top: '#4a3a9a', hor: '#ffc890', sunC: '#fff0c0', fog: '#e8b898', hs: '#ffe8c8', hg: '#7a6a58', sun: 1.3, night: 0.3, water: '#3ab8d0', fogN: 75, fogF: 330 },     // 10 Morro do Mirante
 ];
 
 export function buildCity(W, scene, VP) {
@@ -90,7 +94,7 @@ export function buildCity(W, scene, VP) {
     for (const b of W.blds) {
       const r = VP.U.rng(b.seed), x0 = b.x * S + 0.15, z0 = b.y * S + 0.15, x1 = (b.x + b.w) * S - 0.15, z1 = (b.y + b.h) * S - 0.15, H = b.ht * TL;
       b.H = H;
-      _c.set(b.col); if (b.d === 1 || b.d === 3) _c.multiplyScalar(1.5).lerp(new THREE.Color('#8a7ab8'), 0.25); else _c.lerp(new THREE.Color('#ffffff'), 0.25);
+      _c.set(b.col); if (b.d === 1 || b.d === 3 || b.d === 7) _c.multiplyScalar(1.5).lerp(new THREE.Color('#8a7ab8'), 0.25); else _c.lerp(new THREE.Color('#ffffff'), 0.25);
       const wc = [_c.r, _c.g, _c.b], rc = [_c.r * 0.45, _c.g * 0.45, _c.b * 0.5], uo = Math.floor(r() * 4) / 4;
       const tiers = H > 14 && r() < 0.6 ? 2 : 1, h1 = tiers === 2 ? H * r.range(0.55, 0.75) : H;
       const tier = (ax0, az0, ax1, az1, y0, y1) => { face(ax0, az1, ax1, az1, y0, y1, 0, 1, wc, uo); face(ax1, az1, ax1, az0, y0, y1, 1, 0, wc, uo); face(ax1, az0, ax0, az0, y0, y1, 0, -1, wc, uo); face(ax0, az0, ax0, az1, y0, y1, -1, 0, wc, uo); top(ax0, az0, ax1, az1, y1, rc); };
@@ -100,7 +104,11 @@ export function buildCity(W, scene, VP) {
       if (r() < 0.8) trim(x0, z0, x1, z1, h1 + 0.02);
       if (tiers === 2) { const ins = Math.min(x1 - x0, z1 - z0) * 0.18; tier(x0 + ins, z0 + ins, x1 - ins, z1 - ins, h1, H); trim(x0 + ins, z0 + ins, x1 - ins, z1 - ins, H + 0.02); if (r() < 0.6) { neon.box(nc, (x0 + x1) / 2, H + 2.2, (z0 + z1) / 2, 0.12, 4.4, 0.12); city.glowPts.push({ x: (x0 + x1) / 2, y: H + 4.5, z: (z0 + z1) / 2, col: '#ff3355', s: 3 }); } }
       else if (x1 - x0 > 5 && z1 - z0 > 5) { const ax = r.range(x0 + 1.2, x1 - 2.4), az = r.range(z0 + 1.2, z1 - 2.4); tier(ax, az, ax + 1.6, az + 1.2, h1, h1 + 0.9); }
-      if (b.d !== 3 && r() < 0.5 && H > 6) for (const cx of [x0, x1]) neon.box(r.pick(PAL[b.d].neon), cx, LAND_H + H / 2, z1, t, H * 0.9, t);
+      if (b.d === 8) { // hillside houses: a pitched roof in the colour of the house, no neon
+        const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, rh = 1.1 + r() * 0.5, rc2 = [wc[0] * 0.62, wc[1] * 0.5, wc[2] * 0.5];
+        for (const [ax, az, bx, bz] of [[x0, z1, x1, z1], [x1, z1, x1, z0], [x1, z0, x0, z0], [x0, z0, x0, z1]]) { P.push(ax, h1, az, bx, h1, bz, mx, h1 + rh, mz); UV.push(0.004, 0.004, 0.004, 0.004, 0.004, 0.004); const nx = (az - bz), nz = (bx - ax), l = Math.hypot(nx, nz) || 1; for (let i = 0; i < 3; i++) { N.push(nx / l * 0.6, 0.8, nz / l * 0.6); C.push(rc2[0], rc2[1], rc2[2]); } }
+      }
+      if (b.d !== 3 && b.d !== 8 && r() < 0.5 && H > 6) for (const cx of [x0, x1]) neon.box(r.pick(PAL[b.d].neon), cx, LAND_H + H / 2, z1, t, H * 0.9, t);
       // ground floor shopfront strip + sign on the south face
       neon.box(nc, (x0 + x1) / 2, 2.25, z1 + 0.04, x1 - x0 - 0.3, 0.08, 0.06);
       if (b.sign) { signs.push({ b, x: (x0 + x1) / 2, y: 3.15, z: z1 + 0.12, col: nc, i: World.SIGNS.indexOf(b.sign) }); city.glowPts.push({ x: (x0 + x1) / 2, y: 3.0, z: z1 + 0.8, col: nc, s: 9 }); }
@@ -122,7 +130,7 @@ export function buildCity(W, scene, VP) {
 
   // ---------- deco (merged) ----------
   {
-    const b = new GB(), neon = city.neonGB;
+    const b = new GB(), neon = city.neonGB, farB = new GB();
     for (const d of W.deco) {
       const x = d.x * S, z = d.y * S, y = LAND_H;
       if (d.k === 'fountain') { b.cyl('#c5ccd9', x, y + 0.3, z, 1.9, 0.6, 1.9); b.cyl('#2de2e6', x, y + 0.56, z, 1.6, 0.1, 1.6); b.cyl('#c5ccd9', x, y + 0.9, z, 0.3, 1.4, 0.3); b.cyl('#c5ccd9', x, y + 1.6, z, 0.8, 0.14, 0.8); b.sph('#bff4ff', x, y + 1.9, z, 0.36); }
@@ -131,6 +139,27 @@ export function buildCity(W, scene, VP) {
       else if (d.k === 'umbrella') { b.cyl('#ffffff', x, y + 1.0, z, 0.05, 2.0, 0.05); for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283 + 0.39; b.add(PR.cone, i % 2 ? d.col : '#ffffff', x + Math.sin(a) * 0.5, y + 1.95, z + Math.cos(a) * 0.5, 0.56, 0.5, 0.56, 0.5, a, 0); } b.box(d.col, x + 0.9, y + 0.12, z + 0.3, 0.7, 0.08, 1.7); }
       else if (d.k === 'container') { const w = d.w * S, h = d.h * S; b.box(d.col, x + w / 2, y + 1.25, z + h / 2, w - 0.1, 2.5, h - 0.1); const hor = w > h; for (let i = 0.4; i < (hor ? w : h) - 0.2; i += 0.5) b.box('#1a0d24', hor ? x + i : x + w / 2, y + 1.25, hor ? z + h / 2 : z + i, hor ? 0.05 : w - 0.04, 2.3, hor ? h - 0.04 : 0.05); }
       else if (d.k === 'flower') { b.lo(d.col, x, y + 0.14, z, 0.16, 0.12, 0.16); }
+      else if (d.k === 'pier') { // posts under a wooden jetty, a lamp and a little bench at the tip
+        const n = d.len, hor = !!d.hor;
+        for (let i = 0; i <= n; i += 2) for (const o of [0.15, 3.85]) b.cyl('#6a4a2b', hor ? x + i * TL : x + o, -0.2, hor ? z + o : z + i * TL, 0.14, 1.1, 0.14);
+        const tx2 = hor ? x + 0.6 : x + TL, tz2 = hor ? z + TL : z + n * TL - 0.6;
+        b.cyl('#59536b', tx2, y + 1.2, tz2, 0.06, 2.4, 0.06); neon.sph('#fff6c8', tx2, y + 2.5, tz2, 0.2); city.glowPts.push({ x: tx2, y: y + 2.5, z: tz2, col: '#fff6c8', s: 6 });
+        b.box('#2de2e6', tx2 + (hor ? 0 : 0.9), y + 0.5, tz2 + (hor ? 0.9 : 0), 0.12, 1.0, 0.12); b.sph('#ff3355', tx2 + (hor ? 0 : 0.9), y + 1.1, tz2 + (hor ? 0.9 : 0), 0.18); // fishing-spot marker
+      }
+      else if (d.k === 'hill') { const hc = ['#3f9a5a', '#4aaa62', '#368a50'][Math.floor(d.r) % 3]; farB.sph(hc, x, -1, z, d.r, d.h, d.r * 0.8); if (d.h > 11) farB.lo('#5fbf7a', x + 2, d.h * 0.72, z + 2, d.r * 0.4, d.h * 0.2, d.r * 0.35); }
+      else if (d.k === 'highway') { // guard rail, dashed lanes and a few parked lorries behind it
+        const n = d.len;
+        for (let i = 0; i < n; i++) { const zz = z + i * TL + 1; b.box('#c0c7d1', x + 1, y + 0.75, zz, 0.12, 0.16, TL); if (i % 2 === 0) b.box('#8a90ad', x + 1, y + 0.4, zz, 0.14, 0.8, 0.14); if (i % 3 === 0) { b.box('#f4f0ff', x + 5, 0.03, zz, 0.16, 0.02, 1.6); b.box('#ffd23f', x + 9.4, 0.03, zz, 0.14, 0.02, TL); } }
+        for (let i = 6; i < n - 6; i += 23) { const zz = z + i * TL, col = ['#e2574c', '#2a9d8f', '#e9c46a', '#577590'][(i / 23 | 0) % 4]; b.box(col, x + 7, 1.7, zz, 2.2, 2.6, 6.4); b.box('#f4f0ff', x + 7, 1.3, zz + 4.2, 2.1, 1.9, 1.8); b.box('#1a0d24', x + 7, 0.35, zz + 0.5, 2.3, 0.7, 8); }
+      }
+      else if (d.k === 'lily') { b.cyl('#3fae6a', x, -0.42, z, 0.5, 0.05, 0.5); b.lo(d.col, x + 0.1, -0.3, z, 0.16, 0.12, 0.16); }
+      else if (d.k === 'swan') { const c2 = Math.cos(d.a), s2 = Math.sin(d.a); b.sph('#ffffff', x, -0.2, z, 0.9, 0.5, 0.6, 0, d.a, 0); b.cyl('#ffffff', x + c2 * 0.7, 0.35, z - s2 * 0.7, 0.13, 1.0, 0.13); b.sph('#ffffff', x + c2 * 0.85, 0.9, z - s2 * 0.85, 0.22); b.sph('#ff9a3d', x + c2 * 1.1, 0.86, z - s2 * 1.1, 0.12, 0.08, 0.08); }
+      else if (d.k === 'chimney') { b.cyl('#8a5a4a', x, d.h / 2, z, 0.7, d.h, 0.7); b.cyl('#f4f0ff', x, d.h - 0.9, z, 0.74, 0.5, 0.74); b.cyl('#e2574c', x, d.h - 1.9, z, 0.73, 0.4, 0.73); neon.sph('#ff3355', x, d.h + 0.3, z, 0.16); city.glowPts.push({ x, y: d.h + 0.4, z, col: '#ff3355', s: 4 }); b.lo('#c8c8d0', x + 0.5, d.h + 1.2, z, 0.9, 0.6, 0.8); b.lo('#dcdce4', x + 1.4, d.h + 2.1, z + 0.2, 1.1, 0.7, 0.9); }
+      else if (d.k === 'silo') { b.cyl(d.col, x, y + d.h / 2, z, 1.85, d.h, 1.85); b.sph(d.col, x, y + d.h, z, 1.85, 0.7, 1.85); for (let i = 1; i < 4; i++) b.cyl('#59536b', x, y + d.h * i / 4, z, 1.88, 0.08, 1.88); b.box('#59536b', x + 1.9, y + d.h / 2, z, 0.12, d.h, 0.5); }
+      else if (d.k === 'steps') { for (let i = 0; i < 4; i++) b.box(i % 2 ? '#ffd23f' : '#ff7ac0', x, y + 0.03, z - 0.75 + i * 0.5, 3.4, 0.05, 0.3); }
+      else if (d.k === 'scope') { b.cyl('#59536b', x, y + 0.6, z, 0.08, 1.2, 0.08); b.cyl('#2de2e6', x, y + 1.3, z, 0.16, 0.6, 0.16, Math.PI / 2.3); }
+      else if (d.k === 'railrow') { for (let i = 0; i < 8; i++) if (i !== 3 && i !== 4) { const xx = x + i * TL + 1; b.box('#c0c7d1', xx, y + 0.9, z, TL, 0.08, 0.08); b.box('#c0c7d1', xx, y + 0.5, z, TL, 0.06, 0.06); b.box('#8a90ad', xx - 1, y + 0.5, z, 0.12, 1.0, 0.12); } }
+      else if (d.k === 'net') { for (const sx of [-1, 1]) b.cyl('#ffffff', x + sx * 4.6, y + 1.2, z, 0.08, 2.4, 0.08); b.box('#ffffff', x, y + 2.3, z, 9.2, 0.08, 0.05); b.box('#bff4ff', x, y + 1.8, z, 9.2, 0.9, 0.02); b.box('#ffffff', x, y + 1.3, z, 9.2, 0.06, 0.05); }
     }
     // compound fence rings (gate tiles left open; the gate itself is a mission prop)
     for (const l of W.comps) {
@@ -152,13 +181,15 @@ export function buildCity(W, scene, VP) {
       b.lo('#ffd23f', x, y + 3.3, z + 1.3, 0.3, 0.3, 0.1); b.box('#8a5a2b', x + 1.0, y + 3.8, z - 0.6, 0.5, 1.4, 0.5);
     }
     // yachts moored south of Palm Harbor + a few sails out at sea
-    const b0 = b, far = new GB();
+    const b0 = b, far = farB;
     const boat = (x, z, s, col, rot) => { const b = far; const c = Math.cos(rot), sn = Math.sin(rot), p = (lx, lz) => [x + (lx * c + lz * sn) * s, z + (-lx * sn + lz * c) * s]; let q = p(0, 0); b.box('#ffffff', q[0], -0.1, q[1], 2.6 * s, 1.1 * s, 8 * s, 0, rot, 0); q = p(0, 4.6); b.add(PR.cone, '#ffffff', q[0], -0.1, q[1], 1.3 * s, 2.2 * s, 0.55 * s, Math.PI / 2, rot, 0); q = p(0, -0.6); b.box('#e8f4ff', q[0], 0.95 * s, q[1], 2.0 * s, 1.0 * s, 3.6 * s, 0, rot, 0); b.box(col, q[0], 0.5 * s, q[1], 2.66 * s, 0.14 * s, 8.02 * s, 0, rot, 0); q = p(0, -1); b.box('#bff4ff', q[0], 1.7 * s, q[1], 1.5 * s, 0.6 * s, 2.0 * s, 0, rot, 0); neon.box(col, q[0], 2.05 * s, q[1], 1.6 * s, 0.06, 2.1 * s, 0, rot, 0); };
     const south = TH * TL + 4;
-    for (let i = 0; i < 7; i++) boat((62 + 4 * 28 / 4 + i * 13.5) + 30, south + 5 + (i % 2) * 7, 1 + (i % 3) * 0.25, ['#ffd23f', '#ff4fb8', '#2de2e6'][i % 3], Math.PI / 2 + (i % 2 ? 0.2 : -0.15));
-    for (let i = 0; i < 8; i++) { const a = rng() * 6.283, R = 260 + rng() * 80, x = TW * TL / 2 + Math.cos(a) * R * 1.3, z = TH * TL / 2 + Math.sin(a) * R; boat(x, z, 1.6, '#ff4fb8', a); }
-    // far skyline silhouettes on the horizon
-    for (let i = 0; i < 70; i++) { const a = i / 70 * 6.283 + rng() * 0.05, R = 300 + rng() * 60, x = TW * TL / 2 + Math.cos(a) * R * 1.4, z = TH * TL / 2 + Math.sin(a) * R * 1.1, h = 12 + rng() * 46, w = 8 + rng() * 10; far.box('#2a1848', x, h / 2 - 1, z, w, h, w); neon.box(rng.pick(['#ff4fb8', '#2de2e6', '#ffd23f', '#b967ff']), x, h - 1, z, w + 0.2, 0.5, w + 0.2); }
+    const hx0 = W.RX[World.DREG[2].c0] / 24, hx1 = W.RX[World.DREG[2].c0 + 4] / 24; // moored off Palm Harbor
+    for (let i = 0; i < 7; i++) boat(hx0 + 8 + i * (hx1 - hx0 - 16) / 6, south + 9 + (i % 2) * 7, 1 + (i % 3) * 0.25, ['#ffd23f', '#ff4fb8', '#2de2e6'][i % 3], Math.PI / 2 + (i % 2 ? 0.2 : -0.15));
+    const KX = TW * TL / 352, KZ = TH * TL / 240; // the backdrop ring grows with the map
+    for (let i = 0; i < 10; i++) { const a = 0.25 + rng() * 2.6, R = 250 + rng() * 80, x = TW * TL / 2 + Math.cos(a) * R * 1.3 * KX, z = TH * TL / 2 + Math.sin(a) * R * KZ * 0.8; boat(x, z, 1.6, '#ff4fb8', a); }
+    // far skyline silhouettes on the horizon (east, south and west; the north is all hills)
+    for (let i = 0; i < 80; i++) { const a = i / 80 * 6.283 + rng() * 0.05, R = 300 + rng() * 60, x = TW * TL / 2 + Math.cos(a) * R * 1.4 * KX, z = TH * TL / 2 + Math.sin(a) * R * 1.1 * KZ, h = 12 + rng() * 46, w = 8 + rng() * 10; if (Math.sin(a) < -0.45) { far.add(PR.cone, ['#2f6a55', '#3a7a5e', '#285848'][i % 3], x, h * 0.9, z + 60, 60 + rng() * 50, 60 + h * 1.6, 50); continue; } far.box('#2a1848', x, h / 2 - 1, z, w, h, w); neon.box(rng.pick(['#ff4fb8', '#2de2e6', '#ffd23f', '#b967ff']), x, h - 1, z, w + 0.2, 0.5, w + 0.2); }
     chunkMesh(b0.geo(), MAT.flat, scene, city, { cell: 56, detail: 1.25 });
     chunkMesh(far.geo(), MAT.flat, scene, city, { cell: 200, far: 5000 });
     chunkMesh(neon.geo(), MAT.glow, scene, city, { cell: 56, detail: 1.6 });
@@ -166,7 +197,8 @@ export function buildCity(W, scene, VP) {
 
   // ---------- palms + lamps (instanced) ----------
   {
-    const tint = ['#ffffff', '#9a8ad0', '#ffffff', '#7a94a8', '#d8a8f0'];
+    const tint = ['#ffffff', '#9a8ad0', '#ffffff', '#7a94a8', '#d8a8f0', '#ffffff', '#ffffff', '#8a9a90', '#ffffff'];
+    if (W.trees && W.trees.length) chunkInstances(treeGeo(), treeGeoLo(), MAT.lit, W.trees.map(p => { const k = (p.s || 1) * (0.9 + rng() * 0.25); return { x: p.x * S, y: LAND_H, z: p.y * S, ry: rng() * 6.283, s: k, sy: k * (0.9 + rng() * 0.3), col: World.distAt(W, p.x, p.y) === 7 ? '#8a9a90' : '#ffffff' }; }), scene, city, { cell: 60 });
     chunkInstances(palmGeo(), palmGeoLo(), MAT.lit, W.palms.map(p => { const k = Math.max(0.95, (p.s || 1)) * (0.95 + rng() * 0.3); return { x: p.x * S, y: LAND_H, z: p.y * S, ry: rng() * 6.283, s: k, sy: k * (0.9 + rng() * 0.3), col: tint[World.distAt(W, p.x, p.y)] }; }), scene, city, { cell: 60 });
     const lg = new GB(); lg.add(PR.cyl6, '#59536b', 0, 2.2, 0, 0.07, 4.4, 0.07); lg.box('#59536b', 0.4, 4.4, 0, 0.9, 0.08, 0.08); lg.add(PR.cyl6, '#3a3550', 0, 0.15, 0, 0.16, 0.3, 0.16); lg.box('#fff6c8', 0.8, 4.34, 0, 0.36, 0.1, 0.2);
     W.lamps.forEach((p, i) => { const d = World.distAt(W, p.x, p.y); city.glowPts.push({ x: p.x * S + Math.cos((i % 4) * 1.57) * 0.8, y: 4.3, z: p.y * S - Math.sin((i % 4) * 1.57) * 0.8, col: PAL[d].lamp, s: 7, lamp: 1 }); });

@@ -209,7 +209,7 @@ function radar(G, k, t, ob) {
   if (ob.at && !ob.free) pin(ob.at.x, ob.at.y, GOLD, (4.5 + Math.sin(t * 6)) * k);
   Art.poly(c, [m.x, m.y - 7 * k, m.x - 5 * k, m.y + 5 * k, m.x, m.y + 2 * k, m.x + 5 * k, m.y + 5 * k], '#fff', INK, 1.5);
   c.beginPath(); c.arc(m.x, m.y, m.r, 0, 6.283); c.lineWidth = 3; c.strokeStyle = G.wanted > 0 ? (Math.floor(t * 4) % 2 ? '#ff2040' : '#2a6bff') : PINK; c.stroke();
-  const d = VP.World.distAt(W, a.x, a.y), rn = W.real ? W.real.name.split(' — ').pop().toUpperCase() : ''; txt(W.real ? (rn.length > 16 ? rn.slice(0, 15).trim() + '…' : rn) : VP.t('d' + ((G.m.d === 5 || G.m.d === 6) && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
+  const d = VP.World.distAt(W, a.x, a.y), rn = W.real ? W.real.name.split(' — ').pop().toUpperCase() : ''; txt(W.real ? (rn.length > 16 ? rn.slice(0, 15).trim() + '…' : rn) : VP.t((G.m.d === 5 || G.m.d === 6) && !G.free ? 'd' + G.m.d : VP.World.hoodKey(d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
 }
 
 // world labels (places, mission beams, shop): never under the top HUD, never on top of each other

@@ -70,6 +70,7 @@ function WebSocketTransport(url) {
       else if (m.t === 'leave') { const id = ks.get(m.k); ks.delete(m.k); if (id && T.on.leave) T.on.leave(id); }
       else if (m.t === 'e') { const id = ks.get(m.k); if (id && T.on.emote) T.on.emote(id, m.e); }
       else if (m.t === 'p') { const id = ks.get(m.k); if (id && T.on.phrase) T.on.phrase(id, m.i); }
+      else if (m.t === 'tr') { const id = ks.get(m.k); if (id && T.on.trade) T.on.trade(id, m.off ? null : { to: m.to, give: m.give || null, st: m.st }); }
       else if (m.t === 'paw') { if (T.on.paws) T.on.paws(m.slot, m.taken || []); }
       else if (m.t === 'pawok') { if (T.on.pawOk) T.on.pawOk(m.i); }
     };
@@ -84,6 +85,7 @@ function WebSocketTransport(url) {
   T.emote = k => send({ t: 'e', k });
   T.phrase = i => send({ t: 'p', i });
   T.paw = (i, slot) => send({ t: 'paw', i, s: slot });
+  T.trade = tr => send(tr ? { t: 'tr', to: tr.to, give: tr.give, st: tr.st } : { t: 'tr', off: 1 });
   T.report = (id, reason) => { send({ t: 'report', id, reason }); return Promise.resolve(true); };
   T.close = () => { closed = true; open = false; try { ws.close(); } catch (e) { /* ignore */ } };
   return T;
@@ -96,7 +98,7 @@ function PollingTransport(tickMs) {
   const FAST = Math.max(1000, tickMs || 1500), ALONE = FAST * 2;
   const T = { name: 'poll', delay: FAST / 1000 + 0.45, on: {} };
   let room = '', ticket = '', renew = null, cur = null, sent = null, timer = null, closed = false, fails = 0, known = new Map(), ready = false, pawSent = 0;
-  let tickAt = 0, em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0;
+  let trade = null, tradeSent = 'null', tickAt = 0, em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0;
   const post = (path, body, keep) => json('/api/online/' + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), keepalive: !!keep });
   async function tick(first) {
     const s = cur, n = performance.now();
@@ -104,9 +106,10 @@ function PollingTransport(tickMs) {
     if (s.a === 'car') body.car = s.car;
     if (em && n < em.until) { body.emote = em.k; body.es = es; } else if (em) { em = null; sent = null; }   // one more write clears it
     if (ph && n < ph.until) { body.phrase = ph.i; body.ps = ps; } else if (ph) { ph = null; sent = null; }
+    if (trade) body.trade = trade;
     if (pawMine.length) body.paws = { s: pawSlot, i: pawMine };
     // nothing changed since the last tick that was written: ask the server to only read
-    const idle = !first && sent && sent.x === s.x && sent.z === s.z && sent.a === s.a && Math.abs(sent.ry - s.ry) < 0.05 && !body.emote && body.phrase == null && pawSent === pawMine.length;
+    const idle = !first && sent && sent.x === s.x && sent.z === s.z && sent.a === s.a && Math.abs(sent.ry - s.ry) < 0.05 && !body.emote && body.phrase == null && pawSent === pawMine.length && tradeSent === JSON.stringify(trade);
     if (idle) body.idle = true;
     const need = []; for (const [id, k] of known) if (!k.joined) need.push(id); if (need.length) body.need = need.slice(0, 40);
     let r = await post('tick', body);
@@ -115,7 +118,7 @@ function PollingTransport(tickMs) {
     if (r.status === 429) return r;                              // too fast (clock skew, a retry): just wait for the next one
     if (r.status !== 200) { fails++; if (first || fails >= 3) throw { code: r.error || 'http-' + r.status }; return r; }
     fails = 0; room = r.room; others = r.others.length;
-    if (!idle) { sent = body.emote || body.phrase != null ? null : { x: s.x, z: s.z, ry: s.ry, a: s.a }; pawSent = pawMine.length; }
+    if (!idle) { sent = body.emote || body.phrase != null ? null : { x: s.x, z: s.z, ry: s.ry, a: s.a }; pawSent = pawMine.length; tradeSent = JSON.stringify(body.trade || null); }
     const at = performance.now(), seen = new Set();
     for (const o of r.others) {
       seen.add(o.id);
@@ -127,6 +130,7 @@ function PollingTransport(tickMs) {
       if (stamp > k.stamp + 40) { k.stamp = stamp; if (T.on.state) T.on.state(o.id, o.x, o.z, o.ry, o.anim, o.car || null, at - o.age); }
       if (o.emote && o.es !== k.es) { k.es = o.es; if (T.on.emote) T.on.emote(o.id, o.emote); }
       if (o.phrase != null && o.ps !== k.ps) { k.ps = o.ps; if (T.on.phrase) T.on.phrase(o.id, o.phrase); }
+      const tj = JSON.stringify(o.trade || null); if (tj !== (k.tj || 'null')) { k.tj = tj; if (T.on.trade) T.on.trade(o.id, o.trade || null); }
     }
     for (const [id, k] of known) if (!seen.has(id) && ++k.miss >= 2) { known.delete(id); if (k.joined && T.on.leave) T.on.leave(id); }
     // shared paws: everybody reports what they picked in the current slot; the union is what is gone
@@ -169,6 +173,7 @@ function PollingTransport(tickMs) {
   T.emote = k => { em = { k, until: performance.now() + 5000 }; es = (es + 1) % 256; soon(); };
   T.phrase = i => { ph = { i, until: performance.now() + 5000 }; ps = (ps + 1) % 256; soon(); };
   T.paw = (i, slot) => { if (slot !== pawSlot) { pawSlot = slot; pawMine = []; } if (!pawMine.includes(i)) pawMine.push(i); if (T.on.pawOk) T.on.pawOk(i); };
+  T.trade = tr => { trade = tr ? { to: tr.to, give: tr.give, st: tr.st } : null; soon(); };
   T.report = (id, reason) => post('report', { ticket, targetId: id, reason, room }).then(r => r.status === 200);
   T.close = () => { if (closed) return; closed = true; clearTimeout(timer); if (ready) post('leave', { ticket }, true); };
   return T;
@@ -181,9 +186,13 @@ O.looks = function () {
   const A = VP.Acct, S = VP.S, list = [];
   if (S.avatar && A && A.status === 'in' && A.cats.some(c => c.id === S.avatarId)) list.push({ k: 'mine', q: 'catId=' + encodeURIComponent(S.avatarId), label: S.avatar.label || t('gc_mine'), named: true });
   else if (S.avatar && S.avatarId === 'local' && S.avatarLocal && S.avatarLocal.spec) list.push({ k: 'mine', q: 'spec=' + encodeURIComponent(JSON.stringify(S.avatarLocal.spec)), label: S.avatar.label || t('gc_mine') });
-  for (const n of ['mimo', 'mimosa', 'morticia']) list.push({ k: n, q: 'cat=' + n, label: t(n) });
+  const Wd = VP.Wardrobe;
+  for (const n of ['mimo', 'mimosa', 'morticia']) { const wear = Wd && Wd.data ? Object.values(Wd.wearing(n)).filter(Boolean).slice(0, 6) : []; list.push({ k: n, q: 'cat=' + n + (wear.length ? '&wear=' + wear.join(',') : ''), label: t(n) }); }
+  for (const l of list) l.q += '&lv=' + O.level();
   return list;
 };
+// the level badge: the best cat level when the progression system is there, otherwise one level per 5 stars
+O.level = function () { const P = VP.Prog; let lv = 0; try { if (P && P.level) lv = Math.max(...['mimo', 'mimosa', 'morticia'].map(n => P.level(n).lv)); } catch (e) { lv = 0; } return U.clamp(Math.round(lv || 1 + Math.floor(VP.totalStars() / 5)), 1, 100); };
 O.ticket = async function () {
   const looks = O.looks(), look = looks.find(l => l.k === O.sel.cat) || looks[0];
   O.sel.cat = look.k;
@@ -256,7 +265,7 @@ O.unavailable = function (base, fromMenu, why) {
 };
 O.stop = function () {
   if (O.tr) { try { O.tr.close(); } catch (e) { /* ignore */ } }
-  O.tr = null; O.G = null; O.state = 'off'; O.remotes = new Map(); O.paw = null; closeSheet();
+  O.tr = null; O.G = null; O.state = 'off'; O.remotes = new Map(); O.paw = null; O.trade = null; closeSheet();
 };
 // called by ui.js whenever a game ends (mission start, menu, another map...)
 O.left = function () { if (O.G) O.stop(); };
@@ -278,12 +287,14 @@ function wire(tr, G) {
   tr.on.join = p => {
     if (O.G !== G || (O.you && p.id === O.you.id)) return;
     const old = O.remotes.get(p.id); if (old) gone(G, old);
-    const r = { id: p.id, name: String(p.name || '').slice(0, 24), look: p.cat || { star: 'mimo' }, s: [], f: null, say: null };
+    const r = { id: p.id, name: String(p.name || '').slice(0, 24), look: p.cat || { star: 'mimo' }, s: [], f: null, say: null, offer: null };
+    r.lv = U.clamp(Math.round(+r.look.lv) || 1, 1, 100);
     O.remotes.set(p.id, r);
     push(r, p.x, p.z, p.ry, p.a, p.car, performance.now());
     if (!O.muted[p.id]) spawn(G, r);
   };
-  tr.on.leave = id => { const r = O.remotes.get(id); if (r) { gone(G, r); O.remotes.delete(id); } };
+  tr.on.leave = id => { const r = O.remotes.get(id); if (r) { gone(G, r); O.remotes.delete(id); if (O.trade && O.trade.with === id && !O.trade.done) O.tradeCancel('on_tr_left'); } };
+  tr.on.trade = (id, tr) => { if (O.G === G) O.tradeIn(id, tr); };
   tr.on.state = (id, x, z, ry, a, car, at) => { const r = O.remotes.get(id); if (r) push(r, x, z, ry, a, car, at); };
   tr.on.emote = (id, k) => { const r = O.remotes.get(id); if (r && r.f && EMOTE_S[k]) r.f.em = { k, t: EMOTE_S[k] }; };
   tr.on.phrase = (id, i) => { const r = O.remotes.get(id); if (r && !O.muted[id] && i >= 0 && i < PHRASES) r.say = { i, t: BUBBLE_S }; };
@@ -301,6 +312,7 @@ function spawn(G, r) {
   const s = r.s[r.s.length - 1];
   const f = { kind: 'friend', remote: true, stay: true, rid: r.id, name: r.look.star || 'remote', x: s.x, y: s.y, r: 9, t: Math.random() * 4, walk: 0, face: 1, spd: 0, ry: s.ry, car: s.car, em: null, label: '' };
   if (r.look.spec && VP.Acct) f.spec = VP.Acct.toSpec(r.look.spec);
+  else if (r.look.star && Array.isArray(r.look.wear) && VP.Wardrobe && VP.Wardrobe.data) f.spec = VP.Wardrobe.specOf(r.look.star, r.look.wear);   // the outfit that player is wearing
   r.f = f; G.friends.push(f);
 }
 function gone(G, r) { if (r.f) { r.f.dead = true; const i = G.friends.indexOf(r.f); if (i >= 0) G.friends.splice(i, 1); r.f = null; } }
@@ -406,7 +418,7 @@ O.say = function (i) {
   const n = performance.now(); if (n - (O.saidAt || 0) < 1300) return;
   O.saidAt = n; O.activeAt = nowS(); O.tr.phrase(i); O.bubble = { i, t: BUBBLE_S }; VP.Audio.sfx('paw', 0.1);
 };
-O.mute = function (id, on) { if (on) O.muted[id] = 1; else delete O.muted[id]; try { sessionStorage.setItem('vp_online_muted', JSON.stringify(O.muted)); } catch (e) { /* ignore */ } const r = O.remotes.get(id); if (r && on) { r.say = null; if (O.G) gone(O.G, r); } };
+O.mute = function (id, on) { if (on && O.trade && O.trade.with === id && !O.trade.done) O.tradeCancel(); if (on) { const r0 = O.remotes.get(id); if (r0) r0.offer = null; if (O.sheet === 'inv') closeSheet(); } if (on) O.muted[id] = 1; else delete O.muted[id]; try { sessionStorage.setItem('vp_online_muted', JSON.stringify(O.muted)); } catch (e) { /* ignore */ } const r = O.remotes.get(id); if (r && on) { r.say = null; if (O.G) gone(O.G, r); } };
 O.report = function (id, reason) {
   if (!O.tr || !REASONS.includes(reason)) return;
   O.tr.report(id, reason); O.mute(id, true);
@@ -416,7 +428,15 @@ O.report = function (id, reason) {
 // ---------- HUD (drawn by hud.js inside its world-label pass) ----------
 O.drawHud = function (c, G, R3, k, tools) {
   if (O.G !== G) return;
-  const tag = (s, x, y, col) => { c.font = '800 ' + 11 * k + 'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; const w = c.measureText(s).width + 14 * k; tools.pill(x - w / 2, y - 9 * k, w, 18 * k, 'rgba(18,4,31,.78)', col); tools.txt(s, x, y + 0.5, 11 * k, '#fff', 'center', false, '800'); return w; };
+  // name tag: gold level badge + name (+ 🎁 when that cat is offering a trade)
+  const tag = (s, x, y, col, lv, gift) => {
+    const F = 'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; if (gift) s += ' 🎁';
+    c.font = '800 ' + 11 * k + F; const nw = c.measureText(s).width; const b = t('on_lv') + ' ' + lv; c.font = '900 ' + 10 * k + F; const bw = c.measureText(b).width + 10 * k;
+    const w = nw + bw + 16 * k, x0 = x - w / 2;
+    tools.pill(x0, y - 9 * k, w, 18 * k, 'rgba(18,4,31,.78)', col);
+    tools.pill(x0 + 2 * k, y - 7 * k, bw, 14 * k, '#ffd23f'); tools.txt(b, x0 + 2 * k + bw / 2, y + 0.5, 10 * k, '#3a2a00', 'center', false, '900');
+    tools.txt(s, x0 + bw + 7 * k + nw / 2, y + 0.5, 11 * k, '#fff', 'center', false, '800'); return w;
+  };
   const bubble = (s, x, y) => {
     c.font = '800 ' + 13 * k + 'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; const w = c.measureText(s).width + 20 * k, h = 26 * k;
     x = U.clamp(x, w / 2 + 6, VP.HUD.w - w / 2 - 6);
@@ -428,7 +448,7 @@ O.drawHud = function (c, G, R3, k, tools) {
   for (const r of O.remotes.values()) {
     const f = r.f; if (!f || Math.abs(f.x - a.x) > 1100 || Math.abs(f.y - a.y) > 1100) continue;
     const p = R3.project(f.x, f.y, f.car ? 2.5 : 1.75); if (!p.on) continue;
-    const w = tag(r.name, p.x, p.y, '#2de2e6');
+    const w = tag(r.name, p.x, p.y, '#2de2e6', r.lv, r.offer && !O.trade);
     O.tags.push({ id: r.id, x: p.x, y: p.y + 18 * k, w: Math.max(w, 60 * k) / 2 + 8, h: 44 * k });
     if (r.say) { c.globalAlpha = Math.min(1, r.say.t * 3); bubble(t('on_p' + r.say.i), p.x, p.y - 30 * k); c.globalAlpha = 1; }
   }
@@ -451,10 +471,12 @@ function closeSheet() { const el = document.getElementById('onl'); if (el) el.re
 function sheet(kind, arg) {
   closeSheet(); if (!kind || !O.G) return;
   const el = document.createElement('div'); el.id = 'onl'; el.className = 'onl ' + kind; O.sheet = kind;
-  const row = r => `<div class="orow" data-id="${esc(r.id)}"><b>${O.muted[r.id] ? '🔇 ' : '🐱 '}${esc(r.name)}</b><button class="chip" data-o="mute" data-id="${esc(r.id)}">${O.muted[r.id] ? '🔊 ' + t('on_unmute') : '🔇 ' + t('on_mute')}</button><button class="chip warn" data-o="rep" data-id="${esc(r.id)}">🚩 ${t('on_report')}</button></div>`;
+  const row = r => `<div class="orow" data-id="${esc(r.id)}"><b>${O.muted[r.id] ? '🔇 ' : '🐱 '}<i class="olv">${t('on_lv')} ${r.lv}</i> ${esc(r.name)}</b><button class="chip" data-o="mute" data-id="${esc(r.id)}">${O.muted[r.id] ? '🔊 ' + t('on_unmute') : '🔇 ' + t('on_mute')}</button><button class="chip warn" data-o="rep" data-id="${esc(r.id)}">🚩 ${t('on_report')}</button></div>`;
   if (kind === 'say') el.innerHTML = `<div class="obox"><div class="ohead"><b>💬 ${t('on_say')}</b><button class="chip" data-o="close">✕</button></div><div class="ogrid">${Array.from({ length: PHRASES }, (_, i) => `<button class="ophrase" data-o="say" data-i="${i}">${esc(t('on_p' + i))}</button>`).join('')}</div><p class="small">${t('on_sayNote')}</p></div>`;
   else if (kind === 'list') { const rs = [...O.remotes.values()]; el.innerHTML = `<div class="obox"><div class="ohead"><b>🌐 ${esc(O.roomLabel())} · 👥 ${rs.length + 1}</b><button class="chip" data-o="close">✕</button></div><div class="orow me"><b>💛 ${esc(O.you ? O.you.name : '')}</b><span class="small">${t('on_you')}</span></div>${rs.length ? rs.map(row).join('') : `<p class="small">${t('on_aloneLong')}</p>`}<p class="small">🛡 ${t('on_safe')}</p><button class="btn ghost sm" data-o="leave">🚪 ${t('on_leave')}</button></div>`; }
-  else if (kind === 'cat') { const r = O.remotes.get(arg); if (!r) { O.sheet = null; return; } el.innerHTML = `<div class="obox"><div class="ohead"><b>🐱 ${esc(r.name)}</b><button class="chip" data-o="close">✕</button></div>${row(r)}</div>`; }
+  else if (kind === 'cat') { const r = O.remotes.get(arg); if (!r) { O.sheet = null; return; } el.innerHTML = `<div class="obox"><div class="ohead"><b>🐱 ${esc(r.name)}</b><button class="chip" data-o="close">✕</button></div>${row(r)}${O.muted[r.id] ? '' : `<button class="btn teal sm" data-o="trade" data-id="${esc(r.id)}">🎁 ${t(r.offer ? 'on_tr_see' : 'on_tr_open')}</button>`}</div>`; }
+  else if (kind === 'inv') { const r = O.remotes.get(arg); if (!r || !r.offer) { O.sheet = null; return; } el.innerHTML = `<div class="obox"><div class="ohead"><b>🎁 ${t('on_tr_inv', esc(r.name))}</b><button class="chip" data-o="tradeNo" data-id="${esc(r.id)}">✕</button></div><div class="row"><button class="btn ghost sm" data-o="tradeNo" data-id="${esc(r.id)}">${t('on_tr_no')}</button><button class="btn teal sm" data-o="trade" data-id="${esc(r.id)}">${t('on_tr_see')}</button></div></div>`; }
+  else if (kind === 'trade') { const h = tradeHtml(arg); if (!h) { O.sheet = null; return; } el.innerHTML = h; }
   else if (kind === 'rep') { const r = O.remotes.get(arg); if (!r) { O.sheet = null; return; } el.innerHTML = `<div class="obox"><div class="ohead"><b>🚩 ${t('on_report')}: ${esc(r.name)}</b><button class="chip" data-o="close">✕</button></div><p class="small">${t('on_repWhy')}</p><div class="ogrid one">${REASONS.map(x => `<button class="ophrase" data-o="repSend" data-id="${esc(r.id)}" data-r="${x}">${t('on_r_' + x)}</button>`).join('')}</div><p class="small">${t('on_repNote')}</p></div>`; }
   const born = performance.now();
   el.addEventListener('click', e => {
@@ -466,13 +488,84 @@ function sheet(kind, arg) {
     else if (o === 'say') { O.say(+b.dataset.i); closeSheet(); }
     else if (o === 'mute') { O.mute(id, !O.muted[id]); sheet(kind, arg); }
     else if (o === 'rep') sheet('rep', id);
+    else if (o === 'trade') O.tradeOpen(id);
+    else if (o === 'tradeNo') { O.declined[id] = performance.now(); closeSheet(); }
+    else if (o === 'trGive') O.tradeGive(b.dataset.i || null);
+    else if (o === 'trOk') O.tradeConfirm();
+    else if (o === 'trCancel') O.tradeCancel();
     else if (o === 'repSend') { O.report(id, b.dataset.r); closeSheet(); }
     else if (o === 'leave') { closeSheet(); O.leave(); }
   });
   document.body.appendChild(el);
+  if (kind === 'inv') el.classList.add('say');
   if (kind === 'say') O.sheetT = setTimeout(() => { if (O.sheet === 'say') closeSheet(); }, 9000);
 }
 O.openSheet = sheet; O.closeSheet = closeSheet;
+
+// ---------- trade, the safe way ----------
+// Only wardrobe items bought with coins change hands (never coins, never VIP / Pix items), one for one or as a gift.
+// Nothing is typed. Both sides see both offers, both must confirm, any change un-confirms, and the confirm button
+// stays locked for 3 s after a change so nobody is rushed into a swapped offer. At most 5 trades a day.
+const TR_LOCK = 3000, TR_DAY = 5;
+O.declined = {};
+const itemName = id => { const it = VP.Wardrobe && VP.Wardrobe.item(id); return it ? it.name[VP.lang() === 'pt' ? 'pt' : 'en'] : null; };
+const dayN = () => { const S = VP.S, k = M.dayKey(); if (!S.trades || S.trades.k !== k) S.trades = { k, n: 0 }; return S.trades; };
+const tradeSend = () => { const T = O.trade; if (O.tr && O.tr.trade) O.tr.trade(T && !T.closed ? { to: T.with, give: T.give, st: T.st } : null); O.activeAt = nowS(); };
+const tradeDraw = () => { if (O.sheet === 'trade') sheet('trade', O.trade && O.trade.with); };
+const relock = () => { const T = O.trade; if (!T) return; T.lock = performance.now() + TR_LOCK; clearTimeout(O.lockT); O.lockT = setTimeout(tradeDraw, TR_LOCK + 60); };
+// why the offer of the other cat cannot be accepted (null = fine)
+function theirProblem(give) { const Wd = VP.Wardrobe; if (!give) return null; const it = Wd.item(give); if (!Wd.tradable(it)) return 'on_tr_bad'; if (Wd.owns(it)) return 'on_tr_have'; return null; }
+O.tradeOpen = function (id) {
+  const r = O.remotes.get(id); if (!r || O.muted[id] || !VP.Wardrobe || !VP.Wardrobe.data) return;
+  if (O.trade && O.trade.with !== id && !O.trade.done) O.tradeCancel();
+  if (!O.trade || O.trade.with !== id) { O.trade = { with: id, give: null, st: 0, seen: undefined }; relock(); tradeSend(); }
+  sheet('trade', id);
+};
+O.tradeGive = function (itemId) { const T = O.trade; if (!T || T.done) return; if (itemId && !VP.Wardrobe.ownedTradable().some(it => it.id === itemId)) return; T.give = itemId; T.st = 0; relock(); tradeSend(); tradeDraw(); };
+O.tradeConfirm = function () {
+  const T = O.trade, r = T && O.remotes.get(T.with); if (!T || T.done || !r || !r.offer) return;
+  if (performance.now() < T.lock || theirProblem(r.offer.give) || (!T.give && !r.offer.give) || dayN().n >= TR_DAY) return;
+  T.st = 1; T.seen = r.offer.give; tradeSend(); tradeCheck(); tradeDraw();
+};
+O.tradeCancel = function (why) { const T = O.trade; if (!T) return; clearTimeout(O.lockT); O.trade = null; tradeSend(); if (O.sheet === 'trade') closeSheet(); if (why) UI.toast('🎁 ' + t(why), 2600); };
+// the other cat's offer changed (or went away)
+O.tradeIn = function (id, tr) {
+  const r = O.remotes.get(id); if (!r) return;
+  const me = O.you && O.you.id, had = r.offer;
+  r.offer = tr && tr.to === me && !O.muted[id] ? tr : null;
+  const T = O.trade;
+  if (T && T.with === id && !T.done) {
+    if (!r.offer) return O.tradeCancel(had ? 'on_tr_cancelled' : null);
+    if (!had || had.give !== r.offer.give) { relock(); if (T.st === 1) { T.st = 0; tradeSend(); } }     // their offer changed: confirm again, after the lock
+    tradeCheck(); tradeDraw();
+  } else if (r.offer && !had && !T && !O.sheet && !UI.screen && !(performance.now() - (O.declined[id] || -1e9) < 60000)) sheet('inv', id);
+  else if (!r.offer && O.sheet === 'inv') closeSheet();
+};
+// both confirmed the same pair of offers: the items change hands, once
+function tradeCheck() {
+  const T = O.trade, r = T && O.remotes.get(T.with), Wd = VP.Wardrobe; if (!T || T.done || T.st !== 1 || !r || !r.offer || r.offer.st < 1 || r.offer.give !== T.seen) return;
+  if (theirProblem(T.seen) || (T.give && !Wd.ownedTradable().some(it => it.id === T.give))) return O.tradeCancel('on_tr_cancelled');
+  if (T.give) Wd.give(T.give); if (T.seen) Wd.take(T.seen);
+  dayN().n++; VP.persist(); if (VP.onProgress) VP.onProgress();
+  T.done = true; T.st = 2; tradeSend();
+  VP.Audio.sfx('win'); UI.confetti(); UI.toast('🎁 ' + (T.seen ? t('on_tr_got', itemName(T.seen)) : t('on_tr_gave', itemName(T.give))), 3600);
+  if (O.sheet === 'trade') closeSheet();
+  setTimeout(() => { if (O.trade === T) { T.closed = true; tradeSend(); O.trade = null; } }, 6000);
+}
+function tradeHtml(id) {
+  const T = O.trade, r = O.remotes.get(id), Wd = VP.Wardrobe; if (!T || T.with !== id || !r) return null;
+  const mine = Wd.ownedTradable(), theirs = r.offer, prob = theirs ? theirProblem(theirs.give) : null, left = TR_DAY - dayN().n;
+  const locked = performance.now() < T.lock, nothing = theirs && !T.give && !theirs.give;
+  const state = !theirs ? t('on_tr_wait', esc(r.name)) : left <= 0 ? t('on_tr_limit') : prob ? t(prob) : nothing ? t('on_tr_pick') : T.st === 1 ? t('on_tr_waitOk', esc(r.name)) : theirs.st >= 1 ? t('on_tr_theyOk', esc(r.name)) : t('on_tr_check');
+  return `<div class="obox"><div class="ohead"><b>🎁 ${t('on_tr_title', esc(r.name))}</b><button class="chip" data-o="trCancel">✕</button></div>
+    <p class="small"><b>${t('on_tr_youGive')}</b></p>
+    <div class="ogrid">${mine.length ? `<button class="ophrase ${!T.give ? 'on' : ''}" data-o="trGive" data-i="">${t('on_tr_nothing')}</button>` + mine.map(it => `<button class="ophrase ${T.give === it.id ? 'on' : ''}" data-o="trGive" data-i="${it.id}">${esc(it.name[VP.lang() === 'pt' ? 'pt' : 'en'])}</button>`).join('') : `<p class="small">${t('on_tr_none')}</p>`}</div>
+    <p class="small"><b>${t('on_tr_youGet')}</b></p>
+    <div class="otheirs ${theirs && theirs.st >= 1 ? 'ok' : ''}">${!theirs ? '…' : theirs.give ? esc(itemName(theirs.give) || '?') : t('on_tr_nothing')}${theirs && theirs.st >= 1 ? ' ✔' : ''}</div>
+    <p class="small ostate">${state}</p>
+    <div class="row"><button class="btn ghost sm" data-o="trCancel">${t('on_tr_cancel')}</button><button class="btn sm" data-o="trOk" ${!theirs || locked || prob || nothing || left <= 0 || T.st === 1 ? 'disabled' : ''}>${T.st === 1 ? '✔ ' + t('on_tr_confirmed') : locked && theirs ? '⏳ ' + t('on_tr_confirm') : '✔ ' + t('on_tr_confirm')}</button></div>
+    <p class="small">🛡 ${t('on_tr_safe', left > 0 ? left : 0)}</p></div>`;
+}
 
 // ---------- lobby ----------
 UI.SCREENS.online = {

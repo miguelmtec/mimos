@@ -1,6 +1,6 @@
 // Cidade Online end to end: two browsers in the same room, against the REAL api/online handler on an in-memory
 // database (tests/helpers/online-dev-server.mjs) and, for the "ws" section, the real real-time server.
-//   node tests/e2e/online.cjs [poll|desktop|extras|fallback|ws|shots]      screenshots -> $VP_SHOTS (default /tmp)
+//   node tests/e2e/online.cjs [poll|desktop|social|extras|fallback|ws|shots]      screenshots -> $VP_SHOTS (default /tmp)
 const L = require('./lib.cjs');
 const only = process.argv[2] || '';
 const out = [], ok = (n, c, extra) => { out.push((c ? 'PASS ' : 'FAIL ') + n + (c || extra === undefined ? '' : '  -> ' + JSON.stringify(extra))); };
@@ -164,7 +164,7 @@ async function pair(S, label, wantTransport) {
     ok('interp never runs backwards', steps.every(d => d >= 0));
     // what went over the wire: whitelisted keys only, never a name or a text
     const keys = new Set(); for (const body of S.state.bodies) for (const k of Object.keys(body || {})) keys.add(k);
-    const allowed = ['ticket', 'room', 'x', 'z', 'ry', 'anim', 'car', 'emote', 'es', 'phrase', 'ps', 'paws', 'need', 'idle'];
+    const allowed = ['ticket', 'room', 'x', 'z', 'ry', 'anim', 'car', 'emote', 'es', 'phrase', 'ps', 'paws', 'need', 'idle', 'trade'];
     ok('poll ticks carry only whitelisted fields', [...keys].every(k => allowed.includes(k)), [...keys]);
     ok('poll phrases travel as an index', S.state.bodies.some(x => x.phrase === 3) && S.state.bodies.every(x => x.phrase == null || Number.isInteger(x.phrase)));
     const rows = await S.db.rows('vp_presence');
@@ -274,6 +274,69 @@ async function pair(S, label, wantTransport) {
       await P.browser.close(); await S.db.reset();
     }
     await S.close();
+  }
+
+  // ================= alive city: level badge, outfits, and the safe trade =================
+  if (!only || only === 'social' || only === 'shots') {
+    const S = await startDevServer(); L.URL = S.url;
+    const A = await client(true), B = await client(true);
+    await A.page.evaluate(() => { const s = VP.S; s.stars = { 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 3, 11: 3, 12: 2 }; s.owned = ['cap_teal', 'gold_chain']; s.wear = { mimosa: { head: 'cap_teal', neck: 'gold_chain' } }; });
+    await B.page.evaluate(() => { const s = VP.S; s.owned = ['sailor']; s.wear = { mimo: { body: 'sailor' } }; });
+    ok('social both enter', await enterByMenu(A, 'mimosa') && await enterByMenu(B, 'mimo'));
+    await until(A.page, () => [...VP.Online.remotes.values()].some(r => r.f)); await until(B.page, () => [...VP.Online.remotes.values()].some(r => r.f));
+    const seen = pg => pg.evaluate(() => { const r = [...VP.Online.remotes.values()][0]; return { lv: r.lv, wear: r.look.wear, acc: r.f.spec ? r.f.spec.acc : null, star: r.look.star }; });
+    const sa = await seen(B.page), sb = await seen(A.page);
+    ok('social B sees A\'s level badge (35 stars -> Nv 8)', sa.lv === 8 && sb.lv === 1, [sa.lv, sb.lv]);
+    ok('social B sees A\'s outfit (neon cap + gold chain on Mimosa)', sa.star === 'mimosa' && sa.wear.includes('cap_teal') && sa.acc && sa.acc.hat === '#2de2e6' && sa.acc.collar === '#ffd23f', sa);
+    ok('social A sees B\'s outfit (sailor shirt on Mimo)', sb.wear.includes('sailor') && sb.acc && sb.acc.shirt === '#ffffff', sb);
+    const spot = await B.page.evaluate(spotInView);
+    await A.page.evaluate(q => { for (const c of __vp.G.cats) { c.x = q.x; c.y = q.y; } }, spot);
+    await until(B.page, q => { const r = [...VP.Online.remotes.values()][0]; return r && r.f && Math.hypot(r.f.x - q.x, r.f.y - q.y) < 40 && VP.Online.tags && VP.Online.tags.length; }, spot, 9000);
+    await sleep(600); await L.shot(B.page, 'online-m-badge-outfit');
+
+    // --- trade: A offers the cap, B the sailor shirt
+    const idOf = pg => pg.evaluate(() => [...VP.Online.remotes.keys()][0]);
+    const ida = await idOf(B.page), idb = await idOf(A.page);
+    await A.page.evaluate(id => VP.Online.openSheet('cat', id), idb); await sleep(450);
+    await L.shot(A.page, 'online-m-card-trade');
+    await tap(A.page, '#onl [data-o=trade]'); await sleep(450);
+    ok('social trade sheet lists only coin-bought outfits, no text field', await A.page.evaluate(() => { const b = [...document.querySelectorAll('#onl [data-o=trGive]')].map(x => x.dataset.i); return b.join() === ',cap_teal,gold_chain' && !document.querySelector('#onl input, #onl textarea'); }));
+    await tap(A.page, '#onl [data-o=trGive][data-i=cap_teal]');
+    ok('social B gets an invitation it can decline', await until(B.page, () => VP.Online.sheet === 'inv' && !!document.querySelector('#onl [data-o=tradeNo]'), null, 8000));
+    await L.shot(B.page, 'online-m-trade-invite');
+    await sleep(400); await tap(B.page, '#onl [data-o=trade]'); await sleep(450);
+    ok('social B sees what A offers', /Boné neon/.test(await B.page.evaluate(() => document.querySelector('#onl .otheirs').textContent)));
+    await tap(B.page, '#onl [data-o=trGive][data-i=sailor]');
+    ok('social confirm is locked right after a change', await B.page.evaluate(() => document.querySelector('#onl [data-o=trOk]').disabled));
+    ok('social A sees B\'s offer arrive', await until(A.page, () => /Marinheiro/.test((document.querySelector('#onl .otheirs') || {}).textContent || ''), null, 8000));
+    await until(A.page, () => { const b = document.querySelector('#onl [data-o=trOk]'); return b && !b.disabled; }, null, 8000);
+    await sleep(400); await L.shot(A.page, 'online-m-trade');
+    await tap(A.page, '#onl [data-o=trOk]');
+    ok('social nothing changes hands until both confirm', await A.page.evaluate(() => VP.S.owned.includes('cap_teal') && !VP.S.owned.includes('sailor') && VP.Online.trade.st === 1));
+    // B changes its mind: A's confirmation is reset
+    await tap(B.page, '#onl [data-o=trGive][data-i=""]');
+    ok('social a changed offer resets the other side\'s confirmation', await until(A.page, () => VP.Online.trade && VP.Online.trade.st === 0, null, 8000));
+    await tap(B.page, '#onl [data-o=trGive][data-i=sailor]');
+    await until(A.page, () => { const b = document.querySelector('#onl [data-o=trOk]'); return b && !b.disabled && /Marinheiro/.test(document.querySelector('#onl .otheirs').textContent); }, null, 10000);
+    await sleep(400); await tap(A.page, '#onl [data-o=trOk]');
+    await until(B.page, () => { const b = document.querySelector('#onl [data-o=trOk]'); return b && !b.disabled && /✔/.test(document.querySelector('#onl .otheirs').textContent); }, null, 10000);
+    await sleep(400); await L.shot(B.page, 'online-m-trade-confirm');
+    await tap(B.page, '#onl [data-o=trOk]');
+    ok('social trade completes on both sides', await until(A.page, () => VP.S.owned.includes('sailor') && !VP.S.owned.includes('cap_teal'), null, 10000) && await until(B.page, () => VP.S.owned.includes('cap_teal') && !VP.S.owned.includes('sailor'), null, 10000), [await A.page.evaluate(() => VP.S.owned), await B.page.evaluate(() => VP.S.owned)]);
+    ok('social the traded item is taken off the cat that wore it', await A.page.evaluate(() => !VP.S.wear.mimosa.head && VP.S.wear.mimosa.neck === 'gold_chain') && await B.page.evaluate(() => !VP.S.wear.mimo.body));
+    ok('social each side is told what it got and the day count goes up', /Troca feita/.test((await info(A.page)).toast) && await A.page.evaluate(() => VP.S.trades.n === 1) && await B.page.evaluate(() => VP.S.trades.n === 1));
+    await sleep(300); await L.shot(A.page, 'online-m-trade-done');
+    const bodies = S.state.bodies.filter(x => x.trade);
+    ok('social trade travelled as item ids only', bodies.length > 0 && bodies.every(x => Object.keys(x.trade).sort().join() === 'give,st,to' && (x.trade.give === null || /^[a-z0-9_]+$/.test(x.trade.give))));
+    await sleep(7000);
+    ok('social the offer is cleared afterwards', await A.page.evaluate(() => !VP.Online.trade) && (await S.db.rows('vp_presence')).every(r => !r.trade), (await S.db.rows('vp_presence')).map(r => r.trade));
+    // a muted cat cannot invite
+    await B.page.evaluate(id => VP.Online.mute(id, true), ida);
+    await A.page.evaluate(id => { VP.Online.tradeOpen(id); VP.Online.tradeGive('gold_chain'); }, idb);
+    await sleep(4000);
+    ok('social a muted cat cannot send invitations', await B.page.evaluate(() => VP.Online.sheet !== 'inv' && ![...VP.Online.remotes.values()][0].offer));
+    ok('social zero console errors', A.errors.length === 0 && B.errors.length === 0, [A.errors, B.errors]);
+    await A.browser.close(); await B.browser.close(); await S.close();
   }
 
   // ================= failures: 503, mid-session outage, kill switch, full city =================

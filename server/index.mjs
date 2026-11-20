@@ -16,7 +16,7 @@
 //   server -> {t:"join", p:{k,id,name,cat,x,z,ry,a,car}} / {t:"leave", k}
 //   client -> {t:"e", k:"dance"}     server -> {t:"e", k:<player>, e:"dance"}
 //   client -> {t:"p", i:3}           server -> {t:"p", k:<player>, i:3}
-//   client -> {t:"paw", i:2}         server -> {t:"pawok", i, slot} to the winner, {t:"paw", slot, taken:[...]} to the room
+//   client -> {t:"paw", i:2, s:slot}       server -> {t:"pawok", i, slot} to the winner, {t:"paw", slot, taken:[...]} to the room
 //   client -> {t:"report", id, reason}   server -> {t:"reported", ok:true}
 //   server -> {t:"error", error:"ticket"|"room"|"busy"|"too-many"|"replaced"|"rate"|"idle"} and the socket closes
 import http from 'node:http';
@@ -213,7 +213,7 @@ export function createOnlineServer(opts = {}) {
     },
     paw(p, m) {
       const paws = p.room.paws;
-      if (!Number.isInteger(m.i) || m.i < 0 || m.i >= PAWS_PER_ROOM || paws.taken.has(m.i)) return;
+      if (!Number.isInteger(m.i) || m.i < 0 || m.i >= PAWS_PER_ROOM || paws.taken.has(m.i) || (m.s != null && m.s !== paws.slot)) return;
       paws.taken.add(m.i);
       send(p.ws, { t: 'pawok', i: m.i, slot: paws.slot });
       cast(p.room, { t: 'paw', slot: paws.slot, taken: [...paws.taken] });

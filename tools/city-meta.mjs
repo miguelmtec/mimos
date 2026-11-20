@@ -5,7 +5,7 @@ export const META = {
   rio_vidigal: { flag: '🇧🇷', mood: 0, pal: 0, palms: 1, stars: 6 }, rio_santamarta: { flag: '🇧🇷', mood: 2, pal: 2, palms: 1, stars: 6 }, rio_urca: { flag: '🇧🇷', mood: 5, pal: 2, palms: 1, stars: 9 },
   rio_lapa: { flag: '🇧🇷', mood: 4, pal: 4, palms: 1, stars: 9 }, rio_maracana: { flag: '🇧🇷', mood: 2, pal: 2, palms: 1, stars: 12 },
   rioverde: { flag: '🏡', mood: 5, pal: 2, palms: 1, stars: 0, hometown: 1 }, goiania: { flag: '🇧🇷', mood: 5, pal: 2, palms: 1, stars: 6 },
-  saopaulo: { flag: '🇧🇷', mood: 1, pal: 1, stars: 9 }, brasilia: { flag: '🇧🇷', mood: 5, pal: 2, palms: 1, stars: 9 }, salvador: { flag: '🇧🇷', mood: 0, pal: 0, palms: 1, stars: 12 },
+  saopaulo: { flag: '🇧🇷', mood: 1, pal: 1, stars: 9 }, brasilia: { flag: '🇧🇷', mood: 5, pal: 2, stars: 9 }, salvador: { flag: '🇧🇷', mood: 0, pal: 0, palms: 1, stars: 12 },
   bh: { flag: '🇧🇷', mood: 4, pal: 4, stars: 12 }, recife: { flag: '🇧🇷', mood: 2, pal: 2, palms: 1, stars: 15 }, fortaleza: { flag: '🇧🇷', mood: 2, pal: 2, palms: 1, stars: 15 }, natal: { flag: '🇧🇷', mood: 0, pal: 0, palms: 1, stars: 15 },
   belem: { flag: '🇧🇷', mood: 3, pal: 3, palms: 1, stars: 18 }, manaus: { flag: '🇧🇷', mood: 2, pal: 2, palms: 1, stars: 18 }, floripa: { flag: '🇧🇷', mood: 2, pal: 2, palms: 1, stars: 18 },
   curitiba: { flag: '🇧🇷', mood: 3, pal: 3, stars: 21 }, portoalegre: { flag: '🇧🇷', mood: 4, pal: 4, stars: 21 },

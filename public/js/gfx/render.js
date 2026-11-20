@@ -146,7 +146,7 @@ const platY = (p, x, y) => (p ? hAt(p.x, p.y) + p.h : hAt(x, y));
 function catY(c) {
   if (c.jump) { const j = c.jump, f = Math.min(1, j.t / j.dur); return U.lerp(platY(j.fp, j.fx, j.fy), platY(j.tp, j.tx, j.ty), f) + Math.sin(f * Math.PI) * j.arc; }
   let y = platY(c.plat, c.x, c.y);
-  if (c.dropT > 0) y += (c.dropH || 0) * Math.pow(c.dropT / 0.26, 2); else if (c.climbT > 0) y -= 0.5 * (c.climbT / 0.18);
+  if (c.dropT > 0) y += (c.dropH || 0) * Math.pow(c.dropT / 0.26, 2); else if (c.climbT > 0) y -= 0.5 * Math.min(1, c.climbT / 0.18);
   return y;
 }
 R.catY = catY;
@@ -340,7 +340,8 @@ function updateCamera(G, dt) {
   const hilly = W.real && (W.real.tags || []).includes('morro') && (W.real.tags || []).includes('comunidade'); // steep, dense maps: look from higher up so the alleys stay readable
   const wantDist = G.over && G.won ? 6 : G.car ? 12.5 + Math.abs(G.car.spd) * 0.008 : (G.boss && !G.boss.dead ? 12 : hilly ? 10.5 : 8.6) * (R.w < R.h ? 1.06 : 1), pitch0 = G.car ? (hilly ? 0.5 : 0.36) : hilly ? 0.78 : 0.44;
   // arriving in a real city: start low, looking at the horizon (and at the skyline landmark, if the city has one), then ease up
-  if (cam.intro > 0) cam.intro -= dt; const lookUp = cam.intro > 0 ? Math.min(1, cam.intro / 1.4) : 0, lu = lookUp * lookUp * (3 - 2 * lookUp), pitch = pitch0 + (0.1 - pitch0) * lu;
+  // (hemmed in by buildings, the low shot is skipped: the leader must stay in frame)
+  if (cam.intro > 0) cam.intro -= dt; const lookUp = cam.intro > 0 ? Math.min(1, cam.intro / 1.4) * Math.min(1, Math.pow(cam.dist / wantDist, 2)) : 0, lu = lookUp * lookUp * (3 - 2 * lookUp), pitch = pitch0 + (0.1 - pitch0) * lu;
   // collision-lite: pull the camera in if a building is in the way
   const fx0 = Math.cos(cam.yaw), fz0 = Math.sin(cam.yaw);
   let maxD = wantDist;
@@ -351,7 +352,9 @@ function updateCamera(G, dt) {
   const sh = G.shake * 0.012, ex = maxD < wantDist ? (wantDist - cam.dist) * 0.5 : 0;
   const cpx = cam.x - fx0 * cam.dist * Math.cos(pitch), cpz = cam.z - fz0 * cam.dist * Math.cos(pitch); let cpy = cam.by + 1.3 + cam.dist * Math.sin(pitch) + ex; if (W.real) cpy = Math.max(cpy, W.hpx(cpx / S, cpz / S) + 1.6);
   camera.position.set(cpx + (Math.random() - 0.5) * sh, cpy + (Math.random() - 0.5) * sh, cpz);
-  camera.lookAt(cam.x + fx0 * 3.2, cam.by + 1.2 + lu * 2.6, cam.z + fz0 * 3.2);
+  // in tight streets the camera is pulled in and up: look less far ahead then, or the leader slides off the bottom of the screen
+  const la = 3.2 * Math.min(1, Math.pow(cam.dist / wantDist, 1.6));
+  camera.lookAt(cam.x + fx0 * la, cam.by + 1.2 + lu * 2.6, cam.z + fz0 * la);
   I.yaw = cam.yaw; R.yaw = cam.yaw;
   G.view = { x0: a.x - 600, x1: a.x + 600, y0: a.y - 600, y1: a.y + 600 };
   // mouse -> world point (desktop aim)

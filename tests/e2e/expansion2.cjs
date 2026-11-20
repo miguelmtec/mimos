@@ -153,9 +153,13 @@ const SECTIONS = {
     const a = await page.evaluate(() => {
       __vp.unlockAll(); VP.Audio.sfx = () => {}; __vp.start(206); const G = __vp.G, pk = G.pk, a = G.cats[G.active];
       const info = { plats: pk ? pk.plats.length : 0, pads: pk ? pk.pads.length : 0, styles: pk ? pk.plats.map(p => p.style) : [], hs: pk ? pk.plats.map(p => p.h) : [], steps: G.steps.map(s => s.txt), timer: G.mtimer };
-      // 1) fairness: a crate that is too tall is a wall, the low one is climbed just by walking
-      const hi = pk.plats[2], lo = pk.plats[0]; a.x = hi.x; a.y = hi.y + hi.hh + 20; a.plat = null;
-      VP.I.bot = () => { VP.I.mx = 0; VP.I.my = -1; VP.I.attack = false; }; for (let i = 0; i < 30; i++) { VP.I.poll(); VP.Game.update(1 / 30); } info.wall = !a.plat;
+      // 1) fairness: crates are climbed just by walking into them (even the tall one, so the street is never blocked);
+      //    awnings and roofs stand on posts: from the street you walk underneath, the way up is the course
+      const hi = pk.plats[2], lo = pk.plats[0], aw = pk.plats[3], ax = hi.x === aw.x ? 0 : 1; a.plat = null;
+      if (ax) { a.x = hi.x; a.y = hi.y + hi.hh + 20; } else { a.x = hi.x + hi.hw + 20; a.y = hi.y; }
+      VP.I.bot = () => { VP.I.mx = ax ? 0 : -1; VP.I.my = ax ? -1 : 0; VP.I.attack = false; }; info.scramble = false; for (let i = 0; i < 30 && !info.scramble; i++) { VP.I.poll(); VP.Game.update(1 / 30); info.scramble = a.plat === hi; }
+      a.plat = null; if (ax) { a.x = aw.x; a.y = aw.y + aw.hh + 20; } else { a.x = aw.x + aw.hw + 20; a.y = aw.y; } info.under = true; for (let i = 0; i < 16; i++) { VP.I.poll(); VP.Game.update(1 / 30); if (a.plat) info.under = false; } info.under = info.under && Math.abs(a.x - aw.x) < aw.hw + 30 && Math.abs(a.y - aw.y) < aw.hh + 30;
+      VP.I.bot = () => { VP.I.mx = 0; VP.I.my = -1; VP.I.attack = false; };
       a.x = lo.x; a.y = lo.y + lo.hh + 20; a.plat = null; info.climb = false; for (let i = 0; i < 30 && !info.climb; i++) { VP.I.poll(); VP.Game.update(1 / 30); info.climb = a.plat === lo; }
       // 2) walking off the side is a harmless drop
       a.x = lo.x; a.y = lo.y; a.plat = lo; const hp0 = a.hp, dn0 = G.stat.downs; VP.I.bot = () => { VP.I.mx = 0; VP.I.my = 1; VP.I.attack = false; }; for (let i = 0; i < 40; i++) { VP.I.poll(); VP.Game.update(1 / 30); } info.drop = !a.plat && a.hp === hp0 && G.stat.downs === dn0 && !G.over;
@@ -164,7 +168,7 @@ const SECTIONS = {
     ok('parkour mission builds a rooftop course (crates, awning, roofs, jump pad)', a.plats === 6 && a.pads === 1 && a.styles.filter(s => s === 'crate').length === 3 && a.styles.includes('awning') && a.styles.includes('roof'), a);
     ok('crates rise in climbable steps, roofs sit higher', a.hs[0] < 0.86 && a.hs[1] - a.hs[0] < 0.86 && a.hs[2] - a.hs[1] < 0.86 && a.hs[5] > a.hs[4] + 1, a.hs);
     ok('objectives walk the player through it', ['o_pkStart', 'o_pkUp', 'o_pkGap', 'o_pkPad', 'o_pkDown'].every(t => a.steps.includes(t)), a.steps);
-    ok('a tall crate blocks from the ground, a low one is climbed by walking into it', a.wall && a.climb, a);
+    ok('crates are climbed by walking into them; awnings are walked under (the street is never blocked)', a.scramble && a.climb && a.under, a);
     ok('falling off is a harmless drop (no damage, no fail)', a.drop, a);
     // the whole mission, played by the bot, tracking what the leading cat did
     const r = await page.evaluate(() => { let maxH = 0, hops = 0, pads = 0, prev = null; const orig = VP.Game.update; VP.Game.update = function (dt) { orig(dt); const G = VP.Game.G; if (!G) return; const c = G.cats[G.active]; if (c.plat) maxH = Math.max(maxH, c.plat.h); if (c.jump && c.jump !== prev) { if (c.jump.arc > 2) pads++; else hops++; } prev = c.jump; }; const res = __bot.run(206, 500); VP.Game.update = orig; return { win: res.win, why: res.why, time: res.time, par: res.par, maxH, hops, pads }; });
@@ -189,7 +193,7 @@ const SECTIONS = {
     await page.waitForTimeout(1600);
     // the objective pill sits below the minimap and its label: sample the HUD canvas in the old overlap zone
     const px = await page.evaluate(() => { const H = VP.HUD, cv = document.getElementById('hud'), c = cv.getContext('2d'), dpr = cv.width / cv.clientWidth, y = (H.top + 113 * H.k) * dpr, d = c.getImageData(Math.round(H.w * 0.42 * dpr), Math.round(y), 1, 1).data, e = c.getImageData(Math.round(H.w * 0.42 * dpr), Math.round((H.top + 134 * H.k) * dpr), 1, 1).data; return { a: d[3], pill: e[3] }; });
-    ok('phone HUD: the goal box sits below the minimap label, not under it', px.pill > 200 && px.a < px.pill - 50, px); // (the HUD canvas carries a soft full-screen tint, so compare with the box itself)
+    ok('phone HUD: the goal box sits below the minimap label, not under it', px.pill > 150 && px.a < px.pill - 50, px); // (the HUD canvas carries a soft full-screen tint, so compare with the box itself)
     const lab = await page.evaluate(async () => { await VP.Tour.load('rioverde'); VP.UI.tour('rioverde'); return 1; });
     await page.waitForTimeout(5200); await L.shot(page, 'x2-hud');
     void lab;

@@ -11,6 +11,8 @@ const NAMES = ['mimo', 'mimosa', 'morticia'], CATCOL = { mimo: '#8ff3ff', mimosa
 H.EMO = [['miau', '😺', 'Z'], ['dance', '💃', 'X'], ['sit', '🪑', 'C'], ['wave', '👋', 'V']]; H.emoOpen = 0;
 // emote buttons live in the calm moments: free roam and city visits, on foot, outside the tutorial
 H.emoOn = G => !!G && G.free && !G.car && !G.tutorial && !G.over && !G.trial;
+// phones: above the stick area; mouse and keyboard: tucked in the bottom-left corner
+H.layoutEmo = function () { const k = H.k, b = H.btn, by = H.h - H.bot, t = I.touch; b.emo = { x: 30 * k, y: by - (t ? 250 : 34) * k, r: 20 * k }; H.EMO.forEach((e, i) => { b['em_' + e[0]] = t ? { x: (34 + i * 60) * k, y: by - 310 * k, r: 25 * k } : { x: (88 + i * 58) * k, y: by - 38 * k, r: 25 * k }; }); H.emoTouch = t; };
 H.init = function (canvas) { cv = canvas; c = cv.getContext('2d'); H.resize(); addEventListener('resize', H.resize); };
 H.resize = function () {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -26,7 +28,7 @@ H.resize = function () {
   b.special = { x: w - 60 * k, y: by - 236 * k, r: 31 * k }; b.dash = { x: w - 132 * k, y: by - 206 * k, r: 26 * k }; b.ctx = { x: w - 60 * k, y: by - 318 * k, r: 31 * k };
   H.map = { x: w - 56 * k, y: st + 56 * k, r: 46 * k };
   // emotes: a small toggle on the left edge (above the stick area) that opens four big buttons
-  b.emo = { x: 30 * k, y: by - 250 * k, r: 20 * k }; H.EMO.forEach((e, i) => { b['em_' + e[0]] = { x: (34 + i * 60) * k, y: by - 310 * k, r: 25 * k }; });
+  H.layoutEmo();
   H.atkHint = { x: w - 92 * k, y: by - 112 * k }; H.stickHint = { x: 88 * k, y: by - 112 * k };
 };
 H.hit = function (x, y) {
@@ -138,6 +140,7 @@ H.draw = function (G, dt) {
   // ---- controls ----
   controls(G, k, t, touch, a);
   if (H.emoOn(G)) {
+    if (H.emoTouch !== touch) H.layoutEmo();
     if (H.emoOpen > 0) H.emoOpen -= dt;
     const eb = H.btn.emo; c.save(); c.globalAlpha = 0.9; c.beginPath(); c.arc(eb.x, eb.y, eb.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = H.emoOpen > 0 ? GOLD : 'rgba(255,255,255,.7)'; c.stroke(); c.restore();
     c.font = 20 * k + 'px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText('😺', eb.x, eb.y + 1);

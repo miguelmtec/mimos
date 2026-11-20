@@ -164,10 +164,10 @@ I.poll = function () {
   I.ctxHeld = !!(k.e || k.r || k.f || I.held.ctx !== undefined);
 };
 // Haptic feedback on hits (Android browsers; iOS has no navigator.vibrate and simply ignores this). Off in Settings.
-VP.haptic = function (ms) {
+VP.haptic = function (ms, gap) {
   try {
     if (!I.touch || I.bot || !navigator.vibrate || VP.ls.get('vp_haptic') === '0') return false;
-    const now = performance.now(); if (now - (VP._hapT || 0) < 70) return false;
+    const now = performance.now(); if (now - (VP._hapT || 0) < (gap || 70)) return false; // rapid fire must not turn into a constant buzz
     VP._hapT = now; navigator.vibrate(ms); VP.haptics = (VP.haptics || 0) + 1; return true;
   } catch (e) { return false; }
 };

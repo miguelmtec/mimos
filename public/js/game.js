@@ -219,7 +219,7 @@ Game.healTeam = healTeam;
 // src: 'bolt' | 'bite' | 'snatch' | 'car' | 'hair' | 'roar'
 function hurtDog(e, dmg, src, fx, fy, kb) {
   if (e.dead) return;
-  VP.haptic(e.isBoss ? 14 : 9);
+  VP.haptic(e.isBoss ? 14 : 9, 170);
   if (G.catnip > 0) dmg *= 1.6;
   let shown = dmg, tink = false;
   const exposed = e.isBoss && e.boss.phase === 'exposed';
@@ -434,7 +434,7 @@ function doSpecial(c) {
 Game.special = doSpecial;
 // ---------- parkour course: low roofs, crates, gaps and jump pads ----------
 // The simulation stays 2D: a course is a set of rectangles ("platforms") with a height. The leading cat climbs anything up to
-// CLIMB higher than where it stands just by walking into it, hops over short gaps on its own when it walks off an edge
+// CLIMB higher than where it stands just by walking into it (crates can be scrambled up from the street at any height), hops over short gaps on its own when it walks off an edge
 // towards another platform, and is launched by jump pads. Walking off anywhere else is a harmless drop. No jump button:
 // it plays the same on touch and keyboard. plats: {x, y, hw, hh (px), h (3D units), solid}, pads: {x, y, plat, to: {x, y, plat}}.
 const CLIMB = 0.85, HOP = 150;
@@ -456,9 +456,9 @@ function pkJump(c, dt) {
 function pkMove(c, dx, dy, mode) {
   const cur = c.plat || null, ch = cur ? cur.h : 0, nx = c.x + dx, ny = c.y + dy, np = platAt(nx, ny);
   if (np && np !== cur && np.h > ch + 0.01) {
-    if (np.h - ch <= CLIMB) { c.x = nx; c.y = ny; c.plat = np; c.climbT = 0.18; sfx('step', 0.08); return false; } // low enough: climb
-    if (np.solid && !cur) return true;                 // a wall for cats on the ground
-    if (!cur) return step(c, dx, dy, mode);            // roofs on posts: walk underneath
+    // low enough: climb. Crates (solid) can always be scrambled up from the street, so a course never blocks the way.
+    if (np.h - ch <= CLIMB || (np.solid && !cur)) { c.x = nx; c.y = ny; c.plat = np; c.climbT = np.h - ch <= CLIMB ? 0.18 : 0.3; sfx('step', 0.08); return false; }
+    if (!cur) return step(c, dx, dy, mode);            // awnings and roofs on posts: walk underneath
   }
   if (cur) {
     if (np === cur || (np && np.h <= ch)) { c.x = nx; c.y = ny; if (np !== cur) { c.plat = np; c.dropH = ch - np.h; c.dropT = 0.16; } return false; }

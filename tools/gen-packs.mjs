@@ -79,7 +79,7 @@ const packs = {
   },
   // ---- Rio: three more neighbourhoods ----
   rio_urca: {
-    places: [['Praia Vermelha', -22.9553, -43.1650], ['Estação do Bondinho', -22.9555, -43.1662], ['Pista Cláudio Coutinho', -22.9547, -43.1632], ['Mureta da Urca', -22.9478, -43.1632], ['Praia da Urca', -22.9482, -43.1641], ['Quadrado da Urca', -22.9452, -43.1612], ['Instituto Benjamin Constant', -22.9538, -43.1697]],
+    places: [['Praia Vermelha', -22.9553, -43.1650], ['Estação do Bondinho', -22.9555, -43.1662], ['Pista Cláudio Coutinho', -22.9547, -43.1632], ['Mureta da Urca', -22.9478, -43.1632], ['Praia da Urca', -22.9482, -43.1641], ['Quadrado da Urca', -22.9452, -43.1612], ['Praça General Tibúrcio', -22.9551, -43.1668]],
     missions: [
       M('photo', 'Cartão-Postal do Pão de Açúcar', 'Sugarloaf Postcard', 'O bondinho sobe, o sol desce e a Mimosa quer as duas coisas na mesma foto. Praia Vermelha primeiro!', 'The cable car goes up, the sun goes down and Mimosa wants both in the same photo. Praia Vermelha first!', { n: 4 }, ['Praia Vermelha', 'Estação do Bondinho', 'Mureta da Urca', 'Praia da Urca']),
       M('deliver', 'Bilhete do Bondinho', 'Cable Car Ticket', 'A vovó gata sonha em subir de bondinho. Leve o bilhete até a estação antes da última viagem.', 'Grandma cat dreams of riding the cable car. Get her ticket to the station before the last ride.', null, ['Estação do Bondinho']),
@@ -90,7 +90,7 @@ const packs = {
       M('chain', 'Entregas do Bairro Tranquilo', 'Quiet Neighbourhood Deliveries', 'Na Urca todo mundo se conhece e todo mundo pediu sachê. Busque na praia e entregue no Quadrado.', 'In Urca everybody knows everybody and everybody ordered treats. Pick up at the beach and deliver to the harbour square.', { n: 4 }, ['Praia da Urca', 'Quadrado da Urca', 'Mureta da Urca', 'Praia Vermelha']),
       M('kites', 'Pipas ao Pé do Morro', 'Kites at the Foot of the Hill', 'O vento desce do Pão de Açúcar e leva as pipas pra areia. Corre!', 'The wind comes down from Sugarloaf and carries the kites to the sand. Run!', { n: 9 }),
       M('rescue', 'Gatinho no Caminho do Morro', 'Kitten on the Hill Path', 'Um filhote seguiu os turistas morro acima e ficou com medo de descer. Suba e traga ele no colo.', 'A kitten followed the tourists up the hill and got scared to come down. Climb up and carry it back.'),
-      M('race', 'Volta da Urca', 'Urca Loop', 'Um passeio de conversível pela orla mais bonita da cidade. Devagar nas curvas: tem pescador na mureta!', 'A convertible ride along the prettiest shore in town. Easy on the bends: there are anglers on the sea wall!', null, ['Praia da Urca', 'Mureta da Urca', 'Quadrado da Urca', 'Instituto Benjamin Constant', 'Praia Vermelha']),
+      M('race', 'Volta da Urca', 'Urca Loop', 'Um passeio de conversível pela orla mais bonita da cidade. Devagar nas curvas: tem pescador na mureta!', 'A convertible ride along the prettiest shore in town. Easy on the bends: there are anglers on the sea wall!', null, ['Praia da Urca', 'Mureta da Urca', 'Quadrado da Urca', 'Praça General Tibúrcio', 'Praia Vermelha']),
     ],
   },
   rio_lapa: {

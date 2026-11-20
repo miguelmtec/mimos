@@ -144,6 +144,7 @@ export function ensureOnlineSchema(sql) {
       target_user_id uuid,
       room text not null default '',
       reason text not null,
+      source text not null default 'poll',
       created_at timestamptz not null default now())`;
     await Promise.all([
       sql`create index if not exists vp_presence_room_idx on vp_presence (room, updated_at)`,

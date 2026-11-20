@@ -8,14 +8,14 @@ const HOUR = 3600e3, DAY = 24 * HOUR;
 
 export function createFakeBackend() {
   let t, seq, last;
-  const reset = () => { t = { users: [], codes: [], sessions: [], cats: [], saves: [] }; seq = 0; last = 0; };
+  const reset = () => { t = { users: [], codes: [], sessions: [], cats: [], saves: [], presence: [], reports: [] }; seq = 0; last = 0; };
   reset();
   // strictly increasing clock, so "order by created_at" is deterministic
   const now = () => new Date((last = Math.max(last + 1, Date.now())));
   const catRow = (c) => ({ ...c, spec: structuredClone(c.spec) });
 
   const handlers = [
-    [/^create (table|index) if not exists /, () => []],
+    [/^create (unlogged )?(table|index) if not exists /, () => []],
 
     [/^delete from vp_login_codes where created_at < now\(\) - interval '1 day'$/, () => {
       t.codes = t.codes.filter((c) => c.created_at > Date.now() - DAY);
@@ -114,6 +114,48 @@ export function createFakeBackend() {
       row.updated_at = now();
       return [{ updated_at: row.updated_at }];
     }],
+    // ---------- Cidade Online (api/online) ----------
+    [/^select name, spec from vp_cats where id = \? and user_id = \?$/, ([id, uid]) =>
+      t.cats.filter((c) => c.id === id && c.user_id === uid).map((c) => ({ name: c.name, spec: structuredClone(c.spec) }))],
+    [/^delete from vp_presence where updated_at < now\(\) - interval '30 seconds'$/, () => {
+      t.presence = t.presence.filter((p) => p.updated_at >= Date.now() - 30e3);
+      return [];
+    }],
+    [/^select room, count\(\*\)::int as n, \(count\(\*\) filter \(where ip_hash = \?::text and id <> \?::text\)\)::int as mine from vp_presence where updated_at > now\(\) - interval '10 seconds' group by room$/, ([ip, id]) => {
+      const by = new Map();
+      for (const p of t.presence) {
+        if (p.updated_at <= Date.now() - 10e3) continue;
+        const r = by.get(p.room) || { room: p.room, n: 0, mine: 0 };
+        r.n++; if (p.ip_hash === ip && p.id !== id) r.mine++;
+        by.set(p.room, r);
+      }
+      return [...by.values()];
+    }],
+    [/^with me as \( insert into vp_presence as p \(id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, ip_hash, user_id\) values .* on conflict \(id\) do update set .* where p\.updated_at <= now\(\) - interval '800 milliseconds' returning p\.id, p\.room \) select me\.id as self, o\.id, .* from me left join vp_presence o on o\.room = me\.room and o\.id <> me\.id and o\.updated_at > now\(\) - interval '10 seconds' order by o\.updated_at desc nulls last limit \?::int$/, (p) => {
+      const [id, room, x, z, ry, anim, car, name, cat, cv, emote, es, phrase, ps, paws, ip_hash, user_id, need, limit] = p;
+      const at = Date.now();
+      let row = t.presence.find((r) => r.id === id);
+      if (row && row.updated_at > at - 800) return [];                 // the rate limit of the upsert
+      if (!row) { row = { id }; t.presence.push(row); }
+      Object.assign(row, { room, x, z, ry, anim, car, name, cat: JSON.parse(cat), cv, emote, es, phrase, ps, paws, ip_hash, user_id, updated_at: at });
+      const wanted = String(need || '').split(',');
+      const others = t.presence.filter((o) => o.room === room && o.id !== id && o.updated_at > at - 10e3)
+        .sort((a, b) => b.updated_at - a.updated_at).slice(0, limit)
+        .map((o) => ({ self: id, id: o.id, name: o.name, x: o.x, z: o.z, ry: o.ry, anim: o.anim, car: o.car, cv: o.cv, emote: o.emote, es: o.es,
+          phrase: o.phrase, ps: o.ps, paws: o.paws, age: Math.round(at - o.updated_at), cat: wanted.includes(o.id) ? structuredClone(o.cat) : null }));
+      return others.length ? others : [{ self: id, id: null }];
+    }],
+    [/^insert into vp_online_reports \(reporter_id, target_id, target_name, target_cat, target_user_id, room, reason, source\) select /, (p) => {
+      const [reporter_id, target_id, room, reason, tid2, rid2, max] = p;
+      const recent = t.reports.filter((r) => r.reporter_id === rid2 && r.created_at > Date.now() - HOUR);
+      if (recent.length >= max || recent.some((r) => r.target_id === target_id)) return [];
+      const target = t.presence.find((r) => r.id === tid2);
+      const row = { id: String(++seq), reporter_id, target_id, target_name: target ? target.name : '', target_cat: target ? structuredClone(target.cat) : null,
+        target_user_id: target ? target.user_id : null, room, reason, source: 'poll', created_at: now() };
+      t.reports.push(row);
+      return [{ id: row.id }];
+    }],
+    [/^delete from vp_presence where id = \?$/, ([id]) => { t.presence = t.presence.filter((r) => r.id !== id); return []; }],
   ];
 
   const sql = async (strings, ...params) => {
@@ -126,7 +168,7 @@ export function createFakeBackend() {
     return hit[1](params);
   };
 
-  const TABLES = { vp_users: 'users', vp_login_codes: 'codes', vp_sessions: 'sessions', vp_cats: 'cats', vp_saves: 'saves' };
+  const TABLES = { vp_users: 'users', vp_login_codes: 'codes', vp_sessions: 'sessions', vp_cats: 'cats', vp_saves: 'saves', vp_presence: 'presence', vp_online_reports: 'reports' };
   return {
     name: 'fake',
     sql,
@@ -134,6 +176,7 @@ export function createFakeBackend() {
     rows: async (table) => structuredClone(t[TABLES[table]]),
     expireCodes: async () => { for (const c of t.codes) c.expires_at = new Date(Date.now() - 1000); },
     expireSessions: async () => { for (const s of t.sessions) s.expires_at = new Date(Date.now() - 1000); },
+    agePresence: async (ms) => { for (const p of t.presence) p.updated_at -= ms; },
     close: async () => {},
   };
 }

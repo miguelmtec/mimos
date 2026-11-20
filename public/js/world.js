@@ -133,7 +133,7 @@ function setComp(w, lot, spec) {
     const g = hor ? [0, 5] : [5, 0]; set(tx + g[0], ty + g[1], GAP); w.flap[(ty + g[1]) * w.W + tx + g[0]] = 1;
     lot.gapX = px(g[0]) + (hor ? -T : 0); lot.gapY = py(g[1]) + (hor ? 0 : -T);
     P.push({ k: 'flap', x: px(g[0]), y: py(g[1]), hor: !hor, lot });
-    const lv = hor ? [6, side === 's' ? 1 : 6] : [side === 'w' ? 6 : 1, 6];
+    const lv = spec.vault ? [1, 1] : hor ? [6, side === 's' ? 1 : 6] : [side === 'w' ? 6 : 1, 6];
     P.push({ k: 'lever', x: px(lv[0]), y: py(lv[1]), link: id, lot });
   }
   if (gate === 'key') P.push(Object.assign({ k: 'sdoor', key: true, id }, gp));

@@ -296,6 +296,7 @@ Art.dog = function (c, x, y, p) {
 // ================= CARS (top-down, facing +x) =================
 const CARS = Art.CARS = {
   pink: { len: 86, wid: 42, body: '#ff4fb8', body2: '#c2267f', conv: 1 },
+  gold: { len: 86, wid: 42, body: '#ffd23f', body2: '#b8860b', conv: 1 },
   sedan: { len: 82, wid: 40, body: '#2de2e6', body2: '#168d91' },
   taxi: { len: 82, wid: 40, body: '#ffd23f', body2: '#c79a12', taxi: 1 },
   sport: { len: 84, wid: 40, body: '#9b5de5', body2: '#5f2fa3' },

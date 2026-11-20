@@ -14,8 +14,8 @@ const BOSS = { 10: 'chief', 20: 'poodle', 30: 'rott', 40: 'pug', 50: 'dogcatcher
 // [type, PT name, EN name, params]
 const RAW = {
   1: ['reach', 'Rolê na Orla', 'Boardwalk Stroll', { cols: 2, rows: 2, groups: 1, tut: 1 }],
-  2: ['waves', 'Vira-latas na Areia', 'Beach Mutts', { cols: 2, rows: 2, waves: [['mutt', 'mutt'], ['mutt', 'chi', 'chi'], ['mutt', 'mutt', 'chi', 'chi']] }],
-  3: ['eat', 'Rodízio da Mortícia', "Morticia's Buffet", { n: 12, time: 100 }],
+  2: ['waves', 'Vira-latas na Areia', 'Beach Mutts', { cols: 2, rows: 2, waves: [['mutt', 'mutt', 'mutt'], ['mutt', 'mutt', 'chi', 'chi', 'chi'], ['mutt', 'mutt', 'mutt', 'chi', 'chi', 'chi', 'mutt']] }],
+  3: ['eat', 'Rodízio da Mortícia', "Morticia's Buffet", { n: 25, time: 110 }],
   4: ['rescue', 'Miau por Socorro', 'Meow for Help', { cages: [['fence', 'bite']] }],
   5: ['truck', 'O Caminhão de Petiscos', 'The Treat Truck', { gate: 'switch', wanted: 1 }],
   6: ['rescue', 'A Portinha Secreta', 'The Secret Cat Flap', { cages: [['gap', 'link']] }],
@@ -28,7 +28,7 @@ const RAW = {
   13: ['waves', 'Briga no Beco', 'Alley Brawl', { arena: 1, waves: 4 }],
   14: ['chase', 'Pega a Van!', 'Catch That Van!', { targets: ['van'], time: 90 }],
   15: ['vault', 'O Cofre de Atum', 'The Tuna Vault', { gate: 'fence', wanted: 2 }],
-  16: ['eat', 'Feira Noturna', 'Night Market', { n: 20, time: 110, hunger: 1.4 }],
+  16: ['eat', 'Feira Noturna', 'Night Market', { n: 38, time: 120, hunger: 1.4 }],
   17: ['rescue', 'Gatinhos do Fliperama', 'Arcade Kittens', { cages: [['switch', 'key'], ['fence', 'bite']] }],
   18: ['reach', 'Travessia Neon', 'Neon Crossing', { cols: 4, rows: 3, groups: 5, time: 150 }],
   19: ['escape', 'Sirenes na Avenida', 'Sirens on the Avenue', { wanted: 3, car: 1 }],
@@ -36,16 +36,16 @@ const RAW = {
   21: ['race', 'Peixe Fresco Expresso', 'Fresh Fish Express', { cps: 6, time: 100 }],
   22: ['defend', 'Churrasco no Píer', 'Pier Barbecue', { waves: 4 }],
   23: ['truck', 'Carga do Cais', 'Dock Cargo', { gate: 'gap', wanted: 2 }],
-  24: ['cash', 'Quebra-Caixotes', 'Crate Cracker', { cash: 450, time: 140 }],
+  24: ['cash', 'Quebra-Caixotes', 'Crate Cracker', { cash: 260, time: 150 }],
   25: ['rescue', 'Resgate na Marina', 'Marina Rescue', { cages: [['fence', 'bite'], ['open', 'key'], ['gap', 'link']] }],
   26: ['waves', 'Maré de Latidos', 'Tide of Barks', { arena: 1, waves: 5 }],
   27: ['chase', 'A Limusine do Capitão', "The Captain's Limo", { targets: ['limo'], time: 110, drop: 3.5 }],
   28: ['vault', 'Cofre do Iate Clube', 'Yacht Club Vault', { gate: 'key', wanted: 3 }],
-  29: ['escape', 'Cerco no Porto', 'Harbor Lockdown', { wanted: 3, survive: 70 }],
+  29: ['escape', 'Cerco no Porto', 'Harbor Lockdown', { wanted: 3, survive: 50 }],
   30: ['boss', 'Capitão Rottweiler', 'Captain Rott', {}],
   31: ['reach', 'Tempestade no Cais', 'Storm on the Docks', { cols: 4, rows: 3, groups: 6, time: 170 }],
   32: ['truck', 'Contêiner 32', 'Container 32', { gate: 'switch', wanted: 3, heavy: 1 }],
-  33: ['eat', 'Fome de Trovão', 'Thunder Hunger', { n: 24, time: 110, hunger: 1.7 }],
+  33: ['eat', 'Fome de Trovão', 'Thunder Hunger', { n: 48, time: 130, hunger: 1.7 }],
   34: ['defend', 'O Gerador', 'The Generator', { waves: 5, gen: 1 }],
   35: ['chase', 'Comboio da Carrocinha', 'Catcher Convoy', { targets: ['van', 'van'], time: 150, drop: 3 }],
   36: ['rescue', 'Jaulas na Chuva', 'Cages in the Rain', { cages: [['switch', 'link'], ['key', 'bite'], ['fence', 'key']] }],
@@ -53,7 +53,7 @@ const RAW = {
   38: ['vault', 'Cofre do Contrabando', "Smuggler's Vault", { gate: 'switch', wanted: 3 }],
   39: ['escape', 'Quatro Estrelas', 'Four Stars', { wanted: 4, car: 1 }],
   40: ['boss', 'Don Pug', 'Don Pug', {}],
-  41: ['cash', 'Cobertura de Luxo', 'Penthouse Payday', { cash: 750, time: 160 }],
+  41: ['cash', 'Cobertura de Luxo', 'Penthouse Payday', { cash: 600, time: 170 }],
   42: ['race', 'Corrida das Colinas', 'Hillside Rush', { cps: 8, time: 120, cols: 4 }],
   43: ['truck', 'O Grande Golpe do Sachê', 'The Great Sachet Heist', { gate: 'key', wanted: 4, heavy: 1 }],
   44: ['defend', 'Última Trincheira', 'Last Stand', { waves: 6 }],
@@ -61,17 +61,17 @@ const RAW = {
   46: ['chase', 'Caça ao Caminhão-Jaula', 'Hunt the Cage Truck', { targets: ['van', 'limo'], time: 170, drop: 2.6 }],
   47: ['waves', 'Tropa de Elite Canina', 'Canine Elite Squad', { arena: 1, waves: 6 }],
   48: ['vault', 'O Cofre do Rei', "The King's Vault", { gate: 'gap', wanted: 4 }],
-  49: ['escape', 'Cinco Estrelas', 'Five Stars', { wanted: 5, survive: 50, car: 1 }],
+  49: ['escape', 'Cinco Estrelas', 'Five Stars', { wanted: 5, survive: 30, car: 1 }],
   50: ['boss', 'O Rei da Carrocinha', 'The Dog Catcher King', {}],
   // VIP bonus district: Marina Dourada
   51: ['race', 'Volta de Ouro', 'Golden Lap', { cps: 7, time: 110, lv: 12 }],
-  52: ['eat', 'Buffet do Iate', 'Yacht Buffet', { n: 22, time: 110, lv: 16 }],
+  52: ['eat', 'Buffet do Iate', 'Yacht Buffet', { n: 42, time: 125, lv: 16 }],
   53: ['vault', 'Cofre do Comodoro', "Commodore's Vault", { gate: 'fence', wanted: 2, lv: 20 }],
   54: ['waves', 'Festa no Convés', 'Deck Party', { arena: 1, waves: 5, lv: 24 }],
   55: ['chase', 'Regata Dourada', 'Golden Regatta', { targets: ['limo', 'limo'], time: 160, drop: 3, lv: 28 }],
   // Season: Natal Neon
   61: ['race', 'Entrega de Presentes', 'Gift Delivery', { cps: 6, time: 100, lv: 10 }],
-  62: ['eat', 'Ceia de Natal', 'Christmas Feast', { n: 20, time: 110, lv: 14 }],
+  62: ['eat', 'Ceia de Natal', 'Christmas Feast', { n: 36, time: 120, lv: 14 }],
   63: ['rescue', 'Gatinhos de Natal', 'Christmas Kittens', { cages: [['fence', 'bite'], ['switch', 'link'], ['gap', 'link']], lv: 18 }],
   64: ['defend', 'A Árvore de Natal', 'The Christmas Tree', { waves: 5, lv: 22 }],
 };
@@ -101,7 +101,7 @@ function pack(B, n) {
   if (lv >= 14) pool.push('heavy'); if (lv >= 25) pool.push('cop', 'shooter'); if (lv >= 35) pool.push('heavy', 'catcher');
   const out = []; for (let i = 0; i < n; i++) out.push(B.rng.pick(pool)); return out;
 }
-const gsize = B => 2 + Math.floor(B.lv / 13);
+const gsize = B => 3 + Math.floor(B.lv / 14);
 function mk(B) {
   const W = B.W, G = B.G;
   B.steps = [];
@@ -150,7 +150,7 @@ function mk(B) {
   B.getaway = () => (VP.Shop && VP.Shop.skin('car')) ? 'gold' : 'pink';
   return B;
 }
-const GATE_CAT = { fence: 'mimosa', switch: 'mimo', gap: 'morticia', key: 'morticia', open: null };
+const GATE_CAT = { fence: 'mimosa', switch: 'mimo', gap: 'morticia', key: null, open: null };
 const GATE_TXT = { fence: 'o_gateFence', switch: 'o_gateSwitch', gap: 'o_gateGap', key: 'o_gateKey' };
 // adds the "open this compound" steps; returns the gate prop
 function gateSteps(B, lot, gate) {
@@ -173,7 +173,7 @@ function gateSteps(B, lot, gate) {
   return prop;
 }
 function compGuards(B, lot, n, extra) {
-  const inner = lot.vault ? [[1, 3], [6, 4], [3, 6], [4, 1]] : [[2, 2], [5, 2], [2, 5], [5, 5], [3, 3]];
+  const gap = lot.gate === 'gap', inner = lot.vault ? (gap ? [[3, 6], [4, 6], [6, 5], [6, 6]] : [[1, 3], [6, 4], [3, 6], [4, 1]]) : gap ? [[2, 5], [5, 5], [3, 5], [4, 4]] : [[2, 2], [5, 2], [2, 5], [5, 5], [3, 3]];
   const types = pack(B, n).concat(extra || []);
   types.forEach((t, i) => { const s = inner[i % inner.length]; Game.addDog(t, (lot.tx + s[0] + 0.5) * T, (lot.ty + s[1] + 0.5) * T, { guard: true, tag: 'g', aggro: 150 }); });
 }
@@ -197,7 +197,7 @@ const TYPES = {
       const p = B.p, A = B.R('arena');
       B.begin(p.arena ? { x: A.cx, y: A.cy } : B.ix(2, 2), p.arena ? { traffic: 0 } : {});
       if (p.arena) arenaStuff(B);
-      const waves = Array.isArray(p.waves) ? p.waves : Array.from({ length: p.waves }, (_, i) => pack(B, 3 + i + Math.floor(B.lv / 10)));
+      const waves = Array.isArray(p.waves) ? p.waves : Array.from({ length: p.waves }, (_, i) => pack(B, Math.min(10, Math.round(4 + i * 1.3 + B.lv / 14))));
       B.G.noPolice = true; B.G.noHeat = true;
       waves.forEach((w, i) => { B.wait(i ? 2.2 : 1.5, 'o_waveIn', [i + 1, waves.length]); B.wave(w, { args: [i + 1, waves.length] }); });
     },
@@ -207,7 +207,7 @@ const TYPES = {
       const p = B.p, G = B.G;
       B.begin(B.front('arena', 's'));
       for (const c of ['plaza1', 'plaza2', 'plaza3']) B.dogs(B.front(c, 'n'), pack(B, gsize(B) - 1), { carry: B.rng.pick(['bone', 'steak', 'donut']) });
-      G.mtimer = p.time;
+      G.mtimer = p.time; G.restock = 9;
       B.step({ txt: 'o_eat', args: [p.n], cat: 'morticia', act: 'attack', eat: true, at: () => nearestFood(G), done: () => G.stat.eaten >= p.n, prog: () => [Math.min(p.n, G.stat.eaten), p.n] });
     },
   },
@@ -237,7 +237,7 @@ const TYPES = {
     setup(B) {
       const p = B.p, G = B.G;
       const start = B.front('arena', 's');
-      B.begin(start);
+      B.begin(start); G.noHeat = true;
       p.cages.forEach((c, i) => {
         const lot = B.R('comp' + 'ACBD'[i]), gate = c[0], lock = c[1];
         const gp = gate === 'fence' ? B.propOf(lot, 'fgate') : gate === 'switch' ? B.propOf(lot, 'laser') : gate === 'open' ? null : B.propOf(lot, 'sdoor');
@@ -258,12 +258,12 @@ const TYPES = {
     plan(B) { B.comps.compA = { gate: B.p.gate }; },
     setup(B) {
       const p = B.p, G = B.G, lot = B.R('compA');
-      B.begin(B.front('arena', 's'));
-      const truck = Game.addCar('truck', lot.cx, lot.cy - 30, Math.PI / 2, { locked: true });
+      B.begin(B.front('arena', 's')); G.noHeat = true;
+      const truck = Game.addCar('truck', lot.cx, lot.cy - 30, Math.PI / 2, { locked: true }); truck.hp = truck.max = 420;
       compGuards(B, lot, gsize(B), p.heavy ? ['heavy'] : []);
       B.dogs({ x: lot.frontX + 120, y: lot.frontY + 30 }, pack(B, 1));
       const gp = gateSteps(B, lot, p.gate);
-      const dest = B.ix(B.cols, 0, -48, 80);
+      const hl = B.W.roles[0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
       B.step({ txt: 'o_enterTruck', act: 'ctx', enter() { truck.locked = false; }, tick() { if (gp && gp.done) truck.locked = false; }, at: () => truck, done: () => G.car === truck });
       B.step({ txt: 'o_driveTruck', car: true, enter() { B.wantedOn(p.wanted); }, at: () => dest, done: () => G.car === truck && U.d2(truck.x, truck.y, dest.x, dest.y) < 110 * 110, fail: () => truck.dead ? 'truck' : null });
       B.step({ txt: 'o_done', enter() { G.minWanted = 0; G.heat = 0; G.noPolice = true; }, done: () => true, at: () => null });
@@ -273,7 +273,7 @@ const TYPES = {
     plan(B) { B.comps.compC = { gate: B.p.gate, vault: true }; },
     setup(B) {
       const p = B.p, G = B.G, lot = B.R('compC'), start = B.front('arena', 's');
-      B.begin(start);
+      B.begin(start); G.noHeat = true;
       compGuards(B, lot, gsize(B) + 1);
       B.dogs({ x: lot.frontX - 100, y: lot.frontY + 40 }, pack(B, 2));
       gateSteps(B, lot, p.gate);
@@ -293,7 +293,7 @@ const TYPES = {
       if (p.survive) B.step({ txt: 'o_survive', t: 0, fight: true, tick(dt) { this.t += dt; }, done() { return this.t >= p.survive; }, prog() { return [Math.floor(this.t), p.survive]; }, at: () => null, roam: true });
       if (p.car) {
         const cp = B.ix(B.cols - 1, B.rows - 1, 48, -120), car = Game.addCar(B.getaway(), cp.x, cp.y, -Math.PI / 2);
-        const dest = B.ix(B.cols, 0, -48, 90);
+        const hl = W.roles[B.geo === 0 ? 2 : 0].house, dest = { x: hl.cx + 60, y: (hl.ty + 9.6) * T };
         B.step({ txt: 'o_enterCar', act: 'ctx', at: () => car, done: () => G.car === car, fail: () => car.dead ? 'car' : null });
         B.step({ txt: 'o_driveSafe', car: true, at: () => dest, done: () => !!G.car && U.d2(G.car.x, G.car.y, dest.x, dest.y) < 110 * 110 });
       } else B.goto(B.corner(B.cols - 1, 0, 's'), 'o_hideout');
@@ -305,7 +305,7 @@ const TYPES = {
       const p = B.p, G = B.G;
       const sp = B.ix(1, B.rows - 1, 60, 48);
       B.begin(sp);
-      const car = Game.addCar(B.getaway(), sp.x, sp.y, 0); Game.enterCar(car);
+      const car = Game.addCar(B.getaway(), sp.x, sp.y, 0); car.hp = car.max = 260; Game.enterCar(car);
       G.noHeat = true; G.mtimer = p.time;
       const cw = B.cols, rh = B.rows, loops = [[[1, 1], [cw - 1, 1], [cw - 1, rh - 1], [1, rh - 1]], [[0, 0], [cw, 0], [cw, rh], [0, rh]], [[1, 0], [2, 0], [2, rh], [1, rh]]];
       p.targets.forEach((type, i) => {
@@ -313,8 +313,8 @@ const TYPES = {
         let tc = null;
         B.step({
           txt: 'o_chase', args: [i + 1, p.targets.length], car: true, ram: true,
-          enter() { tc = Game.addCar(type, route[0].x, route[0].y, 0, { ai: 'target', route, wi: 1, drop: p.drop || 0 }); tc.hp = tc.max = tc.max * (1 + B.lv * 0.012); tc.top *= 0.82 + Math.min(0.14, B.lv * 0.003); },
-          at: () => tc, done: () => tc.dead, prog: () => [Math.round((1 - Math.max(0, tc.hp) / tc.max) * 100), 100],
+          enter() { tc = Game.addCar(type, route[0].x, route[0].y, 0, { ai: 'target', route, wi: 1, drop: p.drop || 0 }); tc.hp = tc.max = tc.max * (4.5 + B.lv * 0.04); tc.top *= 0.82 + Math.min(0.14, B.lv * 0.003); },
+          at: () => tc, done: () => !!tc && tc.dead, prog: () => tc ? [Math.round((1 - Math.max(0, tc.hp) / tc.max) * 100), 100] : [0, 100],
           fail: () => (!G.car && car.dead) ? 'car' : null,
         });
       });
@@ -327,11 +327,11 @@ const TYPES = {
       B.begin(sp);
       const car = Game.addCar(B.getaway(), sp.x, sp.y, 0); Game.enterCar(car);
       G.noHeat = true; G.mtimer = p.time;
-      let i = 1, j = B.rows - 1;
+      const W = B.W; let i = B.D.c0 + 1, j = B.D.r0 + B.rows - 1;
       for (let k = 0; k < p.cps; k++) {
         let ni = i, nj = j;
-        for (let t = 0; t < 30 && (Math.abs(ni - i) + Math.abs(nj - j) < 2 || Math.abs(ni - i) + Math.abs(nj - j) > 4); t++) { ni = B.rng.int(0, B.cols); nj = B.rng.int(0, B.rows); }
-        i = ni; j = nj; const pt = B.ix(i, j);
+        for (let t = 0; t < 40 && (Math.abs(ni - i) + Math.abs(nj - j) < 2 || Math.abs(ni - i) + Math.abs(nj - j) > 4); t++) { ni = U.clamp(i + B.rng.int(-3, 3), 0, W.cols); nj = U.clamp(j + B.rng.int(-3, 3), 0, W.rows); }
+        i = ni; j = nj; const pt = { x: W.RX[i], y: W.RY[j] };
         B.step({ txt: 'o_checkpoint', args: [k + 1, p.cps], car: true, at: () => pt, done: () => !!G.car && U.d2(G.car.x, G.car.y, pt.x, pt.y) < 100 * 100, enter() { if (k) { G.mtimer += 2; VP.Audio.sfx('cash'); G.stat.cash += 40; } }, fail: () => (!G.car && car.dead) ? 'car' : null });
       }
     },
@@ -340,10 +340,10 @@ const TYPES = {
     setup(B) {
       const p = B.p, G = B.G, W = B.W, lot = B.R('house');
       B.begin({ x: lot.cx, y: lot.cy + 90 });
-      const h = Game.addProp({ k: 'house', gen: !!p.gen, tree: B.m.d === 6, x: (lot.tx + 4) * T, y: (lot.ty + 3) * T, hp: 260 + B.lv * 6 });
+      const h = Game.addProp({ k: 'house', gen: !!p.gen, tree: B.m.d === 6, x: (lot.tx + 4) * T, y: (lot.ty + 3) * T, hp: 900 + B.lv * 30 });
       G.houseField = W.field(h.x, h.y + T * 1.6, 0);
       G.noPolice = true; G.noHeat = true;
-      for (let i = 0; i < p.waves; i++) { B.wait(i ? 2.5 : 2, 'o_waveIn', [i + 1, p.waves]); B.wave(pack(B, 3 + i + Math.floor(B.lv / 9)), { raid: true, txt: 'o_defend', args: [i + 1, p.waves], hold: { x: h.x, y: h.y + 90 } }); }
+      for (let i = 0; i < p.waves; i++) { B.wait(i ? 2.5 : 2, 'o_waveIn', [i + 1, p.waves]); B.wave(pack(B, Math.min(10, Math.round(4 + i * 1.3 + B.lv / 14))), { raid: true, txt: 'o_defend', args: [i + 1, p.waves], hold: { x: h.x, y: h.y + 90 } }); }
     },
   },
   boss: {

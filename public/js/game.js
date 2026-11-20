@@ -15,17 +15,17 @@ const CAT = {
   morticia: { hp: 80, spd: 195 },
 };
 const DOG = Game.DOG = {
-  mutt: { hp: 38, spd: 104, dmg: 8, cd: 1.0, r: 13, reach: 38, carry: ['bone', 0.4], cash: 12 },
-  chi: { hp: 16, spd: 168, dmg: 5, cd: 0.7, r: 9, reach: 30, carry: ['treat', 0.2], cash: 6 },
-  cop: { hp: 66, spd: 100, dmg: 12, cd: 1.1, r: 14, reach: 42, carry: ['donut', 0.65], cash: 18, police: 1 },
-  shooter: { hp: 44, spd: 92, dmg: 9, cd: 1.5, r: 13, reach: 34, range: 330, keep: 200, carry: ['ammo', 1], cash: 20 },
-  catcher: { hp: 52, spd: 108, dmg: 6, cd: 2.0, r: 13, reach: 36, range: 250, keep: 150, carry: ['net', 1], cash: 22, police: 1 },
-  heavy: { hp: 130, spd: 74, dmg: 20, cd: 1.6, r: 18, reach: 52, armor: 90, carry: ['steak', 0.6], cash: 40, slam: 1 },
-  chief: { hp: 620, spd: 82, dmg: 20, r: 30, armor: 110, boss: { moves: ['charge', 'slam', 'nets', 'summon'], minion: ['cop', 'cop', 'catcher'], snack: 'donut' } },
-  poodle: { hp: 820, spd: 98, dmg: 22, r: 28, armor: 130, boss: { moves: ['spray', 'barrels', 'summon', 'charge', 'spray'], minion: ['chi', 'chi', 'chi', 'chi'], snack: 'sushi' } },
-  rott: { hp: 1050, spd: 84, dmg: 26, r: 32, armor: 150, boss: { moves: ['slam', 'barrels', 'charge', 'summon', 'slam'], minion: ['mutt', 'shooter', 'mutt'], snack: 'steak' } },
-  pug: { hp: 1250, spd: 92, dmg: 28, r: 30, armor: 170, boss: { moves: ['suck', 'spray', 'charge', 'barrels', 'summon'], minion: ['chi', 'shooter', 'heavy'], snack: 'donut' } },
-  dogcatcher: { hp: 1500, spd: 96, dmg: 30, r: 31, armor: 190, boss: { moves: ['nets', 'charge', 'barrels', 'summon', 'slam', 'spray', 'suck'], minion: ['catcher', 'cop', 'heavy', 'shooter'], snack: 'steak' } },
+  mutt: { hp: 55, spd: 104, dmg: 8, cd: 1.0, r: 13, reach: 38, carry: ['bone', 0.4], cash: 12 },
+  chi: { hp: 22, spd: 168, dmg: 5, cd: 0.7, r: 9, reach: 30, carry: ['treat', 0.2], cash: 6 },
+  cop: { hp: 90, spd: 100, dmg: 12, cd: 1.1, r: 14, reach: 42, carry: ['donut', 0.65], cash: 18, police: 1 },
+  shooter: { hp: 60, spd: 92, dmg: 9, cd: 1.5, r: 13, reach: 34, range: 330, keep: 200, carry: ['ammo', 1], cash: 20 },
+  catcher: { hp: 70, spd: 108, dmg: 6, cd: 2.0, r: 13, reach: 36, range: 250, keep: 150, carry: ['net', 1], cash: 22, police: 1 },
+  heavy: { hp: 190, spd: 74, dmg: 20, cd: 1.6, r: 18, reach: 52, armor: 120, carry: ['steak', 0.6], cash: 40, slam: 1 },
+  chief: { hp: 3600, spd: 82, dmg: 18, r: 30, armor: 240, boss: { moves: ['charge', 'slam', 'nets', 'summon'], minion: ['cop', 'cop', 'catcher'], snack: 'donut' } },
+  poodle: { hp: 4600, spd: 98, dmg: 20, r: 28, armor: 280, boss: { moves: ['spray', 'barrels', 'summon', 'charge', 'spray'], minion: ['chi', 'chi', 'chi', 'chi'], snack: 'sushi' } },
+  rott: { hp: 5600, spd: 84, dmg: 22, r: 32, armor: 320, boss: { moves: ['slam', 'barrels', 'charge', 'summon', 'slam'], minion: ['mutt', 'shooter', 'mutt'], snack: 'steak' } },
+  pug: { hp: 6400, spd: 92, dmg: 23, r: 30, armor: 360, boss: { moves: ['suck', 'spray', 'charge', 'barrels', 'summon'], minion: ['chi', 'shooter', 'heavy'], snack: 'donut' } },
+  dogcatcher: { hp: 7200, spd: 96, dmg: 20, r: 31, armor: 400, boss: { moves: ['nets', 'charge', 'barrels', 'summon', 'slam', 'spray', 'suck'], minion: ['catcher', 'cop', 'heavy', 'shooter'], snack: 'steak' } },
 };
 const CARSTAT = { gold: [100, 345], pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
 
@@ -60,7 +60,7 @@ Game.create = function (world, mission) {
     heat: 0, wanted: 0, minWanted: 0, calm: 0, copT: 2, car: null, ctx: null, revive: 0, keys: 0,
     stat: { ko: 0, eaten: 0, freed: 0, cash: 0, downs: 0, stolen: 0, dmg: 0 }, flags: {},
     steps: [], step: 0, stepT: 0, timer: null, fieldT: 0, field: null, fieldM: null, houseField: null, house: null,
-    hpMul: 1 + (mission.lv || 1) * 0.022, dmgMul: 1 + (mission.lv || 1) * 0.016, pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
+    hpMul: 1 + (mission.lv || 1) * 0.016, dmgMul: 1 + (mission.lv || 1) * 0.007, pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
   };
   return G;
 };
@@ -173,7 +173,7 @@ function moveToward(e, tx, ty, spd, dt, field, mode) {
 // ---------- damage ----------
 function hurtCat(c, dmg, fx, fy) {
   if (c.down || c.inv > 0 || G.over) return false;
-  if (G.car) { damageCar(G.car, dmg * 0.6); return true; }
+  if (G.car) { if (c.idx === G.active) damageCar(G.car, dmg * 0.6); return true; }
   if (c.name === 'mimosa') dmg *= 0.72;
   if (c.idx !== G.active) dmg *= 0.55;
   dmg = Math.max(1, Math.round(dmg));
@@ -226,7 +226,7 @@ function koDog(e) {
   if (Math.random() < 0.07) Game.addItem('coffee', e.x, e.y, true);
   if (e.isBoss) { for (let i = 0; i < 8; i++) Game.addItem(i % 2 ? 'cash' : 'treat', e.x, e.y, true); for (const o of G.dogs) if (!o.dead && o !== e) { o.dead = true; poof(o.x, o.y - 10); } }
   G.stat.cash += st.cash || 0;
-  if (e.police && !G.noHeat) G.heat = Math.min(5, G.heat + 0.3);
+  if (e.police && !G.noHeat) G.heat = Math.min(5, G.heat + 0.15);
 }
 function damageCar(car, dmg) {
   if (car.dead) return;
@@ -408,7 +408,13 @@ function updCat(c, dt) {
   c.t += dt; c.walk = 0;
   for (const k of ['cd', 'cd2', 'cdS', 'flash', 'inv', 'comboT', 'invis', 'root']) if (c[k] > 0) c[k] -= dt;
   c.atk = Math.max(0, c.atk - dt * 6); c.mouth = Math.max(0, c.mouth - dt * 4); c.recoil = Math.max(0, c.recoil - dt * 9);
-  if (c.down) return;
+  if (c.down) {
+    if (!G.car && c.idx !== G.active && G.field && W.distAt(G.cats[G.active].name === 'morticia' ? G.fieldM : G.field, c.x, c.y) < 0) {
+      c.lostT = (c.lostT || 0) + dt;
+      if (c.lostT > 2.5) { const a = active(), p = nearFree(a.x, a.y, 60, 0); if (p) { poof(c.x, c.y - 10, 6); c.x = p.x; c.y = p.y; poof(c.x, c.y - 10, 6); c.lostT = 0; } }
+    } else c.lostT = 0;
+    return;
+  }
   // role meters
   if (c.name === 'mimo') {
     c.idle += dt;
@@ -537,7 +543,7 @@ function pickTarget(e) {
 }
 function dogAttack(e) {
   const st = DOG[e.type], tg = e.target;
-  if (e.atkHouse) { const h = G.house; if (h && !h.done) { h.hp -= e.dmg; h.flash = 0.1; burst(h.x + U.rand(-30, 30), h.y, 4, '#fff1d6', 120, 'dot', 5); sfx('hit', 0.1); if (h.hp <= 0) { h.hp = 0; h.done = true; Game.fail('house'); } } return; }
+  if (e.atkHouse) { const h = G.house; if (h && !h.done) { h.hp -= e.dmg * 0.5; h.flash = 0.1; burst(h.x + U.rand(-30, 30), h.y, 4, '#fff1d6', 120, 'dot', 5); sfx('hit', 0.1); if (h.hp <= 0) { h.hp = 0; h.done = true; Game.fail('house'); } } return; }
   if (st.range && !e.disarmed) {
     const a = e.aim;
     if (e.type === 'shooter') { G.bullets.push({ k: 'ball', x: e.x + Math.cos(a) * 18, y: e.y - 12 + Math.sin(a) * 18, vx: Math.cos(a) * 290, vy: Math.sin(a) * 290, life: 1.6, dmg: e.dmg, from: 'dog', r: 6, t: 0 }); sfx('hairball', 0.1); }
@@ -622,7 +628,7 @@ function updBoss(e, dt) {
     }
     return;
   }
-  if (e.armor <= 0) { B.phase = 'exposed'; B.pt = 6.5; B.move = null; e.wind = 0; shake(12); hitstop(0.1); say(tr('exposed'), '#ffd23f', 2.6); sfx('break'); return; }
+  if (e.armor <= 0) { B.phase = 'exposed'; B.pt = 5; B.move = null; e.wind = 0; shake(12); hitstop(0.1); say(tr('exposed'), '#ffd23f', 2.6); sfx('break'); return; }
   const dx = tg.x - e.x, dy = tg.y - e.y, d = Math.hypot(dx, dy) || 1;
   if (!B.move) {
     e.face = dx > 0 ? 1 : -1; e.aim = Math.atan2(dy, dx);
@@ -662,7 +668,7 @@ function updBoss(e, dt) {
     if (B.mt > 1.3) { B.s1 = B.s2 = 0; end(); }
   } else if (mv === 'summon') {
     e.wind = Math.min(1, B.mt * 1.5);
-    if (B.mt > 0.7) { let n = 0; for (const o of G.dogs) if (!o.dead && !o.isBoss) n++; if (n < 6) for (const type of B.minion) { const p = nearFree(e.x, e.y, 110, 0); if (p) { Game.addDog(type, p.x, p.y, { hpMul: 0.7 }); poof(p.x, p.y - 10, 6); } } sfx('wanted', 0.5); end(); }
+    if (B.mt > 0.7) { let n = 0; for (const o of G.dogs) if (!o.dead && !o.isBoss) n++; if (n < 4) for (const type of B.minion) { const p = nearFree(e.x, e.y, 110, 0); if (p) { Game.addDog(type, p.x, p.y, { hpMul: 0.5 }); poof(p.x, p.y - 10, 6); } } sfx('wanted', 0.5); end(); }
   } else if (mv === 'nets') {
     e.wind = Math.min(1, B.mt * 1.6);
     if (B.mt > 0.6) { for (const c of alive()) { const a = Math.atan2(c.y - e.y, c.x - e.x); for (const off of [-0.18, 0.18]) G.bullets.push({ k: 'net', x: e.x, y: e.y - 20, vx: Math.cos(a + off) * 270, vy: Math.sin(a + off) * 270, life: 1.5, dmg: e.dmg * 0.4, from: 'dog', r: 14, t: 0 }); } sfx('net'); end(); }
@@ -747,7 +753,8 @@ function collect(c, it) {
 // ---------- props ----------
 function updProp(p, dt) {
   p.t += dt; if (p.flash > 0) p.flash -= dt;
-  if (p.done) return;
+  if (p.done && p.k !== 'stand') return;
+  if (p.k === 'stand' && G.restock && p.left < 3) { p.rs = (p.rs || 0) + dt; if (p.rs > G.restock) { p.rs = 0; p.left++; } }
   if (p.k === 'lever') { const m = G.cats[2]; for (const c of G.cats) if (!c.down && U.d2(c.x, c.y, p.x, p.y) < 34 * 34) { p.done = true; sfx('switch'); openLink(p.link); G.flags.lever = (G.flags.lever || 0) + 1; burst(p.x, p.y - 10, 8, '#7CFF6B', 140, 'star', 6); } void m; }
   else if ((p.k === 'sdoor' && p.key) || (p.k === 'cage' && p.lock === 'key')) {
     for (const c of G.cats) if (!c.down && U.d2(c.x, c.y, p.x, p.y) < 70 * 70) {
@@ -769,7 +776,7 @@ function carBlocked(c, x, y) {
 function updCar(c, dt, rdt) {
   c.t += dt; if (c.flash > 0) c.flash -= dt; if (c.hitCd > 0) c.hitCd -= dt;
   if (c.hp < c.max * 0.4 && Math.random() < dt * 8) part({ x: c.x + U.rand(-8, 8), y: c.y - 6, k: 'puff', size: 9, life: 0.6, col: 'rgba(60,60,70,.7)', vy: -40 });
-  const driven = G.car === c;
+  const driven = G.car === c, a0 = c.a;
   if (driven) {
     const m = Math.hypot(I.mx, I.my);
     if (m > 0.15) {
@@ -790,6 +797,7 @@ function updCar(c, dt, rdt) {
   else if (c.ai === 'target') updTargetCar(c, dt);
   else { c.spd *= Math.pow(0.05, dt); }
   if (c.ai !== 'traffic' || driven) {
+    if (c.a !== a0 && carBlocked(c, c.x, c.y)) { c.a = a0; if (carBlocked(c, c.x, c.y)) { for (let i = 0; i < 8; i++) { const an = i * 0.785, qx = c.x + Math.cos(an) * 10, qy = c.y + Math.sin(an) * 10; if (!carBlocked(c, qx, qy)) { c.x = qx; c.y = qy; break; } } } }
     const nx = c.x + Math.cos(c.a) * c.spd * dt + c.px * dt, ny = c.y + Math.sin(c.a) * c.spd * dt + c.py * dt;
     c.px *= Math.pow(0.02, dt); c.py *= Math.pow(0.02, dt);
     if (!carBlocked(c, nx, c.y)) c.x = nx; else bump(c);
@@ -810,13 +818,14 @@ function updCar(c, dt, rdt) {
       const nx = (o.x - c.x) / d, ny = (o.y - c.y) / d, rel = Math.abs(c.spd) + Math.abs(o.spd);
       const push = (46 - d) * 0.5;
       if (!carBlocked(c, c.x - nx * push, c.y - ny * push)) { c.x -= nx * push; c.y -= ny * push; }
+      if (o.ai === 'parked' && G.car !== o && !carBlocked(o, o.x + nx * push, o.y + ny * push)) { o.x += nx * push; o.y += ny * push; }
       if (rel > 90 && c.hitCd <= 0 && o.hitCd <= 0) {
         c.hitCd = o.hitCd = 0.4; const dmg = rel * 0.035;
         const involvesPlayer = G.car === c || G.car === o;
         if (involvesPlayer) { sfx('crash', 0.15); shake(8); burst((c.x + o.x) / 2, (c.y + o.y) / 2, 8, ['#ffd23f', '#fff'], 200, 'dot', 4, 0.3); }
         const hostile = k => k.ai === 'cop' || k.ai === 'target';
-        damageCar(c, hostile(o) && G.car === c ? dmg * 1.2 : hostile(c) ? dmg * 2.6 : dmg * 0.5);
-        damageCar(o, hostile(c) && G.car === o ? dmg * 1.2 : hostile(o) ? dmg * 2.6 : dmg * 0.5);
+        damageCar(c, hostile(o) && G.car === c ? dmg * 0.3 : hostile(c) ? dmg * 2.6 : dmg * 0.5);
+        damageCar(o, hostile(c) && G.car === o ? dmg * 0.3 : hostile(o) ? dmg * 2.6 : dmg * 0.5);
         o.px += nx * rel * 0.5; o.py += ny * rel * 0.5; c.spd *= 0.55;
         if (o.ai === 'traffic') { o.ai = 'parked'; if (involvesPlayer && !G.noHeat) G.heat = Math.min(5, G.heat + 0.2); }
       }
@@ -898,7 +907,7 @@ function exitCar(force) {
 Game.enterCar = enterCar; Game.exitCar = exitCar;
 
 // ---------- wanted ----------
-const CAP = [0, 2, 3, 5, 6, 8], CARCAP = [0, 0, 1, 2, 2, 3];
+const CAP = [0, 2, 3, 4, 5, 6], CARCAP = [0, 0, 1, 2, 2, 3];
 function updWanted(dt) {
   if (G.heat < G.minWanted) G.heat = G.minWanted;
   let police = 0, pcars = 0, seen = false;

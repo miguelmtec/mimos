@@ -148,7 +148,7 @@ Game.populate = function (o) {
   const nT = o.traffic === undefined ? 20 : o.traffic;
   for (let i = 0; i < (o.paws || 0); i++) { const p = W.randWalk(rng); Game.addItem('paw', p.x, p.y); }
   for (let i = 0; i < nT; i++) spawnTraffic(rng);
-  if (W.real) for (let i = 0; i < (o.parked === undefined ? 14 : o.parked); i++) { const p = W.randWalk(rng); if (W.gnd[Math.floor(p.y / T) * W.W + Math.floor(p.x / T)] === 1 && !W.blocked(p.x, p.y, 40, 3)) Game.addCar(rng.pick(['sedan', 'sport', 'taxi', 'sedan']), p.x, p.y, rng() * 6.283); }
+  if (W.real) for (let i = 0; i < (o.parked === undefined ? 14 : o.parked); i++) { const p = W.randWalk(rng); if (W.gnd[Math.floor(p.y / T) * W.W + Math.floor(p.x / T)] === 1 && !W.blocked(p.x, p.y, 40, 3)) Game.addCar(rng.pick(W.real.id === 'rioverde' ? ['pickup', 'pickup', 'sedan'] : ['sedan', 'sport', 'taxi', 'sedan']), p.x, p.y, rng() * 6.283); }
 };
 function spawnTraffic(rng) {
   if (W.real) { // real cities: cars follow the road polylines of the map
@@ -157,7 +157,7 @@ function spawnTraffic(rng) {
     for (const c of G.cars) if (U.d2(c.x, c.y, p.x, p.y) < 150 * 150) return;
     for (const c of G.cats) if (U.d2(c.x, c.y, p.x, p.y) < 220 * 220) return;
     if (W.blocked(p.x, p.y, 30, 3)) return;
-    Game.addCar(rng.pick(['sedan', 'sedan', 'taxi', 'sport']), p.x, p.y, 0, { ai: 'path', road, wi, dirn: rng() < 0.5 ? 1 : -1, spd: 80 });
+    Game.addCar(rng.pick(W.real.id === 'rioverde' ? ['pickup', 'pickup', 'sedan', 'pickup'] : ['sedan', 'sedan', 'taxi', 'sport']), p.x, p.y, 0, { ai: 'path', road, wi, dirn: rng() < 0.5 ? 1 : -1, spd: 80 });
     return;
   }
   const hor = rng() < 0.5, fwd = rng() < 0.5;

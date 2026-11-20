@@ -4,7 +4,10 @@
 const VP = window.VP, UI = VP.UI, t = (...a) => VP.t(...a);
 const Shop = VP.Shop = {};
 const PKEY = 'vp_purchases';
-const PRICE = { vip: '4,90', lives10: '1,99', season: '2,90', apoio5: '5,00', apoio10: '10,00', apoio20: '20,00' };
+// display prices only: the server (api/pix/_products.js) always decides what is charged
+const PRICE = { vip: '4,90', lives10: '1,99', season: '2,90', apoio5: '5,00', apoio10: '10,00', apoio20: '20,00', supporter_small: '0,99', skin_praia: '0,99', skin_agro: '0,99', skin_festa: '1,99', skin_natal: '1,99' };
+const PACKS = [['skin_praia', 'pack_praia', '🏄', 'linear-gradient(135deg,#2de2e6,#ff8a5c)'], ['skin_agro', 'pack_agro', '🤠', 'linear-gradient(135deg,#c98f4b,#5c3a18)'], ['skin_festa', 'pack_festa', '🎉', 'linear-gradient(135deg,#b967ff,#ff4fb8)'], ['skin_natal', 'pack_natal', '🎄', 'linear-gradient(135deg,#1f8f5a,#e01e37)']];
+Shop.PRICE = PRICE; Shop.PACKS = PACKS;
 let P = null;
 try { P = JSON.parse(VP.ls.get(PKEY)); } catch (e) { P = null; }
 if (!P || typeof P !== 'object' || !P.ids) P = { ids: {}, grants: {}, mural: [] };
@@ -46,15 +49,19 @@ S.shop = {
       <div class="card"><div class="art" style="background-image:url('${art('shop_season')}')"></div><div class="body"><h4>🎄 ${t('p_season')}</h4><p>${t('p_season_d')}</p>
         <div class="buy">${sea ? `<span class="owned">${t('owned')}</span>` : price('season') + `<button class="btn teal" data-act="buy" data-p="season">${t('buy')}</button>`}</div></div></div>
       <div class="card"><div class="art" style="background-image:url('${art('shop_apoio')}')"></div><div class="body"><h4>💖 ${t('p_apoio')} ${sup ? '· ' + t('supporter') + ' ✓' : ''}</h4><p>${t('p_apoio_d')}</p>
-        <div class="amts">${['apoio5', 'apoio10', 'apoio20'].map(p => `<button class="btn sm" data-act="buy" data-p="${p}">R$ ${PRICE[p].replace(',00', '')}</button>`).join('')}</div>
+        <div class="amts">${['supporter_small', 'apoio5', 'apoio10', 'apoio20'].map(p => `<button class="btn sm" data-act="buy" data-p="${p}">R$ ${PRICE[p].replace(',00', '')}</button>`).join('')}</div>
         <div class="buy" style="margin-top:8px"><button class="btn ghost sm" data-act="mural">🌟 ${t('mural')}</button></div></div></div>
       <div class="card mini"><div class="art" style="background:linear-gradient(135deg,#ff4f7a,#7a1050);display:flex;align-items:center;justify-content:center;font-size:44px">❤️</div><div class="body"><h4>${t('p_lives10')}</h4><p>${t('p_lives10_d')}</p><div class="buy">${price('lives10')}<button class="btn sm" data-act="buy" data-p="lives10">${t('buy')}</button></div></div></div>
     </div>
+    <h3 class="teal" style="margin:14px 0 2px">👕 ${t('packs')}</h3><p class="small">${t('packsSub')}</p>
+    <div class="packgrid">${PACKS.map(([prod, g, icon, bg]) => { const own = Shop.has(g), items = VP.Wardrobe && VP.Wardrobe.data ? VP.Wardrobe.data.items.filter(i => i.grant === g) : []; return `<div class="card pack"><div class="art" style="background:${bg}">${icon}</div><div class="body"><h4>${t('p_' + g)}</h4><p>${items.length} ${t('packItems')}: ${items.slice(0, 3).map(i => esc(i.name[VP.lang() === 'pt' ? 'pt' : 'en'])).join(', ')}…</p><div class="buy">${own ? `<span class="owned">${t('owned')}</span>` : price(prod)}<button class="btn ghost sm" data-act="packTry" data-g="${g}">👗 ${t('tryOn')}</button>${own ? '' : `<button class="btn teal sm" data-act="buy" data-p="${prod}">${t('buy')}</button>`}</div></div></div>`; }).join('')}</div>
     <button class="btn ghost" data-act="restore">🔑 ${t('restore')}</button>
     <p class="legal">${t('legal')}</p><div class="foot">${t('fan')}</div></div>`;
   },
 };
 Shop.open = () => UI.show('shop');
+// preview a cosmetic pack on the cats in the wardrobe (items stay locked until bought)
+UI.act.packTry = el => { const Wd = VP.Wardrobe, g = el.dataset.g, first = Wd.data.items.find(i => i.grant === g); Wd.slot = first.slot; Wd.tryPack = g; Wd.open(); };
 UI.act.shopBack = () => { const G = VP.Game.G; if (G && UI.state === 'play') { UI.hide(); UI.paused = false; } else UI.show('title'); };
 
 // ---------- try before you buy ----------

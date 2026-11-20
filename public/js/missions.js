@@ -365,6 +365,8 @@ M.startFree = function (pos, opts) {
     if (nx) G.markers.push({ x: pt.x, y: pt.y, k: 'mission', n: nx, col: '#ff4fb8' });
     for (let i = 0; i < 2; i++) { B.geo = d; const q = W.randWalkD(d, B.rng); if (U.d2(q.x, q.y, sp.x, sp.y) > 500 * 500) B.dogs(q, pack(B, 2 + (d > 1 ? 1 : 0)), { aggro: 170 }); }
   }
+  // chapters ("arcs"): one teal beam per open chapter, in its own district
+  { const slot = {}; for (const D of M.DIST) { if (!D.arc || !M.distOpen(D)) continue; const nx = M.list.find(x => x.d === D.id && !VP.S.stars[x.n]); if (!nx) continue; const k = slot[D.geo] = (slot[D.geo] || 0) + 1; if (k > 3) continue; const lot = W.roles[D.geo][['plaza2', 'plaza3', 'plaza1'][k - 1]]; if (!lot) continue; const q = W.front(lot, 'e'); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: nx.n, col: '#2de2e6' }); } }
   const shop = W.front(W.roles[0].plaza1, 's'); G.markers.push({ x: shop.x, y: shop.y, k: 'shop', col: '#ffd23f' });
   if (VP.Shop && VP.Shop.has('vip')) { const q = W.front(W.roles[2].plaza3, 'n'); const n = M.list.find(x => x.d === 5 && !VP.S.stars[x.n]) || M.get(51); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: n.n, col: '#ffd23f' }); }
   if (VP.Shop && VP.Shop.has('season')) { const q = W.front(W.roles[1].plaza2, 'n'); const n = M.list.find(x => x.d === 6 && !VP.S.stars[x.n]) || M.get(61); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: n.n, col: '#7CFF6B' }); }
@@ -394,7 +396,7 @@ M.tourMissions = function (id) {
   if (comu) defs = defs.filter(d => M.COMU_SAFE.includes(d.kind)); // hard rule: comunidade maps only get positive missions
   defs = defs.filter(d => !d.needs || d.needs.every(t => tags.includes(t))).slice(0, 10);
   const base = M.tourBase(meta), L = VP.lang;
-  const list = defs.map((d, k) => ({ n: base + k, type: 'tour', tourCity: id, name: [d.name.pt, d.name.en], story: d.story || null, p: Object.assign({ kind: d.kind, comu, seed: k }, d.params || {}, d.at ? { at: d.at } : {}), lv: Math.min(40, d.lv || 4 + (ci > 0 ? ci : 0) + k * 2), par: d.par || (d.kind === 'race' ? 260 : d.kind === 'deliver' || d.kind === 'kiterun' ? 160 : 190), hunger: 1, boss: null, bonus: true, side: true, d: 0, geo: 0 }));
+  const list = defs.map((d, k) => ({ n: base + k, type: 'tour', tourCity: id, name: [d.name.pt, d.name.en], story: d.story || null, p: Object.assign({ kind: d.kind, comu, seed: k }, d.params || {}, d.at ? { at: d.at } : {}), lv: Math.min(40, d.lv || 4 + (ci > 0 ? ci : 0) + k * 2), par: Math.round((d.par || (d.kind === 'race' ? 260 : d.kind === 'deliver' || d.kind === 'kiterun' ? 160 : 190)) * (tags.includes('morro') ? 1.4 : 1)), hunger: 1, boss: null, bonus: true, side: true, d: 0, geo: 0 }));
   void L;
   M.tourList = M.tourList.filter(m => m.tourCity !== id).concat(list);
   return list;
@@ -418,6 +420,7 @@ M.startTour = function (id) {
     W.roads = W.roads.filter(rd => rd.pts.length >= 2);
   }
   const sp = W.tourStart;
+  if (comu && !W.pitch && M.helpers) W.pitch = M.helpers.patch(W, sp.x, sp.y, 14, 3, (g, x, y) => (g === 7 || g === 3 ? 120 : 0) - (Math.abs(W.hpx(x + 90, y) - W.hpx(x - 90, y)) + Math.abs(W.hpx(x, y + 60) - W.hpx(x, y - 60))) * 60); // the little football pitch
   B.begin(sp, { paws: 1, traffic: comu ? 0 : (meta.traffic || 10), coffee: 10, parked: comu ? 0 : 14 });
   G.free = true; G.tour = id; G.steps = []; G.markers = []; G.npcs = [];
   S.paws = S.paws || {}; S.quests = S.quests || {}; S.tour = S.tour || {}; S.tour[id] = S.tour[id] || { seen: {} };
@@ -428,6 +431,8 @@ M.startTour = function (id) {
   // mission beams: spread around the start so they are easy to find
   ms.forEach((mm, k) => { let q = null; for (let i = 0; i < 40 && !q; i++) { const c = W.randWalk(r), d = Math.hypot(c.x - sp.x, c.y - sp.y); if (d > 180 + k * 60 && d < 520 + k * 130 && !G.markers.some(o => U.d2(o.x, o.y, c.x, c.y) < 200 * 200)) q = c; } q = q || W.randWalk(r); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: mm.n, col: VP.S.stars[mm.n] ? '#2de2e6' : '#ff4fb8' }); });
   if (S.avatar) { const f = Game.addFriend(sp.x + 30, sp.y + 50, 'avatar'); f.spec = S.avatar; f.label = S.avatar.label || ''; }
+  // friendly neighbours: elder cats in the comunidade, farmers at the Rio Verde fair
+  if (comu || id === 'rioverde') for (let i = 0; i < 4; i++) { const q = Game.nearFree(sp.x, sp.y, 120 + i * 70, 0); if (q) { const f = Game.addFriend(q.x, q.y, id === 'rioverde' ? 'farmer' : i % 2 ? 'elder' : 'f' + i); f.stay = true; f.wander = true; f.home = { x: q.x, y: q.y }; } }
   return G;
 };
 M.current = G => G.steps[G.step] || null;

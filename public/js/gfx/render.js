@@ -1,7 +1,8 @@
 // VICE PAWS — Three.js renderer: syncs the simulation (VP.Game.G) to a 3D scene. No game logic here.
-import { THREE, GB, MAT, buildCat, animCat, CAT_SPECS, buildDog, animDog, buildCar, itemGeo, buildProp } from './models.js';
+import { THREE, GB, MAT, buildCat, animCat, CAT_SPECS, buildDog, animDog, buildCar, itemGeo, buildProp, setDetail } from './models.js';
 import { buildCity, MOODS, LAND_H, glowMaterial } from './city.js';
 import { buildRealCity } from './realcity.js';
+import { updateChunks } from './lod.js';
 
 const VP = window.VP, U = VP.U, I = VP.I, S = 1 / 24;
 const R = VP.R3 = { ok: false, lost: false, quality: 2, fps: 60, mode: 'game', draws: 0 };
@@ -33,6 +34,7 @@ R.init = function (cv) {
   if (!renderer.getContext()) return false;
   R.quality = mobile ? 1 : 2;
   try { const q = VP.ls.get('vp_quality'); if (q !== null && q !== '') R.quality = U.clamp(+q, 0, 2); } catch (e) { /* ignore */ }
+  setDetail(R.quality === 0);
   cv.addEventListener('webglcontextlost', e => { e.preventDefault(); R.lost = true; if (VP.UI && VP.UI.toast) VP.UI.toast(VP.t('ctxLost')); });
   cv.addEventListener('webglcontextrestored', () => { R.lost = false; R.resize(); });
   scene = new THREE.Scene(); scene.fog = new THREE.Fog(0xf08a78, 60, 300);
@@ -56,10 +58,9 @@ R.resize = function () {
   R.w = w; R.h = h;
   const sc = h * R.pixelRatio() * 0.5 / Math.tan(camera.fov * Math.PI / 360);
   if (fx.mat) fx.mat.uniforms.scale.value = sc; if (city) city.glowMat.uniforms.scale.value = sc; if (fx.glowMat) fx.glowMat.uniforms.scale.value = sc;
-  if (city) { city.palms.count = R.quality === 0 ? Math.floor(city.palmCount * 0.5) : city.palmCount; }
   if (stageCam) { stageCam.aspect = w / h; stageCam.updateProjectionMatrix(); }
 };
-R.setQuality = function (q, auto) { q = U.clamp(q, 0, 2); if (q === R.quality) return; R.quality = q; if (!auto) VP.ls.set('vp_quality', '' + q); R.resize(); };
+R.setQuality = function (q, auto) { q = U.clamp(q, 0, 2); if (q === R.quality) return; const lowChanged = (q === 0) !== (R.quality === 0); R.quality = q; if (!auto) VP.ls.set('vp_quality', '' + q); setDetail(q === 0); if (lowChanged && dyn) { for (const [, o] of ents) dyn.remove(o); ents.clear(); } R.resize(); };
 // auto quality: measured FPS, only steps down (or back up once things are clearly fine)
 let fpsAcc = 0, fpsN = 0, lowT = 0, highT = 0;
 function autoQuality(dt) {
@@ -123,8 +124,9 @@ function pt(x, y, z, col, alpha, size, shape) {
 }
 function glow(x, y, z, col, size) { if (gn >= fx.GN) return; const i = gn++; fx.gpos[i * 3] = x; fx.gpos[i * 3 + 1] = y; fx.gpos[i * 3 + 2] = z; _c.set(col); fx.gcol[i * 3] = _c.r; fx.gcol[i * 3 + 1] = _c.g; fx.gcol[i * 3 + 2] = _c.b; fx.gsize[i] = size; }
 function shadow(x, z, y, rx, rz, rot) { if (sn >= 48) return; _e.set(0, rot || 0, 0); _q.setFromEuler(_e); _m4.compose(_p.set(x, y + 0.03, z), _q, _s.set(rx, 1, rz)); fx.shadows.setMatrixAt(sn++, _m4); }
-const hAt = (px, py) => W.real ? W.hpx(px, py) : (W.gnd[Math.floor(py / 48) * W.W + Math.floor(px / 48)] === 1 ? 0 : LAND_H);
-const H0 = (px, py) => W.real ? W.hpx(px, py) : 0;
+const onPitch = (px, py) => W.pitch && W.pitch.h !== undefined && Math.abs(px - W.pitch.x) < 88 && Math.abs(py - W.pitch.y) < 60;
+const hAt = (px, py) => W.real ? (onPitch(px, py) ? Math.max(W.pitch.h, W.hpx(px, py)) : W.hpx(px, py)) : (W.gnd[Math.floor(py / 48) * W.W + Math.floor(px / 48)] === 1 ? 0 : LAND_H);
+const H0 = (px, py) => W.real ? hAt(px, py) : 0;
 R.hAt = hAt;
 
 // ---------- entity meshes ----------
@@ -321,7 +323,8 @@ function updateCamera(G, dt) {
   if (G.car) { const d = U.angDiff(cam.yaw, G.car.a + (G.car.spd < -20 ? Math.PI : 0)); cam.yaw += d * Math.min(1, dt * (0.8 + Math.min(2.2, Math.abs(G.car.spd) / 120))); }
   else if (!I.rmb) { const m = Math.hypot(I.rawx || 0, I.rawy || 0); if (m > 0.3 && !I.attack) { cam.yaw += (I.rawx || 0) * dt * 1.15 * (I.rawy > 0.5 ? 0.4 : 1); } }
   if (G.over && G.won) cam.yaw += dt * 0.5;
-  const wantDist = G.over && G.won ? 6 : G.car ? 12.5 + Math.abs(G.car.spd) * 0.008 : (G.boss && !G.boss.dead ? 12 : 8.6) * (R.w < R.h ? 1.06 : 1), pitch = G.car ? 0.36 : 0.44;
+  const hilly = W.real && (W.real.tags || []).includes('morro'); // steep, dense maps: look from higher up so the alleys stay readable
+  const wantDist = G.over && G.won ? 6 : G.car ? 12.5 + Math.abs(G.car.spd) * 0.008 : (G.boss && !G.boss.dead ? 12 : hilly ? 10.5 : 8.6) * (R.w < R.h ? 1.06 : 1), pitch = G.car ? (hilly ? 0.5 : 0.36) : hilly ? 0.78 : 0.44;
   // collision-lite: pull the camera in if a building is in the way
   const fx0 = Math.cos(cam.yaw), fz0 = Math.sin(cam.yaw);
   let maxD = wantDist;
@@ -353,7 +356,7 @@ R.render = function (G, dt) {
   if (R.mode === 'stage') return renderStage(dt);
   if (!G) return;
   updateCamera(G, dt);
-  const a = G.car || G.cats[G.active], near = 1900 * 1900, nearItem = 1300 * 1300;
+  const a = G.car || G.cats[G.active], near = R.quality === 0 ? 1250 * 1250 : 1900 * 1900, nearItem = R.quality === 0 ? 900 * 900 : 1300 * 1300;
   for (const c of G.cats) syncCat(c, G, dt);
   for (const f of G.friends) { const o = obj(f, () => { const g = buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
   for (const e of G.dogs) if (U.d2(e.x, e.y, a.x, a.y) < near) syncDog(e, G, dt);
@@ -369,13 +372,15 @@ R.render = function (G, dt) {
   fx.activeRing.visible = !G.car && !ac.down; fx.activeRing.position.set(ac.x * S, hAt(ac.x, ac.y) + 0.05, ac.y * S); fx.activeRing.scale.setScalar(1 + Math.sin(G.real * 5) * 0.06);
   for (const c of G.cats) if (c.down && !G.car) glow(c.x * S, 0.8, c.y * S, '#ff4f7a', 5 + Math.sin(G.real * 6));
   const ob = G.free ? null : VP.Missions.objective(G), at = ob && ob.at;
-  if (at && !at.kind && at.x !== undefined || at && (at.kind === 'car' || at.kind === 'prop')) { fx.target.visible = true; fx.target.position.set(at.x * S, hAt(at.x, at.y), at.y * S); fx.target.userData.ring.rotation.y = G.real; fx.target.userData.beam.scale.set(1.1, 16, 1.1); } else fx.target.visible = false;
+  const farAt = at && at.x !== undefined && U.d2(at.x, at.y, ac.x, ac.y) > 70 * 70 && !(ob.step && ob.step.mini);
+  if (farAt && (!at.kind || at.kind === 'car' || at.kind === 'prop')) { fx.target.visible = true; fx.target.position.set(at.x * S, hAt(at.x, at.y), at.y * S); fx.target.userData.ring.rotation.y = G.real; fx.target.userData.beam.scale.set(1.1, 16, 1.1); } else fx.target.visible = false;
   syncParts(G);
   const m = R.moodOf(G);
   weather(G, G.real, m);
   if (m === 3) { R.flash = Math.max(0, (R.flash || 0) - dt * 3); if (Math.random() < dt * 0.09) { R.flash = 1; VP.Audio.sfx('thunder', 3); } } else R.flash = 0;
   applyMood(m, dt); setXmas(m === 6 && !W.real);
   for (; rn < fx.rings.length; rn++) fx.rings[rn].visible = false;
+  if (city.chunks && (frame & 3) === 0) updateChunks(city, camera.position, R.quality, scene.fog.far);
   flush();
   city.waterTex.offset.x = G.real * 0.004; city.waterTex.offset.y = G.real * 0.006;
   city.sky.position.copy(camera.position);
@@ -416,6 +421,22 @@ R.showcase = function (items, opts) {
   R.stageOpts = opts; R.mode = 'stage'; R.stageT = 0;
 };
 R.endShowcase = function () { R.mode = 'game'; };
+// one-off render of cats on the stage at w x h, copied to a 2D canvas (share card). Leaves the current mode untouched.
+R.snapshot = function (items, w, h) {
+  if (!R.ok || R.lost) return null;
+  const keep = stageGroup.children.slice(), rotY = stageGroup.rotation.y, out = document.createElement('canvas'); out.width = w; out.height = h;
+  while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
+  for (const it of items) { const g = buildCat(it.spec); g.position.set(it.x || 0, 0.1, it.z || 0); if (it.s) g.scale.multiplyScalar(it.s); animCat(g, { t: 1.3 + (it.x || 0), walk: 0 }); stageGroup.add(g); }
+  stageGroup.rotation.y = 0;
+  renderer.setPixelRatio(1); renderer.setSize(w, h, false);
+  stageCam.aspect = w / h; stageCam.fov = 34; stageCam.updateProjectionMatrix(); stageCam.position.set(0, 2.0, 8.6); stageCam.lookAt(0, 1.05, 0);
+  renderer.render(stage, stageCam);
+  out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
+  while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
+  for (const k of keep) stageGroup.add(k); stageGroup.rotation.y = rotY;
+  R.resize();
+  return out;
+};
 function renderStage(dt) {
   R.stageT += dt; const t = R.stageT, o = R.stageOpts || {};
   if (o.spin !== false) stageGroup.rotation.y = t * 0.8;

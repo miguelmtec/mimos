@@ -1,22 +1,17 @@
 // VICE PAWS — real-city renderer: builds the 3D scene of an OpenStreetMap extract (data/cities/*.json)
 // Buildings are extruded footprints, roads are ribbons on the terrain, everything merged into a handful of draw calls.
 import { THREE, GB, MAT, PR } from './models.js';
-import { bldMaterial, palmGeo, treeGeo, glowPoints, skyWater, lin } from './city.js';
+import { bldMaterial, palmGeo, palmGeoLo, treeGeo, treeGeoLo, glowPoints, skyWater, lin } from './city.js';
+import { chunkMesh, chunkInstances } from './lod.js';
 
 const VIVID = ['#ff5a7a', '#ffb347', '#ffe066', '#5fd0c8', '#7fb4ff', '#c9a7ff', '#ff8fd0', '#7CFF6B', '#ff7043', '#40c4ff'];
 export function buildRealCity(W, scene, VP) {
   const C = W.real, meta = W.meta || {}, K = 2 / VP.World.MPT, half = C.half, U = VP.U, rng = U.rng(77 + C.id.length * 13), pal = W.pal;
-  const city = { glowPts: [], real: true }, GT = VP.World.GT, tags = C.tags || [];
+  const city = { glowPts: [], real: true, chunks: [] }, GT = VP.World.GT, tags = C.tags || [];
   const comu = tags.includes('comunidade');
   const u = m => (m + half) * K;
-  // terrain height (units) at metres
-  const E = C.elev && C.elev.data && C.elev.n > 1 ? C.elev : null;
-  const hM = (x, z) => {
-    if (!E) return 0;
-    const n = E.n, fx = U.clamp((x + half) / (half * 2) * (n - 1), 0, n - 1.001), fz = U.clamp((z + half) / (half * 2) * (n - 1), 0, n - 1.001), i = Math.floor(fx), j = Math.floor(fz), a = fx - i, b = fz - j, d = E.data;
-    return ((d[j * n + i] * (1 - a) + d[j * n + i + 1] * a) * (1 - b) + (d[(j + 1) * n + i] * (1 - a) + d[(j + 1) * n + i + 1] * a) * b) * K;
-  };
-  W.hpx = (px, py) => hM(px / 48 * VP.World.MPT - half, py / 48 * VP.World.MPT - half);
+  // terrain height (3D units) at metres: comes from the simulation world, so movement and rendering always agree
+  const E = W.hasElev, hM = W.hM;
   const gAt = (x, z) => { const tx = Math.floor((x + half) / VP.World.MPT), ty = Math.floor((z + half) / VP.World.MPT); return tx < 0 || ty < 0 || tx >= W.W || ty >= W.H ? GT.G_LOT : W.gnd[ty * W.W + tx]; };
 
   // ---------- terrain ----------
@@ -33,13 +28,13 @@ export function buildRealCity(W, scene, VP) {
     }
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const a = j * (n + 1) + i, b = a + 1, c = a + n + 1, d = c + 1; if (wet[a] && wet[b] && wet[c] && wet[d]) continue; idx.push(a, c, b, b, c, d); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, MAT.lit); m.frustumCulled = false; scene.add(m);
+    chunkMesh(g, MAT.lit, scene, city, { cell: 80 });
   }
 
   // ---------- roads (ribbons following the terrain) ----------
   {
     const P = [], N = [], Cc = [];
-    const road = lin(pal.road), foot = lin(comu ? '#e9d9c0' : pal.walk2), line = lin(pal.line);
+    const road = lin(pal.road), foot = lin(comu ? '#e9d9c0' : pal.walk2), line = lin(pal.line), step0 = lin('#e8e0d2'), step1 = lin('#bdb3a4'); let stairN = 0;
     const quad = (ax, az, bx, bz, hw, c, lift) => {
       const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, nx = -dz / l * hw, nz = dx / l * hw, ya = hM(ax, az) + lift, yb = hM(bx, bz) + lift;
       P.push(u(ax - nx), ya, u(az - nz), u(ax + nx), ya, u(az + nz), u(bx - nx), yb, u(bz - nz), u(bx - nx), yb, u(bz - nz), u(ax + nx), ya, u(az + nz), u(bx + nx), yb, u(bz + nz));
@@ -50,6 +45,20 @@ export function buildRealCity(W, scene, VP) {
       for (let i = 2; i + 3 < R.length; i += 2) {
         const ax = R[i], az = R[i + 1], bx = R[i + 2], bz = R[i + 3], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / (E ? 7 : 40)));
         if (Math.max(Math.abs(ax), Math.abs(az), Math.abs(bx), Math.abs(bz)) > half + 30) continue;
+        const rise = Math.abs(hM(bx, bz) - hM(ax, az)) / K / (len || 1);
+        if (isFoot && E && rise > 0.16 && len > 3) { // steep footpath: a stairway with flat treads and painted risers
+          const ns = Math.max(2, Math.ceil(len / 1.6)), up = hM(bx, bz) > hM(ax, az);
+          for (let k = 0; k < ns; k++) {
+            const f0 = k / ns, f1 = (k + 1) / ns, x0 = ax + (bx - ax) * f0, z0 = az + (bz - az) * f0, x1 = ax + (bx - ax) * f1, z1 = az + (bz - az) * f1, y = Math.max(hM(x0, z0), hM(x1, z1)) + 0.09, yl = Math.min(hM(x0, z0), hM(x1, z1)) + 0.02;
+            const dx = x1 - x0, dz = z1 - z0, l = Math.hypot(dx, dz) || 1, nx = -dz / l * hw, nz = dx / l * hw, c = k % 2 ? step1 : step0, rc = comu ? lin(VIVID[(k + stairN) % VIVID.length]) : step1;
+            P.push(u(x0 - nx), y, u(z0 - nz), u(x0 + nx), y, u(z0 + nz), u(x1 - nx), y, u(z1 - nz), u(x1 - nx), y, u(z1 - nz), u(x0 + nx), y, u(z0 + nz), u(x1 + nx), y, u(z1 + nz));
+            for (let q = 0; q < 6; q++) { N.push(0, 1, 0); Cc.push(c[0], c[1], c[2]); }
+            const ex = up ? x0 : x1, ez = up ? z0 : z1; // riser on the low side of the tread
+            P.push(u(ex - nx), y, u(ez - nz), u(ex - nx), yl, u(ez - nz), u(ex + nx), y, u(ez + nz), u(ex + nx), y, u(ez + nz), u(ex - nx), yl, u(ez - nz), u(ex + nx), yl, u(ez + nz), u(ex + nx), y, u(ez + nz), u(ex - nx), yl, u(ez - nz), u(ex - nx), y, u(ez - nz), u(ex + nx), yl, u(ez + nz), u(ex - nx), yl, u(ez - nz), u(ex + nx), y, u(ez + nz));
+            for (let q = 0; q < 12; q++) { N.push(0, 0.6, 0.8); Cc.push(rc[0], rc[1], rc[2]); }
+          }
+          stairN++; city.stairs = (city.stairs || 0) + 1;
+        } else
         for (let k = 0; k < n; k++) { const x0 = ax + (bx - ax) * k / n, z0 = az + (bz - az) * k / n, x1 = ax + (bx - ax) * (k + 1) / n, z1 = az + (bz - az) * (k + 1) / n; quad(x0, z0, x1, z1, hw, isFoot ? foot : road, isFoot ? 0.07 : 0.1); }
         if (!isFoot && R[0] >= 6) for (let d = (12 - run % 12) % 12; d + 4 < len; d += 12) { const f0 = d / len, f1 = (d + 4) / len; quad(ax + (bx - ax) * f0, az + (bz - az) * f0, ax + (bx - ax) * f1, az + (bz - az) * f1, 0.16, line, 0.16); }
         run += len;
@@ -59,20 +68,24 @@ export function buildRealCity(W, scene, VP) {
     }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3));
     const mat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-    const m = new THREE.Mesh(g, mat); m.frustumCulled = false; scene.add(m);
+    chunkMesh(g, mat, scene, city, { cell: 80 });
   }
 
   // ---------- buildings (extruded footprints) ----------
-  const neon = new GB();
+  const neon = new GB(), mural = new GB(), pitches = [];
   {
     const P = [], N = [], Cc = [], UV = [], cols = comu ? VIVID : pal.roofs, _c = new THREE.Color(), white = new THREE.Color('#ffffff'), dusk = new THREE.Color('#8a7ab8');
     let neonEdges = 0;
     for (const B of C.buildings) {
       const n = (B.length - 1) >> 1; if (n < 3) continue;
       const pts = []; let area = 0, ymin = 1e9, ymax = -1e9, cx = 0, cz = 0;
-      for (let i = 0; i < n; i++) { const x = B[1 + i * 2], z = B[2 + i * 2]; pts.push(new THREE.Vector2(x, z)); const y = hM(x, z); if (y < ymin) ymin = y; if (y > ymax) ymax = y; cx += x; cz += z; }
+      for (let i = 0; i < n; i++) { cx += B[1 + i * 2]; cz += B[2 + i * 2]; } cx /= n; cz /= n;
+      // keep streets, alleys and stairways clear: shrink the footprint towards its centre until it no longer covers walkable tiles
+      let sc = 0; for (const f of [1, 0.86, 0.72, 0.58, 0.44]) { let hit = false; for (let i = 0; i < n && !hit; i++) { const x0 = cx + (B[1 + i * 2] - cx) * f, z0 = cz + (B[2 + i * 2] - cz) * f, k = (i + 1) % n, x1 = cx + (B[1 + k * 2] - cx) * f, z1 = cz + (B[2 + k * 2] - cz) * f; for (const t of [0, 0.33, 0.66]) { const g = gAt(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t); if (g === GT.G_ROAD || g === GT.G_WALK) { hit = true; break; } } } if (!hit) { sc = f; break; } }
+      if (!sc) continue;
+      for (let i = 0; i < n; i++) { const x = cx + (B[1 + i * 2] - cx) * sc, z = cz + (B[2 + i * 2] - cz) * sc; pts.push(new THREE.Vector2(x, z)); const y = hM(x, z); if (y < ymin) ymin = y; if (y > ymax) ymax = y; }
       if (pts.length > 3 && pts[0].distanceTo(pts[pts.length - 1]) < 0.3) pts.pop();
-      const m = pts.length; if (m < 3) continue; cx /= n; cz /= n;
+      const m = pts.length; if (m < 3) continue;
       if (Math.abs(cx) > half + 10 || Math.abs(cz) > half + 10) continue;
       for (let i = 0, j = m - 1; i < m; j = i++) area += (pts[j].x - pts[i].x) * (pts[j].y + pts[i].y);
       if (area > 0) pts.reverse(); // make the winding consistent (walls face out, roof faces up)
@@ -87,15 +100,22 @@ export function buildRealCity(W, scene, VP) {
         P.push(ax, y1, az, bx, y1, bz, ax, y0, az, bx, y1, bz, bx, y0, bz, ax, y0, az);
         UV.push(uo, v1, uo + u1, v1, uo, 0, uo + u1, v1, uo + u1, 0, uo, 0);
         for (let q = 0; q < 6; q++) { N.push(nx, 0, nz); Cc.push(wc[0], wc[1], wc[2]); }
+        if (comu && len > 3.2 && r() < 0.22 && city.murals !== 90) { // mural: bright stripes and a sun painted on the wall
+          city.murals = (city.murals || 0) + 1; const ry = -Math.atan2(bz - az, bx - ax), mx = (ax + bx) / 2 + nx * 0.05, mz = (az + bz) / 2 + nz * 0.05, mw = Math.min(len * 0.8, 5), k0 = Math.floor(r() * 10);
+          const base = Math.max(hM(pts[j].x, pts[j].y), hM(pts[i].x, pts[i].y)) + 0.5, n5 = 4 + Math.floor(r() * 3);
+          for (let q = 0; q < n5; q++) mural.box(VIVID[(k0 + q * 3) % VIVID.length], mx + (bx - ax) / len * (q / (n5 - 1) - 0.5) * mw * 0.8, base + 1.1 + Math.sin(q * 1.7 + k0) * 0.25, mz + (bz - az) / len * (q / (n5 - 1) - 0.5) * mw * 0.8, mw / n5 * 0.86, 1.7 + (q % 2) * 0.5, 0.06, 0, ry, 0);
+          mural.cyl('#fff6c8', mx + nx * 0.04, base + 2.5, mz + nz * 0.04, 0.42, 0.05, 0.42, Math.PI / 2, ry, 0);
+        }
         if (glowIt && len > 3) { neon.box(nc, (ax + bx) / 2, y1 + 0.05, (az + bz) / 2, len, 0.16, 0.16, 0, -Math.atan2(bz - az, bx - ax), 0); neonEdges++; }
       }
       let tris = []; try { tris = THREE.ShapeUtils.triangulateShape(pts, []); } catch (e) { tris = []; }
       for (const t of tris) for (const q of [t[0], t[2], t[1]]) { P.push(u(pts[q].x), y1, u(pts[q].y)); N.push(0, 1, 0); Cc.push(rc[0], rc[1], rc[2]); UV.push(0.004, 0.004); }
-      if (comu && r() < 0.35) { neon.box(r.pick(VIVID), u(cx), y1 + 0.5, u(cz), 1.2, 1.0, 1.2); } // rooftop water tanks in bright colours
+      if (comu && r() < 0.35) { mural.cyl(r.pick(['#3f8fd0', '#2f7fc0', '#5fa8e0']), u(cx), y1 + 0.55, u(cz), 0.6, 1.1, 0.6); } // blue rooftop water tanks
+      if (comu && Math.abs(area) > 260 && pitches.length < 4 && ymax - ymin < 1.5) pitches.push({ x: u(cx), y: y1 + 0.03, z: u(cz), s: Math.min(1, Math.sqrt(Math.abs(area)) / 26) }); // big flat roof: a rooftop football pitch
     }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
     city.bMat = bldMaterial(VP);
-    const m = new THREE.Mesh(g, city.bMat); m.frustumCulled = false; scene.add(m);
+    chunkMesh(g, city.bMat, scene, city, { cell: 80 });
   }
 
   // ---------- trees / palms, lamps ----------
@@ -103,17 +123,15 @@ export function buildRealCity(W, scene, VP) {
     const spots = [], inPoly = (P, x, z) => { let c = false; for (let i = 0, j = P.length - 2; i < P.length; j = i, i += 2) if ((P[i + 1] > z) !== (P[j + 1] > z) && x < (P[j] - P[i]) * (z - P[i + 1]) / (P[j + 1] - P[i + 1]) + P[i]) c = !c; return c; };
     for (const P of C.green || []) { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i < P.length; i += 2) { x0 = Math.min(x0, P[i]); x1 = Math.max(x1, P[i]); z0 = Math.min(z0, P[i + 1]); z1 = Math.max(z1, P[i + 1]); } const want = Math.min(26, Math.ceil((x1 - x0) * (z1 - z0) / 420)); for (let k = 0, tries = 0; k < want && tries < want * 6; tries++) { const x = rng.range(x0, x1), z = rng.range(z0, z1); if (Math.abs(x) < half - 4 && Math.abs(z) < half - 4 && inPoly(P, x, z) && gAt(x, z) === GT.G_GRASS) { spots.push([x, z]); k++; } } }
     for (let i = 0; i < 500 && spots.length < 420; i++) { const x = rng.range(-half, half), z = rng.range(-half, half), g = gAt(x, z); if (g === GT.G_SAND && rng() < 0.25 || (g === GT.G_LOT && rng() < 0.12)) spots.push([x, z]); }
-    const list = spots.slice(0, 420), geo = meta.palms ? palmGeo() : treeGeo();
-    const im = new THREE.InstancedMesh(geo, MAT.lit, Math.max(1, list.length)), mt = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3();
-    list.forEach((s, i) => { const k = 0.85 + rng() * 0.5; e.set(0, rng() * 6.283, 0); q.setFromEuler(e); mt.compose(p.set(u(s[0]), hM(s[0], s[1]), u(s[1])), q, sc.set(k, k, k)); im.setMatrixAt(i, mt); });
-    im.count = list.length; im.frustumCulled = false; scene.add(im); city.palms = im; city.palmCount = list.length;
+    const list = spots.slice(0, 420);
+    chunkInstances(meta.palms ? palmGeo() : treeGeo(), meta.palms ? palmGeoLo() : treeGeoLo(), MAT.lit, list.map(sp => ({ x: u(sp[0]), y: hM(sp[0], sp[1]), z: u(sp[1]), ry: rng() * 6.283, s: 0.85 + rng() * 0.5 })), scene, city, { cell: 90 });
+    const mt = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(); void mt; void q; void p; void sc;
     // street lamps along the main roads
     const lg = new GB(); lg.add(PR.cyl6, '#59536b', 0, 2.2, 0, 0.07, 4.4, 0.07); lg.box('#fff6c8', 0, 4.45, 0, 0.5, 0.12, 0.5);
     const lamps = [];
     for (const R of C.roads) { if (R[1] === 1 || R[0] < 6) continue; let acc = 20; for (let i = 2; i + 3 < R.length && lamps.length < 240; i += 2) { const ax = R[i], az = R[i + 1], bx = R[i + 2], bz = R[i + 3], len = Math.hypot(bx - ax, bz - az) || 1; acc += len; if (acc > 48) { acc = 0; const nx = -(bz - az) / len, nz = (bx - ax) / len, x = ax + nx * (R[0] / 2 + 1.6), z = az + nz * (R[0] / 2 + 1.6); if (Math.abs(x) < half && Math.abs(z) < half && gAt(x, z) !== GT.G_WATER) lamps.push([x, z]); } } }
-    const lm = new THREE.InstancedMesh(lg.geo(), MAT.lit, Math.max(1, lamps.length));
-    lamps.forEach((s, i) => { const y = hM(s[0], s[1]); mt.compose(p.set(u(s[0]), y, u(s[1])), q.identity(), sc.set(1, 1, 1)); lm.setMatrixAt(i, mt); city.glowPts.push({ x: u(s[0]), y: y + 4.4, z: u(s[1]), col: pal.lamp, s: 7 }); });
-    lm.count = lamps.length; lm.frustumCulled = false; scene.add(lm);
+    lamps.forEach(sp => { city.glowPts.push({ x: u(sp[0]), y: hM(sp[0], sp[1]) + 4.4, z: u(sp[1]), col: pal.lamp, s: 7 }); });
+    chunkInstances(lg.geo(), null, MAT.lit, lamps.map(sp => ({ x: u(sp[0]), y: hM(sp[0], sp[1]), z: u(sp[1]) })), scene, city, { cell: 90, detail: 1.5 });
   }
 
   // ---------- landmarks: glowing beacons; comunidade kites ----------
@@ -126,7 +144,27 @@ export function buildRealCity(W, scene, VP) {
     im.count = top.length; im.frustumCulled = false; scene.add(im);
     if (comu) for (let i = 0; i < 16; i++) { const x = rng.range(-half * 0.8, half * 0.8), z = rng.range(-half * 0.8, half * 0.8), y = hM(x, z) + rng.range(16, 34), col = rng.pick(VIVID); neon.box(col, u(x), y, u(z), 1.5, 1.5, 0.05, 0.4, rng() * 3, Math.PI / 4); neon.box('#ffffff', u(x), y - 1.6, u(z), 0.06, 2.2, 0.06, 0.3); }
   }
-  const nm = neon.mesh(MAT.glow); nm.frustumCulled = false; scene.add(nm);
+  // ---------- comunidade: football pitches (rooftops + the little ground pitch the missions use) ----------
+  const pitch = (x, y, z, s, flat) => {
+    const g = flat || mural; g.box('#3fae5a', x, y, z, 9 * s, 0.05, 6 * s); for (const sx of [-1, 1]) { g.box('#ffffff', x + sx * 4.4 * s, y + 0.03, z, 0.12, 0.03, 6 * s); g.box('#ffffff', x + sx * 4.3 * s, y + 0.6, z, 0.1, 1.2, 2.2 * s); g.box('#ffffff', x + sx * 4.3 * s, y + 1.2, z, 0.12, 0.1, 2.3 * s); }
+    for (const sz of [-1, 1]) g.box('#ffffff', x, y + 0.03, z + sz * 2.95 * s, 9 * s, 0.03, 0.12); g.box('#ffffff', x, y + 0.03, z, 0.1, 0.03, 6 * s); g.cyl('#ffffff', x, y + 0.02, z, 0.9 * s, 0.03, 0.9 * s);
+  };
+  for (const pt of pitches) pitch(pt.x, pt.y, pt.z, pt.s);
+  if (W.pitch) { const py = Math.max(W.hpx(W.pitch.x - 90, W.pitch.y), W.hpx(W.pitch.x + 90, W.pitch.y), W.hpx(W.pitch.x, W.pitch.y - 60), W.hpx(W.pitch.x, W.pitch.y + 60)); pitch(W.pitch.x / 24, py + 0.1, W.pitch.y / 24, 0.8); mural.box('#b98a5e', W.pitch.x / 24, py - 3.9, W.pitch.y / 24, 7.6, 7.9, 5.2); W.pitch.h = py + 0.12; }
+  city.pitches = pitches.length;
+  // ---------- Rio Verde: the livestock fair next to the start (tents, hay, flags, prize cattle) ----------
+  if (C.id === 'rioverde' && W.tourStart) {
+    const fx = W.tourStart.x / 24, fz = W.tourStart.y / 24, r2 = U.rng(2026);
+    for (let i = 0; i < 9; i++) {
+      const a = i / 9 * 6.283, d = 9 + r2() * 9, x = fx + Math.cos(a) * d, z = fz + Math.sin(a) * d, px = x * 24, py = z * 24; if (W.blocked(px, py, 30, 0)) continue; const y = W.hpx(px, py);
+      if (i % 3 === 0) { mural.box('#ffffff', x, y + 1.1, z, 2.6, 0.1, 2.6); mural.add(PR.cone, i % 2 ? '#e01e37' : '#ffd23f', x, y + 2.2, z, 2.3, 1.6, 2.3, 0, Math.PI / 4, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) mural.cyl('#8a5a2b', x + sx * 1.2, y + 0.55, z + sz * 1.2, 0.06, 1.1, 0.06); }
+      else if (i % 3 === 1) { for (let k = 0; k < 3; k++) mural.cyl('#e8c860', x + (k - 1) * 0.9, y + 0.42, z, 0.42, 0.8, 0.42, Math.PI / 2, 0, 0); mural.cyl('#e8c860', x, y + 1.15, z, 0.42, 0.8, 0.42, Math.PI / 2, 0, 0); }
+      else { mural.box('#f4f0ea', x, y + 0.75, z, 0.7, 0.6, 1.3); mural.box('#2b2b33', x + 0.1, y + 0.85, z + 0.2, 0.72, 0.3, 0.5); mural.box('#f4f0ea', x, y + 1.0, z + 0.8, 0.45, 0.45, 0.5); for (const sx of [-1, 1]) for (const sz of [-1, 1]) mural.box('#d8d0c4', x + sx * 0.25, y + 0.22, z + sz * 0.45, 0.14, 0.45, 0.14); mural.cone('#fff6c8', x - 0.2, y + 1.3, z + 0.85, 0.05, 0.2); mural.cone('#fff6c8', x + 0.2, y + 1.3, z + 0.85, 0.05, 0.2); }
+    }
+    for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283, x = fx + Math.cos(a) * 14, z = fz + Math.sin(a) * 14; neon.box(['#ffd23f', '#7CFF6B', '#2a6bff', '#ffffff'][i % 4], x, W.hpx(x * 24, z * 24) + 4.2, z, 0.5, 0.36, 0.04, 0, a, 0); }
+  }
+  if (mural.p.length) chunkMesh(mural.geo(), MAT.flat, scene, city, { cell: 80, detail: 1.6 });
+  if (neon.p.length) chunkMesh(neon.geo(), MAT.glow, scene, city, { cell: 80, detail: 1.8 });
   glowPoints(city, scene);
   skyWater(city, scene, VP, u(0), u(0), -0.3);
   return city;

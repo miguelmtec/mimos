@@ -13,10 +13,10 @@ const say = (k, col, dur, ...a) => Game.fx.say(tr(k, ...a), col || '#fff', dur |
 function patch(W, cx, cy, rad, need, pref) {
   const tx0 = Math.floor(cx / T), ty0 = Math.floor(cy / T), g = W.grid; let best = null, bs = -1e9;
   for (let y = ty0 - rad; y <= ty0 + rad; y++) for (let x = tx0 - rad; x <= tx0 + rad; x++) {
-    if (x < need + 2 || y < need + 2 || x >= W.W - need - 2 || y >= W.H - need - 2 || g[y * W.W + x]) continue;
+    if (x < need + 2 || y < need + 2 || x >= W.W - need - 2 || y >= W.H - need - 2 || g[y * W.W + x] || (W.conn && W.conn[y * W.W + x] < 0)) continue;
     let c = 0;
     scan: for (; c < need; c++) for (let k = -c - 1; k <= c + 1; k++) if (g[(y - c - 1) * W.W + x + k] || g[(y + c + 1) * W.W + x + k] || g[(y + k) * W.W + x - c - 1] || g[(y + k) * W.W + x + c + 1]) break scan;
-    const gr = W.gnd[y * W.W + x], s = c * 100 + (pref && pref(gr) ? 160 : 0) - Math.hypot(x - tx0, y - ty0) * 4 - (gr === GT.G_ROAD ? 80 : 0);
+    const gr = W.gnd[y * W.W + x], pv = pref ? pref(gr, (x + 0.5) * T, (y + 0.5) * T) : 0, s = c * 100 + (pv === true ? 160 : +pv || 0) - Math.hypot(x - tx0, y - ty0) * 4 - (gr === GT.G_ROAD ? 80 : 0);
     if (s > bs) { bs = s; best = { x: (x + 0.5) * T, y: (y + 0.5) * T, c }; }
   }
   return best;
@@ -386,7 +386,7 @@ TYPES.tour = {
       G.mtimer = p.time || 100; B.goto(c, 'o_tourGo', { args: [tr('tp_kites')] });
       kiteGame(B, c, p.n || 8, { rad: 250, txt: comu ? 'o_kiteContest' : 'o_kites' });
     } else if (kind === 'football' || kind === 'volley') {
-      const c = patch(W, start.x, start.y, 10, 3, g => (kind === 'volley' ? g === GT.G_SAND : g === GT.G_LOT || g === GT.G_GRASS)) || start;
+      const c = (kind === 'football' && W.pitch) || patch(W, start.x, start.y, kind === 'volley' ? 40 : 10, 3, g => (kind === 'volley' ? g === GT.G_SAND : g === GT.G_LOT || g === GT.G_GRASS)) || start;
       B.goto(c, 'o_tourGo', { args: [tr(kind === 'volley' ? 'tp_court' : 'tp_pitch')] });
       for (let i = 0; i < 2; i++) { const q = freeNear(B, c.x + (i ? 70 : -70), c.y - 150, 0, 60); if (q) { const f = Game.addFriend(q.x, q.y, i ? 'f3' : 'f1'); f.stay = true; } }
       ballGame(B, c, p.n || 8, { txt: kind === 'volley' ? 'o_volley' : 'o_football' });

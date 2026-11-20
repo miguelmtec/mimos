@@ -1,0 +1,815 @@
+{
+ "version": 1,
+ "note": "City mission packs. places = [name, lat, lon] (approximate, snapped to the nearest street). Maps tagged comunidade only ever get the positive kinds.",
+ "templates": [
+  {
+   "kind": "race",
+   "name": {
+    "pt": "Rali dos Cartões-Postais",
+    "en": "Postcard Rally"
+   },
+   "story": {
+    "pt": "Cinco pontos turísticos, um conversível e nenhum mapa. O Mimo dirige (acordado, por enquanto).",
+    "en": "Five sights, one convertible and no map. Mimo is driving (awake, for now)."
+   }
+  },
+  {
+   "kind": "photo",
+   "name": {
+    "pt": "Turistas de Primeira Viagem",
+    "en": "First-Time Tourists"
+   },
+   "story": {
+    "pt": "A Mimosa quer foto em tudo que é lugar famoso. A pé, que é pra aparecer no fundo.",
+    "en": "Mimosa wants a photo at every famous spot. On foot, so the background shows."
+   },
+   "par": 280,
+   "params": {
+    "n": 4
+   }
+  },
+  {
+   "kind": "deliver",
+   "name": {
+    "pt": "Entrega Especial",
+    "en": "Special Delivery"
+   },
+   "story": {
+    "pt": "Um petisco importado precisa chegar inteiro. A Mortícia jurou que não vai abrir.",
+    "en": "An imported treat must arrive in one piece. Morticia swore she will not open it."
+   }
+  },
+  {
+   "kind": "feast",
+   "name": {
+    "pt": "Banquete de Rua",
+    "en": "Street Feast"
+   },
+   "story": {
+    "pt": "Cidade nova, comida nova. A Mortícia vai provar tudo antes do relógio zerar.",
+    "en": "New city, new food. Morticia will taste everything before the clock hits zero."
+   },
+   "params": {
+    "n": 22
+   }
+  },
+  {
+   "kind": "chain",
+   "name": {
+    "pt": "Motoboy Internacional",
+    "en": "International Courier"
+   },
+   "story": {
+    "pt": "Busca aqui, entrega ali. Cada entrega certa dá mais tempo.",
+    "en": "Pick up here, drop off there. Every good delivery adds time."
+   },
+   "params": {
+    "n": 4,
+    "car": 1
+   }
+  },
+  {
+   "kind": "kites",
+   "name": {
+    "pt": "Pipas no Céu Novo",
+    "en": "Kites in a New Sky"
+   },
+   "story": {
+    "pt": "O vento daqui é diferente. As pipas também caem diferente.",
+    "en": "The wind is different here. So is the way kites fall."
+   },
+   "params": {
+    "n": 8
+   }
+  },
+  {
+   "kind": "parkour",
+   "name": {
+    "pt": "Corrida de Rua",
+    "en": "Street Run"
+   },
+   "story": {
+    "pt": "Checkpoints a pé pelas ruas de verdade. Sem carro!",
+    "en": "Checkpoints on foot through real streets. No cars!"
+   },
+   "params": {
+    "n": 5
+   }
+  },
+  {
+   "kind": "brawl",
+   "name": {
+    "pt": "Briga na Praça",
+    "en": "Plaza Brawl"
+   },
+   "story": {
+    "pt": "Os vira-latas locais não gostaram dos turistas. A Mimosa não gostou dos vira-latas.",
+    "en": "The local mutts did not like the tourists. Mimosa did not like the mutts."
+   }
+  },
+  {
+   "kind": "rescue",
+   "name": {
+    "pt": "Gatinho Perdido",
+    "en": "Lost Kitten"
+   },
+   "story": {
+    "pt": "Um filhote miou lá longe. Ninguém fica pra trás, em país nenhum.",
+    "en": "A kitten meowed far away. No cat left behind, in any country."
+   }
+  },
+  {
+   "kind": "escape",
+   "name": {
+    "pt": "Fuga Turística",
+    "en": "Tourist Getaway"
+   },
+   "story": {
+    "pt": "A carrocinha daqui também não gosta de gato. Aguente firme e suma do mapa.",
+    "en": "The local dog catchers do not like cats either. Hold on, then vanish."
+   }
+  }
+ ],
+ "comunidade": [
+  {
+   "kind": "groceries",
+   "name": {
+    "pt": "As Compras da Vovó",
+    "en": "Grandma's Groceries"
+   },
+   "story": {
+    "pt": "A vovó gata mora lá no alto e as sacolas pesam. Suba com ela, no ritmo dela.",
+    "en": "Grandma cat lives up the hill and the bags are heavy. Walk up with her, at her pace."
+   }
+  },
+  {
+   "kind": "paws",
+   "name": {
+    "pt": "Patinhas na Escadaria",
+    "en": "Paws on the Stairway"
+   },
+   "story": {
+    "pt": "Alguém espalhou patinhas douradas pelos becos e escadarias. Vale conhecer cada cantinho.",
+    "en": "Someone scattered golden paws through the alleys and stairways. Worth getting to know every corner."
+   },
+   "params": {
+    "n": 12
+   }
+  },
+  {
+   "kind": "kites",
+   "name": {
+    "pt": "Concurso de Pipas",
+    "en": "Kite Contest"
+   },
+   "story": {
+    "pt": "O céu do morro é o mais colorido da cidade. Pegue as pipas que o vento trouxer!",
+    "en": "The sky over the hill is the most colourful in town. Catch the kites the wind brings!"
+   },
+   "params": {
+    "n": 9
+   }
+  },
+  {
+   "kind": "rescue",
+   "name": {
+    "pt": "Gatinho no Telhado",
+    "en": "Kitten on the Roof"
+   },
+   "story": {
+    "pt": "Um filhote subiu atrás de uma pipa e não sabe descer. Suba até lá e traga ele pra casa.",
+    "en": "A kitten climbed after a kite and can not get down. Go up there and bring it home."
+   }
+  },
+  {
+   "kind": "football",
+   "name": {
+    "pt": "Altinha na Laje",
+    "en": "Rooftop Keepie-Uppie"
+   },
+   "story": {
+    "pt": "A molecada chamou pra altinha na laje, com vista pro mar. A bola não pode cair!",
+    "en": "The kids invited you for keepie-uppie on the rooftop, with an ocean view. Do not let the ball drop!"
+   },
+   "params": {
+    "n": 8
+   }
+  },
+  {
+   "kind": "photo",
+   "name": {
+    "pt": "Rota dos Murais",
+    "en": "Mural Route"
+   },
+   "story": {
+    "pt": "Os muros daqui são uma galeria a céu aberto. Fotografe os mais bonitos.",
+    "en": "The walls here are an open-air gallery. Photograph the prettiest ones."
+   },
+   "par": 280,
+   "params": {
+    "n": 4
+   }
+  },
+  {
+   "kind": "chain",
+   "name": {
+    "pt": "Entregas Morro Acima",
+    "en": "Deliveries Up the Hill"
+   },
+   "story": {
+    "pt": "Pão quentinho, gás e encomenda: tudo sobe pela escadaria, de pata em pata.",
+    "en": "Warm bread, parcels and more: everything goes up the stairway, paw by paw."
+   },
+   "params": {
+    "n": 4
+   }
+  },
+  {
+   "kind": "parkour",
+   "name": {
+    "pt": "Subida do Mirante",
+    "en": "Climb to the Lookout"
+   },
+   "story": {
+    "pt": "Corrida a pé até o ponto mais alto. A vista lá de cima compensa cada degrau.",
+    "en": "A run on foot to the highest spot. The view up there is worth every step."
+   },
+   "params": {
+    "n": 5
+   }
+  },
+  {
+   "kind": "treats",
+   "name": {
+    "pt": "Lanche da Tarde",
+    "en": "Afternoon Snack"
+   },
+   "story": {
+    "pt": "As tias da comunidade deixaram petiscos pra visita. A Mortícia agradece em nome de todos.",
+    "en": "The neighbours left treats out for the visitors. Morticia says thanks on behalf of everyone."
+   },
+   "params": {
+    "n": 20
+   }
+  },
+  {
+   "kind": "deliver",
+   "name": {
+    "pt": "Bolo de Aniversário",
+    "en": "Birthday Cake"
+   },
+   "story": {
+    "pt": "Tem festa na laje hoje! Leve o bolo inteiro até lá (Mortícia, estamos de olho).",
+    "en": "There is a rooftop party today! Deliver the cake in one piece (Morticia, we are watching)."
+   }
+  }
+ ],
+ "packs": {
+  "miami": {
+   "places": [
+    [
+     "Lummus Park",
+     25.7806,
+     -80.1301
+    ],
+    [
+     "Ocean Drive",
+     25.7786,
+     -80.1306
+    ],
+    [
+     "Collins Avenue",
+     25.779,
+     -80.1322
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali da Ocean Drive",
+      "en": "Ocean Drive Rally"
+     },
+     "story": {
+      "pt": "Do Art Deco Welcome Center ao letreiro de Miami Beach, passando pelos hotéis mais famosos.",
+      "en": "From the Art Deco Welcome Center to the Miami Beach sign, past the most famous hotels."
+     },
+     "at": [
+      "Art Deco Welcome Center",
+      "The Carlyle",
+      "Hotel Victor",
+      "The Colony Hotel",
+      "Miami Beach Sign"
+     ]
+    },
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Safári Art Déco",
+      "en": "Art Deco Safari"
+     },
+     "story": {
+      "pt": "Fachadas em tons pastel pedem foto. A Mimosa exige o Carlyle e a Casa Casuarina.",
+      "en": "Pastel facades are begging for photos. Mimosa demands the Carlyle and Casa Casuarina."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "The Carlyle",
+      "Cardozo Hotel South Beach",
+      "Leslie Hotel",
+      "The Villa Casa Casuarina"
+     ]
+    },
+    {
+     "kind": "volley",
+     "name": {
+      "pt": "Vôlei em Lummus Park",
+      "en": "Lummus Park Volleyball"
+     },
+     "story": {
+      "pt": "Quadra de areia de frente pro Atlântico. Oito pontos pra virar lenda de South Beach.",
+      "en": "A sand court facing the Atlantic. Eight points to become a South Beach legend."
+     },
+     "params": {
+      "n": 8
+     },
+     "needs": [
+      "beach"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Serviço de Quarto",
+      "en": "Room Service"
+     },
+     "story": {
+      "pt": "Os hóspedes do Pelican, do Avalon, do Beacon e do Park Central pediram sachê. Todos ao mesmo tempo.",
+      "en": "Guests at the Pelican, the Avalon, the Beacon and the Park Central ordered treats. All at once."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Pelican Hotel",
+      "Avalon Hotel",
+      "Beacon Hotel",
+      "Park Central Hotel"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Brunch em South Beach",
+      "en": "South Beach Brunch"
+     },
+     "story": {
+      "pt": "Brunch de hotel chique espalhado pela calçada. A Mortícia não fez reserva.",
+      "en": "A fancy hotel brunch spread along the sidewalk. Morticia has no reservation."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas sobre o Atlântico",
+      "en": "Kites over the Atlantic"
+     },
+     "story": {
+      "pt": "A brisa do mar empurra as pipas pra cidade. Corra atrás delas!",
+      "en": "The sea breeze pushes the kites into town. Chase them!"
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Encomenda para o Wolfsonian",
+      "en": "Parcel for the Wolfsonian"
+     },
+     "story": {
+      "pt": "O museu encomendou uma estátua de gato. Frágil. Muito frágil.",
+      "en": "The museum ordered a cat statue. Fragile. Very fragile."
+     },
+     "at": [
+      "The Wolfsonian - FIU"
+     ]
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Corrida na Collins",
+      "en": "Collins Avenue Dash"
+     },
+     "story": {
+      "pt": "Checkpoints a pé entre os neons da Collins Avenue. O café ajuda o Mimo.",
+      "en": "Checkpoints on foot among the neon signs of Collins Avenue. Coffee helps Mimo."
+     },
+     "params": {
+      "n": 6
+     }
+    },
+    {
+     "kind": "brawl",
+     "name": {
+      "pt": "Confusão no Breakwater",
+      "en": "Breakwater Brawl"
+     },
+     "story": {
+      "pt": "Uns buldogues de óculos escuros tomaram a calçada do Breakwater. Hora de devolver pros turistas.",
+      "en": "Some bulldogs in shades took over the Breakwater sidewalk. Time to give it back to the tourists."
+     },
+     "at": [
+      "Hotel Breakwater South Beach"
+     ]
+    },
+    {
+     "kind": "escape",
+     "name": {
+      "pt": "Fuga de South Beach",
+      "en": "South Beach Getaway"
+     },
+     "story": {
+      "pt": "A carrocinha de Miami tem até lancha. Aguente e desapareça em South Beach.",
+      "en": "The Miami dog catchers even have a speedboat. Hold out, then disappear into South Beach."
+     },
+     "at": [
+      "South Beach"
+     ]
+    }
+   ]
+  },
+  "rio": {
+   "places": [
+    [
+     "Copacabana Palace",
+     -22.967,
+     -43.1787
+    ],
+    [
+     "Praça Serzedelo Correia",
+     -22.9689,
+     -43.1853
+    ],
+    [
+     "Estação Siqueira Campos",
+     -22.967,
+     -43.1868
+    ],
+    [
+     "Bairro Peixoto",
+     -22.9655,
+     -43.1893
+    ],
+    [
+     "Calçadão de Copacabana",
+     -22.9712,
+     -43.183
+    ]
+   ],
+   "missions": [
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali da Avenida Atlântica",
+      "en": "Avenida Atlântica Rally"
+     },
+     "story": {
+      "pt": "Do Posto 3 ao Posto 4, com parada no 18 do Forte e no Copacabana Palace. Sem buzinar pro calçadão!",
+      "en": "From Posto 3 to Posto 4, with stops at the 18 do Forte monument and the Copacabana Palace. No honking at the boardwalk!"
+     },
+     "at": [
+      "Posto 3",
+      "18 do Forte",
+      "Posto 4",
+      "Copacabana Palace",
+      "Ayrton Senna"
+     ]
+    },
+    {
+     "kind": "volley",
+     "name": {
+      "pt": "Vôlei no Posto 4",
+      "en": "Volleyball at Posto 4"
+     },
+     "story": {
+      "pt": "Rede armada na areia de Copacabana. A Mimosa não aceita menos que oito pontos.",
+      "en": "The net is up on Copacabana sand. Mimosa accepts no less than eight points."
+     },
+     "params": {
+      "n": 8
+     },
+     "needs": [
+      "beach"
+     ]
+    },
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Cartões-Postais de Copa",
+      "en": "Copacabana Postcards"
+     },
+     "story": {
+      "pt": "O Palace, a estátua do Ayrton Senna, o 18 do Forte e o Posto 3: o álbum da viagem começa aqui.",
+      "en": "The Palace, the Ayrton Senna statue, 18 do Forte and Posto 3: the travel album starts here."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Copacabana Palace",
+      "Ayrton Senna",
+      "18 do Forte",
+      "Posto 3"
+     ]
+    },
+    {
+     "kind": "football",
+     "name": {
+      "pt": "Altinha no Posto 3",
+      "en": "Keepie-Uppie at Posto 3"
+     },
+     "story": {
+      "pt": "Na beira do mar ninguém deixa a bola cair. Nem gato.",
+      "en": "By the sea nobody lets the ball drop. Not even cats."
+     },
+     "params": {
+      "n": 9
+     },
+     "needs": [
+      "beach"
+     ]
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Mate e Biscoito de Polvilho",
+      "en": "Iced Tea and Crunchy Biscuits"
+     },
+     "story": {
+      "pt": "O lanche oficial da praia precisa chegar em toda barraca. Busque na praça e leve até a areia.",
+      "en": "The official beach snack must reach every tent. Pick up at the square and take it to the sand."
+     },
+     "params": {
+      "n": 4
+     },
+     "at": [
+      "Praça Serzedelo Correia",
+      "Posto 3",
+      "Estação Siqueira Campos",
+      "Posto 4"
+     ]
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas na Orla",
+      "en": "Kites on the Shore"
+     },
+     "story": {
+      "pt": "Fim de tarde, vento do mar e o céu cheio de pipa. Pegue as que o vento soltar.",
+      "en": "Late afternoon, sea wind and a sky full of kites. Catch the ones the wind sets loose."
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Bilhete do Trem do Corcovado",
+      "en": "Corcovado Train Ticket"
+     },
+     "story": {
+      "pt": "A vovó gata quer ver o Cristo de perto. Leve o bilhete até a bilheteria antes que feche.",
+      "en": "Grandma cat wants to see the Christ statue up close. Get her ticket to the ticket office before it closes."
+     },
+     "at": [
+      "Ticket Office Trem de Corcovado"
+     ]
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Quiosques do Calçadão",
+      "en": "Boardwalk Kiosks"
+     },
+     "story": {
+      "pt": "Água de coco, queijo coalho e camarão: a Mortícia vai de quiosque em quiosque.",
+      "en": "Coconut water, grilled cheese and shrimp: Morticia goes from kiosk to kiosk."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Subida do Bairro Peixoto",
+      "en": "Bairro Peixoto Climb"
+     },
+     "story": {
+      "pt": "Copacabana também tem ladeira! Corrida a pé morro acima, com vista pro mar na chegada.",
+      "en": "Copacabana has hills too! A run on foot uphill, with an ocean view at the finish."
+     },
+     "params": {
+      "n": 5
+     },
+     "at": [
+      "Bairro Peixoto"
+     ]
+    },
+    {
+     "kind": "escape",
+     "name": {
+      "pt": "Fuga pela Siqueira Campos",
+      "en": "Siqueira Campos Getaway"
+     },
+     "story": {
+      "pt": "A carrocinha fechou a orla. Aguente firme e despiste pela estação Siqueira Campos.",
+      "en": "The dog catchers closed off the shore. Hold out and lose them by Siqueira Campos station."
+     },
+     "at": [
+      "Estação Siqueira Campos"
+     ]
+    }
+   ]
+  },
+  "rio_vidigal": {
+   "places": [
+    [
+     "Praia do Vidigal",
+     -22.9931,
+     -43.2331
+    ],
+    [
+     "Mirante do Leblon",
+     -22.9893,
+     -43.2279
+    ]
+   ],
+   "missions": []
+  },
+  "rio_santamarta": {
+   "places": [
+    [
+     "Laje do Michael Jackson",
+     -22.9492,
+     -43.1947
+    ],
+    [
+     "Plano Inclinado",
+     -22.9483,
+     -43.1931
+    ]
+   ],
+   "missions": []
+  },
+  "rioverde": {
+   "places": [],
+   "missions": [
+    {
+     "kind": "race",
+     "name": {
+      "pt": "Rali das Caminhonetes",
+      "en": "Pickup Truck Rally"
+     },
+     "story": {
+      "pt": "Na capital do agro, corrida boa é de caminhonete. Cinco pontos da cidade, poeira e sertanejo no rádio.",
+      "en": "In the farming capital, a proper race is a pickup race. Five spots around town, dust and country music on the radio."
+     },
+     "params": {
+      "car": 2
+     }
+    },
+    {
+     "kind": "chain",
+     "name": {
+      "pt": "Ração para a Feira",
+      "en": "Feed for the Fair"
+     },
+     "story": {
+      "pt": "A feira agropecuária abre hoje e falta ração. Carregue a caçamba e entregue nos estandes.",
+      "en": "The livestock fair opens today and feed is short. Load the truck bed and deliver to the stands."
+     },
+     "params": {
+      "n": 4,
+      "car": 2
+     }
+    },
+    {
+     "kind": "photo",
+     "name": {
+      "pt": "Fotos na Exposição",
+      "en": "Photos at the Fair"
+     },
+     "story": {
+      "pt": "Tem gado premiado, trator brilhando e barraca de pamonha. A Mimosa quer foto com tudo.",
+      "en": "Prize cattle, shiny tractors and a corn-cake stall. Mimosa wants a photo with everything."
+     },
+     "par": 280,
+     "params": {
+      "n": 4
+     }
+    },
+    {
+     "kind": "feast",
+     "name": {
+      "pt": "Pamonha, Pequi e Churrasco",
+      "en": "Corn Cakes and Barbecue"
+     },
+     "story": {
+      "pt": "Comida goiana de verdade. A Mortícia nunca foi tão feliz (cuidado com o caroço do pequi!).",
+      "en": "Real Goiás food. Morticia has never been happier (mind the pequi stone!)."
+     },
+     "params": {
+      "n": 24
+     }
+    },
+    {
+     "kind": "groceries",
+     "name": {
+      "pt": "A Feira da Vovó",
+      "en": "Grandma's Market Run"
+     },
+     "story": {
+      "pt": "A vovó gata comprou queijo, doce de leite e mais um tanto. Acompanhe ela até em casa.",
+      "en": "Grandma cat bought cheese, milk caramel and a whole lot more. Walk her home."
+     }
+    },
+    {
+     "kind": "kites",
+     "name": {
+      "pt": "Pipas no Cerrado",
+      "en": "Kites over the Cerrado"
+     },
+     "story": {
+      "pt": "Céu aberto do cerrado e vento bom. Dia perfeito pra soltar pipa.",
+      "en": "Wide open savanna sky and a good wind. A perfect day for kites."
+     },
+     "params": {
+      "n": 9
+     }
+    },
+    {
+     "kind": "paws",
+     "name": {
+      "pt": "Patinhas na Praça",
+      "en": "Paws in the Square"
+     },
+     "story": {
+      "pt": "Espalharam patinhas douradas pelo centro. Quem conhece a cidade acha todas.",
+      "en": "Golden paws are scattered across the town centre. Those who know the town will find them all."
+     },
+     "params": {
+      "n": 12
+     }
+    },
+    {
+     "kind": "parkour",
+     "name": {
+      "pt": "Corrida do Boiadeiro",
+      "en": "The Cowboy's Dash"
+     },
+     "story": {
+      "pt": "Corrida a pé de checkpoint em checkpoint. O prêmio é um chapéu (e muito orgulho).",
+      "en": "A run on foot from checkpoint to checkpoint. The prize is a hat (and a lot of pride)."
+     },
+     "params": {
+      "n": 6
+     }
+    },
+    {
+     "kind": "rescue",
+     "name": {
+      "pt": "Gatinho no Silo",
+      "en": "Kitten on the Silo"
+     },
+     "story": {
+      "pt": "Um filhote subiu no ponto mais alto pra ver a plantação e travou. Bora buscar.",
+      "en": "A kitten climbed the highest spot to see the fields and froze. Let us fetch it."
+     }
+    },
+    {
+     "kind": "deliver",
+     "name": {
+      "pt": "Encomenda da Fazenda",
+      "en": "Parcel from the Farm"
+     },
+     "story": {
+      "pt": "Queijo fresco da fazenda pro centro da cidade. Chega inteiro se a Mortícia colaborar.",
+      "en": "Fresh farm cheese for the town centre. It arrives whole if Morticia cooperates."
+     }
+    }
+   ]
+  }
+ }
+}

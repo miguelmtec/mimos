@@ -3,7 +3,7 @@ import * as THREE from '../../vendor/three.module.min.js';
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color(), _v = new THREE.Vector3(), _n = new THREE.Matrix3();
 const PR = {
-  sph: new THREE.SphereGeometry(1, 12, 9).toNonIndexed(), lo: new THREE.SphereGeometry(1, 7, 5).toNonIndexed(),
+  sph: new THREE.SphereGeometry(1, 12, 9).toNonIndexed(), mid: new THREE.SphereGeometry(1, 8, 6).toNonIndexed(), lo: new THREE.SphereGeometry(1, 7, 5).toNonIndexed(),
   box: new THREE.BoxGeometry(1, 1, 1).toNonIndexed(), cyl: new THREE.CylinderGeometry(1, 1, 1, 10).toNonIndexed(),
   cone: new THREE.ConeGeometry(1, 1, 8).toNonIndexed(), tor: new THREE.TorusGeometry(1, 0.22, 5, 12).toNonIndexed(),
   taper: new THREE.CylinderGeometry(0.6, 1, 1, 8).toNonIndexed(), cyl6: new THREE.CylinderGeometry(1, 1, 1, 6, 1, true).toNonIndexed(),
@@ -21,7 +21,7 @@ export class GB {
     }
     return this;
   }
-  sph(col, x, y, z, sx, sy, sz, rx, ry, rz) { return this.add(PR.sph, col, x, y, z, sx, sy, sz, rx, ry, rz); }
+  sph(col, x, y, z, sx, sy, sz, rx, ry, rz) { return this.add(GB.low ? PR.mid : PR.sph, col, x, y, z, sx, sy, sz, rx, ry, rz); }
   lo(col, x, y, z, sx, sy, sz, rx, ry, rz) { return this.add(PR.lo, col, x, y, z, sx, sy, sz, rx, ry, rz); }
   box(col, x, y, z, sx, sy, sz, rx, ry, rz) { return this.add(PR.box, col, x, y, z, sx, sy, sz, rx, ry, rz); }
   cyl(col, x, y, z, r, h, r2, rx, ry, rz) { return this.add(PR.cyl, col, x, y, z, r, h, r2 === undefined ? r : r2, rx, ry, rz); }
@@ -37,6 +37,8 @@ export class GB {
   }
   mesh(mat) { return new THREE.Mesh(this.geo(), mat || MAT.lit); }
 }
+// low quality: characters are built from coarser spheres (about 40% of the triangles)
+export function setDetail(low) { GB.low = !!low; }
 export const MAT = {
   lit: new THREE.MeshLambertMaterial({ vertexColors: true }),
   flat: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),

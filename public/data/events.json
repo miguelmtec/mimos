@@ -1,0 +1,156 @@
+{
+ "version": 1,
+ "note": "One event per week, rotating from the epoch (a Monday). Coins only: events never sell anything.",
+ "epoch": "2026-01-05",
+ "events": [
+  {
+   "id": "kites",
+   "icon": "🪁",
+   "name": {
+    "pt": "Semana da Pipa",
+    "en": "Kite Week"
+   },
+   "desc": {
+    "pt": "Missões de pipa e de corrida a pé rendem +50% de moedas.",
+    "en": "Kite and foot-race missions pay +50% coins."
+   },
+   "types": [
+    "kites",
+    "parkour",
+    "kiterun"
+   ],
+   "mult": 1.5
+  },
+  {
+   "id": "fishing",
+   "icon": "🎣",
+   "name": {
+    "pt": "Semana do Pescador",
+    "en": "Fisher's Week"
+   },
+   "desc": {
+    "pt": "Pescarias e missões de comilança rendem +50% de moedas.",
+    "en": "Fishing and eating missions pay +50% coins."
+   },
+   "types": [
+    "fish",
+    "eat",
+    "feast",
+    "treats"
+   ],
+   "mult": 1.5
+  },
+  {
+   "id": "rescue",
+   "icon": "🐱",
+   "name": {
+    "pt": "Semana do Resgate",
+    "en": "Rescue Week"
+   },
+   "desc": {
+    "pt": "Resgates, gatinhos e escoltas rendem +50% de moedas.",
+    "en": "Rescues, kittens and escorts pay +50% coins."
+   },
+   "types": [
+    "rescue",
+    "kittens",
+    "escort",
+    "groceries"
+   ],
+   "mult": 1.5
+  },
+  {
+   "id": "turbo",
+   "icon": "🏎️",
+   "name": {
+    "pt": "Semana Turbo",
+    "en": "Turbo Week"
+   },
+   "desc": {
+    "pt": "Corridas, perseguições e entregas rendem +50% de moedas.",
+    "en": "Races, chases and deliveries pay +50% coins."
+   },
+   "types": [
+    "race",
+    "chase",
+    "chain",
+    "heist",
+    "deliver"
+   ],
+   "mult": 1.5
+  },
+  {
+   "id": "mimosa",
+   "icon": "😾",
+   "name": {
+    "pt": "Semana da Mimosa",
+    "en": "Mimosa's Week"
+   },
+   "desc": {
+    "pt": "Duelos, ondas, defesas e chefões rendem +50% de moedas.",
+    "en": "Duels, waves, defences and bosses pay +50% coins."
+   },
+   "types": [
+    "duel",
+    "waves",
+    "defend",
+    "boss",
+    "brawl"
+   ],
+   "mult": 1.5
+  },
+  {
+   "id": "world",
+   "icon": "✈️",
+   "name": {
+    "pt": "Semana Volta ao Mundo",
+    "en": "World Tour Week"
+   },
+   "desc": {
+    "pt": "Toda missão de viagem rende +50% de moedas.",
+    "en": "Every travel mission pays +50% coins."
+   },
+   "types": [],
+   "mult": 1.5,
+   "tour": true
+  },
+  {
+   "id": "sneak",
+   "icon": "🤫",
+   "name": {
+    "pt": "Semana Furtiva",
+    "en": "Sneaky Week"
+   },
+   "desc": {
+    "pt": "Missões furtivas, roubos e cofres rendem +50% de moedas.",
+    "en": "Stealth, steal and vault missions pay +50% coins."
+   },
+   "types": [
+    "stealth",
+    "steal",
+    "vault",
+    "truck"
+   ],
+   "mult": 1.5
+  },
+  {
+   "id": "beach",
+   "icon": "🏐",
+   "name": {
+    "pt": "Semana da Praia",
+    "en": "Beach Week"
+   },
+   "desc": {
+    "pt": "Vôlei, altinha e caça às fotos rendem +50% de moedas.",
+    "en": "Volleyball, keepie-uppie and photo hunts pay +50% coins."
+   },
+   "types": [
+    "volley",
+    "football",
+    "photo",
+    "paws"
+   ],
+   "mult": 1.5
+  }
+ ]
+}

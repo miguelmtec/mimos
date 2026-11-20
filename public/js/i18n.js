@@ -170,6 +170,20 @@ const L = {
   dc_done: ['Desafio do dia completo! +{0} moedas', 'Daily challenge complete! +{0} coins'], dc_all: ['Os 3 desafios do dia! +1 vida · sequência de {0} dia(s)', 'All 3 daily challenges! +1 life · {0}-day streak'],
   dc_go: ['Jogar', 'Play'], dc_ok: ['Feito', 'Done'], dc_streak: ['Sequência: {0} dia(s)', 'Streak: {0} day(s)'], dc_reset: ['Novos desafios à meia-noite', 'New challenges at midnight'],
   wk_title: ['Evento da semana', 'Event of the week'], wk_bonus: ['Evento da semana: +{0} moedas', 'Weekly event: +{0} coins'], wk_left: ['faltam {0} dia(s)', '{0} day(s) left'],
+  fpsShow: ['Mostrar FPS', 'Show FPS'], bonusTab: ['Bônus', 'Bonus'],
+  ch_friend: ['Um amigo', 'A friend'], ch_dares: ['desafiou você: {0} pts', 'dares you: {0} pts'], ch_beat: ['Desafio de {0}: faça mais de {1} pontos', 'Challenge from {0}: score more than {1} points'],
+  ch_won: ['Você venceu o desafio de {0} ({1} pts)! 🏆', 'You beat the challenge from {0} ({1} pts)! 🏆'], ch_lost: ['Ainda não bateu {0} ({1} pts). Tente de novo!', 'Not past {0} yet ({1} pts). Try again!'],
+  sh_title: ['Compartilhar', 'Share'], sh_img: ['Compartilhar imagem', 'Share image'], sh_save: ['Salvar imagem', 'Save image'], sh_dare: ['Desafie um amigo', 'Challenge a friend'], sh_hold: ['Segure a imagem para salvar', 'Press and hold the image to save it'],
+  sh_dareTxt: ['Fiz {0} pontos em “{1}” no Vice Paws. Duvido você passar! 🐾', 'I scored {0} points on “{1}” in Vice Paws. Bet you can not beat it! 🐾'], sh_linkOk: ['Link do desafio copiado!', 'Challenge link copied!'],
+  sh_score: ['PONTOS', 'POINTS'], sh_stars: ['estrelas', 'stars'], sh_play: ['Jogue grátis', 'Play free'], sh_free: ['Cidade dos Gatos', 'Paws City'],
+  bk_race: ['Corrida de carro pelos pontos.', 'A car race through the spots.'], bk_photo: ['Vá a pé até cada ponto para a foto.', 'Walk to each spot for the photo.'], bk_deliver: ['Leve a encomenda a pé antes do tempo acabar.', 'Carry the parcel on foot before time runs out.'],
+  bk_feast: ['Mortícia come tudo antes do tempo acabar.', 'Morticia eats everything before time runs out.'], bk_treats: ['Colete os petiscos antes do tempo acabar.', 'Collect the treats before time runs out.'], bk_chain: ['Busque e entregue em sequência; cada entrega dá mais tempo.', 'Pick up and drop off in sequence; each drop adds time.'],
+  bk_kites: ['Pegue as pipas que descem com o vento.', 'Catch the kites drifting down with the wind.'], bk_parkour: ['Checkpoints a pé contra o relógio.', 'Checkpoints on foot against the clock.'], bk_brawl: ['Vá até o local e vença três ondas.', 'Go to the spot and beat three waves.'],
+  bk_rescue: ['Suba até o gatinho e traga ele de volta.', 'Climb to the kitten and bring it back.'], bk_escape: ['Sobreviva à perseguição e chegue ao esconderijo.', 'Survive the chase and reach the hideout.'], bk_groceries: ['Ande junto com a vovó gata até o destino. Sem pressa e sem perigo.', 'Walk with grandma cat to the destination. No rush, no danger.'],
+  bk_paws: ['Ache as patinhas douradas pelos becos e escadarias.', 'Find the golden paws in the alleys and stairways.'], bk_football: ['Fique embaixo da bola: três quedas e acabou.', 'Get under the ball: three drops and it is over.'], bk_volley: ['Fique embaixo da bola: três quedas e acabou.', 'Get under the ball: three drops and it is over.'],
+  bk_fish: ['Espere o ❗ e toque em ATACAR.', 'Wait for the ❗ and tap ATTACK.'], bk_kiterun: ['Corra a pé pelos pontos do festival.', 'Run on foot through the festival spots.'],
+  packs: ['Pacotes de visual', 'Outfit packs'], packsSub: ['Só enfeite: roupas e acessórios para os três gatos. Nenhuma vantagem no jogo.', 'Looks only: clothes and accessories for the three cats. No gameplay advantage.'], packItems: ['itens', 'items'],
+  p_pack_praia: ['Praia', 'Beach'], p_pack_agro: ['Agro · Rio Verde', 'Country · Rio Verde'], p_pack_festa: ['Festa', 'Party'], p_pack_natal: ['Natal', 'Christmas'],
 };
 let lang = 'en';
 try { const s = VP.ls.get('vp_lang'); lang = s === 'pt' || s === 'en' ? s : (/^pt/i.test(navigator.language || '') ? 'pt' : 'en'); } catch (e) { lang = 'en'; }

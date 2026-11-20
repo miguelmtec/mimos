@@ -6,6 +6,12 @@ export const PRODUCTS = {
   apoio5:   { title: 'Vice Paws — Apoio aos gatos R$5', price: 5.00, grants: ['supporter'] },
   apoio10:  { title: 'Vice Paws — Apoio aos gatos R$10', price: 10.00, grants: ['supporter'] },
   apoio20:  { title: 'Vice Paws — Apoio aos gatos R$20', price: 20.00, grants: ['supporter'] },
+  // pacotes pequenos, só visual (nada de vantagem no jogo)
+  supporter_small: { title: 'Vice Paws — Um petisco para os gatos', price: 0.99, grants: ['supporter'] },
+  skin_praia: { title: 'Vice Paws — Pacote de visual Praia', price: 0.99, grants: ['pack_praia'] },
+  skin_agro:  { title: 'Vice Paws — Pacote de visual Agro (Rio Verde)', price: 0.99, grants: ['pack_agro'] },
+  skin_festa: { title: 'Vice Paws — Pacote de visual Festa', price: 1.99, grants: ['pack_festa'] },
+  skin_natal: { title: 'Vice Paws — Pacote de visual Natal', price: 1.99, grants: ['pack_natal'] },
 };
 export const MP = 'https://api.mercadopago.com';
 export const token = () => process.env.MP_ACCESS_TOKEN || '';

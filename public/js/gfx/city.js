@@ -1,5 +1,6 @@
 // VICE PAWS — static 3D city built once from the tile world: ground, buildings, neon, palms, lamps, water, sky
 import { THREE, GB, MAT, PR } from './models.js';
+import { chunkMesh, chunkInstances } from './lod.js';
 
 const S = 1 / 24, TL = 2; // world px -> units; tile size in units
 export const LAND_H = 0.14;
@@ -23,7 +24,7 @@ export const MOODS = [
 export function buildCity(W, scene, VP) {
   const World = VP.World, GT = World.GT, TT = World.TT, PAL = World.PAL, { W: TW, H: TH, grid, gnd } = W;
   const dOf = (tx, ty) => World.distAt(W, (tx + 0.5) * 48, (ty + 0.5) * 48);
-  const city = { glowPts: [], animated: [] };
+  const city = { glowPts: [], animated: [], chunks: [] };
   const rng = VP.U.rng(4711);
 
   // ---------- ground ----------
@@ -71,7 +72,7 @@ export function buildCity(W, scene, VP) {
     for (const l of W.lots) if (l.type === 'arena') { const c = lin(l.pal.neon[0]); const cx = l.cx * S, cz = l.cy * S; for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; quad(cx + Math.cos(a) * 5 - 0.6, cz + Math.sin(a) * 5 - 0.6, cx + Math.cos(a) * 5 + 0.6, cz + Math.sin(a) * 5 + 0.6, LAND_H + 0.02, c); } }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
-    const m = new THREE.Mesh(g, MAT.lit); m.frustumCulled = false; scene.add(m); city.ground = m;
+    chunkMesh(g, MAT.lit, scene, city, { cell: 56 });
   }
 
   // ---------- buildings (one merged mesh, window texture + emissive map) ----------
@@ -109,14 +110,14 @@ export function buildCity(W, scene, VP) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
     city.bMat = bldMaterial(VP);
-    const m = new THREE.Mesh(g, city.bMat); m.frustumCulled = false; scene.add(m);
+    chunkMesh(g, city.bMat, scene, city, { cell: 56 });
     city.neonGB = neon;
     // sign text atlas
     const NS = World.SIGNS.length, atlas = canvasTex(1024, 512, (c) => { c.clearRect(0, 0, 1024, 512); c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '900 italic 60px system-ui,Arial,sans-serif'; for (let i = 0; i < NS; i++) { const x = (i % 4) * 256 + 128, y = Math.floor(i / 4) * 128 + 64; c.shadowColor = '#fff'; c.shadowBlur = 14; c.fillStyle = '#fff'; c.fillText(World.SIGNS[i], x, y, 240); c.shadowBlur = 0; c.fillText(World.SIGNS[i], x, y, 240); } });
     const SP = [], SU = [], SC = [];
     for (const s of signs) { const w = 2.3, h = 1.15, u0 = (s.i % 4) / 4, v1 = 1 - Math.floor(s.i / 4) / 4, c = lin(s.col); neon.box('#120a1c', s.x, s.y, s.z - 0.06, w * 2 + 0.2, h + 0.1, 0.08); SP.push(s.x - w, s.y + h / 2, s.z, s.x - w, s.y - h / 2, s.z, s.x + w, s.y + h / 2, s.z, s.x + w, s.y + h / 2, s.z, s.x - w, s.y - h / 2, s.z, s.x + w, s.y - h / 2, s.z); SU.push(u0, v1, u0, v1 - 0.25, u0 + 0.25, v1, u0 + 0.25, v1, u0, v1 - 0.25, u0 + 0.25, v1 - 0.25); for (let i = 0; i < 6; i++) SC.push(Math.min(1, c[0] + 0.35), Math.min(1, c[1] + 0.35), Math.min(1, c[2] + 0.35)); }
     const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(SP, 3)); sg.setAttribute('uv', new THREE.Float32BufferAttribute(SU, 2)); sg.setAttribute('color', new THREE.Float32BufferAttribute(SC, 3));
-    const sm = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ map: atlas, transparent: true, vertexColors: true, depthWrite: false, fog: true })); sm.frustumCulled = false; scene.add(sm);
+    if (signs.length) chunkMesh(sg, new THREE.MeshBasicMaterial({ map: atlas, transparent: true, vertexColors: true, depthWrite: false, fog: true }), scene, city, { cell: 56, detail: 1.5 });
   }
 
   // ---------- deco (merged) ----------
@@ -151,27 +152,25 @@ export function buildCity(W, scene, VP) {
       b.lo('#ffd23f', x, y + 3.3, z + 1.3, 0.3, 0.3, 0.1); b.box('#8a5a2b', x + 1.0, y + 3.8, z - 0.6, 0.5, 1.4, 0.5);
     }
     // yachts moored south of Palm Harbor + a few sails out at sea
-    const boat = (x, z, s, col, rot) => { const c = Math.cos(rot), sn = Math.sin(rot), p = (lx, lz) => [x + (lx * c + lz * sn) * s, z + (-lx * sn + lz * c) * s]; let q = p(0, 0); b.box('#ffffff', q[0], -0.1, q[1], 2.6 * s, 1.1 * s, 8 * s, 0, rot, 0); q = p(0, 4.6); b.add(PR.cone, '#ffffff', q[0], -0.1, q[1], 1.3 * s, 2.2 * s, 0.55 * s, Math.PI / 2, rot, 0); q = p(0, -0.6); b.box('#e8f4ff', q[0], 0.95 * s, q[1], 2.0 * s, 1.0 * s, 3.6 * s, 0, rot, 0); b.box(col, q[0], 0.5 * s, q[1], 2.66 * s, 0.14 * s, 8.02 * s, 0, rot, 0); q = p(0, -1); b.box('#bff4ff', q[0], 1.7 * s, q[1], 1.5 * s, 0.6 * s, 2.0 * s, 0, rot, 0); neon.box(col, q[0], 2.05 * s, q[1], 1.6 * s, 0.06, 2.1 * s, 0, rot, 0); };
+    const b0 = b, far = new GB();
+    const boat = (x, z, s, col, rot) => { const b = far; const c = Math.cos(rot), sn = Math.sin(rot), p = (lx, lz) => [x + (lx * c + lz * sn) * s, z + (-lx * sn + lz * c) * s]; let q = p(0, 0); b.box('#ffffff', q[0], -0.1, q[1], 2.6 * s, 1.1 * s, 8 * s, 0, rot, 0); q = p(0, 4.6); b.add(PR.cone, '#ffffff', q[0], -0.1, q[1], 1.3 * s, 2.2 * s, 0.55 * s, Math.PI / 2, rot, 0); q = p(0, -0.6); b.box('#e8f4ff', q[0], 0.95 * s, q[1], 2.0 * s, 1.0 * s, 3.6 * s, 0, rot, 0); b.box(col, q[0], 0.5 * s, q[1], 2.66 * s, 0.14 * s, 8.02 * s, 0, rot, 0); q = p(0, -1); b.box('#bff4ff', q[0], 1.7 * s, q[1], 1.5 * s, 0.6 * s, 2.0 * s, 0, rot, 0); neon.box(col, q[0], 2.05 * s, q[1], 1.6 * s, 0.06, 2.1 * s, 0, rot, 0); };
     const south = TH * TL + 4;
     for (let i = 0; i < 7; i++) boat((62 + 4 * 28 / 4 + i * 13.5) + 30, south + 5 + (i % 2) * 7, 1 + (i % 3) * 0.25, ['#ffd23f', '#ff4fb8', '#2de2e6'][i % 3], Math.PI / 2 + (i % 2 ? 0.2 : -0.15));
     for (let i = 0; i < 8; i++) { const a = rng() * 6.283, R = 260 + rng() * 80, x = TW * TL / 2 + Math.cos(a) * R * 1.3, z = TH * TL / 2 + Math.sin(a) * R; boat(x, z, 1.6, '#ff4fb8', a); }
     // far skyline silhouettes on the horizon
-    for (let i = 0; i < 70; i++) { const a = i / 70 * 6.283 + rng() * 0.05, R = 300 + rng() * 60, x = TW * TL / 2 + Math.cos(a) * R * 1.4, z = TH * TL / 2 + Math.sin(a) * R * 1.1, h = 12 + rng() * 46, w = 8 + rng() * 10; b.box('#2a1848', x, h / 2 - 1, z, w, h, w); neon.box(rng.pick(['#ff4fb8', '#2de2e6', '#ffd23f', '#b967ff']), x, h - 1, z, w + 0.2, 0.5, w + 0.2); }
-    const m = b.mesh(MAT.flat); m.frustumCulled = false; scene.add(m);
-    const nm = neon.mesh(MAT.glow); nm.frustumCulled = false; scene.add(nm); city.neon = nm;
+    for (let i = 0; i < 70; i++) { const a = i / 70 * 6.283 + rng() * 0.05, R = 300 + rng() * 60, x = TW * TL / 2 + Math.cos(a) * R * 1.4, z = TH * TL / 2 + Math.sin(a) * R * 1.1, h = 12 + rng() * 46, w = 8 + rng() * 10; far.box('#2a1848', x, h / 2 - 1, z, w, h, w); neon.box(rng.pick(['#ff4fb8', '#2de2e6', '#ffd23f', '#b967ff']), x, h - 1, z, w + 0.2, 0.5, w + 0.2); }
+    chunkMesh(b0.geo(), MAT.flat, scene, city, { cell: 56, detail: 1.25 });
+    chunkMesh(far.geo(), MAT.flat, scene, city, { cell: 200, far: 5000 });
+    chunkMesh(neon.geo(), MAT.glow, scene, city, { cell: 56, detail: 1.6 });
   }
 
   // ---------- palms + lamps (instanced) ----------
   {
-    const pg = palmGeo();
-    const palms = W.palms, im = new THREE.InstancedMesh(pg, MAT.lit, palms.length), mt = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), sc = new THREE.Vector3();
-    const tint = [new THREE.Color('#ffffff'), new THREE.Color('#9a8ad0'), new THREE.Color('#ffffff'), new THREE.Color('#7a94a8'), new THREE.Color('#d8a8f0')];
-    palms.forEach((p, i) => { const s = Math.max(0.95, (p.s || 1)) * (0.95 + rng() * 0.3); e.set(0, rng() * 6.283, 0); q.setFromEuler(e); mt.compose(pos.set(p.x * S, LAND_H, p.y * S), q, sc.set(s, s * (0.9 + rng() * 0.3), s)); im.setMatrixAt(i, mt); im.setColorAt(i, tint[World.distAt(W, p.x, p.y)]); });
-    im.frustumCulled = false; scene.add(im); city.palms = im; city.palmCount = palms.length;
+    const tint = ['#ffffff', '#9a8ad0', '#ffffff', '#7a94a8', '#d8a8f0'];
+    chunkInstances(palmGeo(), palmGeoLo(), MAT.lit, W.palms.map(p => { const k = Math.max(0.95, (p.s || 1)) * (0.95 + rng() * 0.3); return { x: p.x * S, y: LAND_H, z: p.y * S, ry: rng() * 6.283, s: k, sy: k * (0.9 + rng() * 0.3), col: tint[World.distAt(W, p.x, p.y)] }; }), scene, city, { cell: 60 });
     const lg = new GB(); lg.add(PR.cyl6, '#59536b', 0, 2.2, 0, 0.07, 4.4, 0.07); lg.box('#59536b', 0.4, 4.4, 0, 0.9, 0.08, 0.08); lg.add(PR.cyl6, '#3a3550', 0, 0.15, 0, 0.16, 0.3, 0.16); lg.box('#fff6c8', 0.8, 4.34, 0, 0.36, 0.1, 0.2);
-    const lm = new THREE.InstancedMesh(lg.geo(), MAT.lit, W.lamps.length);
-    W.lamps.forEach((p, i) => { const d = World.distAt(W, p.x, p.y); e.set(0, (i % 4) * 1.57, 0); q.setFromEuler(e); mt.compose(pos.set(p.x * S, LAND_H, p.y * S), q, sc.set(1, 1, 1)); lm.setMatrixAt(i, mt); city.glowPts.push({ x: p.x * S + Math.cos((i % 4) * 1.57) * 0.8, y: 4.3, z: p.y * S - Math.sin((i % 4) * 1.57) * 0.8, col: PAL[d].lamp, s: 7, lamp: 1 }); });
-    lm.frustumCulled = false; scene.add(lm);
+    W.lamps.forEach((p, i) => { const d = World.distAt(W, p.x, p.y); city.glowPts.push({ x: p.x * S + Math.cos((i % 4) * 1.57) * 0.8, y: 4.3, z: p.y * S - Math.sin((i % 4) * 1.57) * 0.8, col: PAL[d].lamp, s: 7, lamp: 1 }); });
+    chunkInstances(lg.geo(), null, MAT.lit, W.lamps.map((p, i) => ({ x: p.x * S, y: LAND_H, z: p.y * S, ry: (i % 4) * 1.57 })), scene, city, { cell: 60, detail: 1.5 });
   }
 
   glowPoints(city, scene);
@@ -191,6 +190,19 @@ export function palmGeo() {
     pg.lo('#8a5a2b', px, py - 0.05, 0, 0.3);
   return pg.geo();
 }
+// cheap palm for the distance: one trunk and eight flat blades (~56 triangles instead of ~300)
+function blade(g, col, ax, ay, az, bx, by, bz, w) {
+  const c = new THREE.Color(col), dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, nx = -dz / l * w, nz = dx / l * w;
+  const v = [[ax - nx, ay, az - nz], [ax + nx, ay, az + nz], [bx, by, bz]];
+  for (const order of [[0, 1, 2], [0, 2, 1]]) for (const i of order) { g.p.push(v[i][0], v[i][1], v[i][2]); g.n.push(0, 1, 0); g.c.push(c.r, c.g, c.b); }
+}
+export function palmGeoLo() {
+  const g = new GB(); let px = 0, py = 0; for (let i = 0; i < 4; i++) { const lean = i * 0.08; px += Math.sin(lean) * 1.9; py += Math.cos(lean) * 1.9; }
+  g.add(PR.cyl6, '#8f6034', px / 2, py / 2, 0, 0.19, py, 0.19, 0, 0, -0.12);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; blade(g, i % 2 ? '#2fae7a' : '#1f8f6a', px, py + 0.15, 0, px + Math.cos(a) * 3.1, py - 0.75, Math.sin(a) * 3.1, 0.42); }
+  return g.geo();
+}
+export function treeGeoLo() { const g = new GB(); g.add(PR.cyl6, '#7a5a3b', 0, 1.1, 0, 0.22, 2.2, 0.22); g.add(PR.cone, '#2f9a5a', 0, 3.6, 0, 1.7, 2.8, 1.7); return g.geo(); }
 export function treeGeo() {
   const g = new GB(); g.add(PR.cyl6, '#7a5a3b', 0, 1.1, 0, 0.22, 2.2, 0.22); g.lo('#2f9a5a', 0, 3.2, 0, 1.7, 1.5, 1.7); g.lo('#3fb870', 0.5, 4.2, 0.2, 1.1, 1.0, 1.1); g.lo('#278a50', -0.6, 3.9, -0.3, 1.0, 0.9, 1.0);
   return g.geo();

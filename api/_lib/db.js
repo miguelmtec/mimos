@@ -26,6 +26,7 @@ export async function getSql() {
 export function __setSqlForTests(sql) {
   testSql = sql;
   ready = null;
+  onlineReady = null;
 }
 
 const tables = (sql) => [
@@ -82,4 +83,72 @@ export function ensureSchema(sql) {
     await Promise.all(indexes(sql).map((i) => i()));
   })().catch((e) => { ready = null; throw e; });
   return ready;
+}
+
+// ---------- Cidade Online (api/online) ----------
+// Kept apart from the account schema on purpose: if anything here fails, accounts, cats and saves
+// keep working and the game falls back to solo free roam.
+export function ensureOnlineSchema(sql) {
+  onlineReady ??= (async () => {
+    // Presence is throwaway data rewritten about once a second per player: an UNLOGGED table skips
+    // the write-ahead log (less compute, no history kept in storage). If the database refuses it,
+    // a normal table does the same job.
+    // (Keep the two column lists identical, and in sync with db/schema.sql.)
+    try {
+      await sql`create unlogged table if not exists vp_presence (
+    id text primary key,
+    room text not null,
+    x integer not null,
+    z integer not null,
+    ry real not null default 0,
+    anim text not null default 'idle',
+    car text,
+    name text not null,
+    cat jsonb not null,
+    cv text not null,
+    emote text,
+    es smallint not null default 0,
+    phrase smallint,
+    ps smallint not null default 0,
+    paws text,
+    ip_hash text not null default '',
+    user_id uuid,
+    updated_at timestamptz not null default now())`;
+    } catch {
+      await sql`create table if not exists vp_presence (
+    id text primary key,
+    room text not null,
+    x integer not null,
+    z integer not null,
+    ry real not null default 0,
+    anim text not null default 'idle',
+    car text,
+    name text not null,
+    cat jsonb not null,
+    cv text not null,
+    emote text,
+    es smallint not null default 0,
+    phrase smallint,
+    ps smallint not null default 0,
+    paws text,
+    ip_hash text not null default '',
+    user_id uuid,
+    updated_at timestamptz not null default now())`;
+    }
+    await sql`create table if not exists vp_online_reports (
+      id bigserial primary key,
+      reporter_id text not null,
+      target_id text not null,
+      target_name text not null default '',
+      target_cat jsonb,
+      target_user_id uuid,
+      room text not null default '',
+      reason text not null,
+      created_at timestamptz not null default now())`;
+    await Promise.all([
+      sql`create index if not exists vp_presence_room_idx on vp_presence (room, updated_at)`,
+      sql`create index if not exists vp_online_reports_reporter_idx on vp_online_reports (reporter_id, created_at desc)`,
+    ]);
+  })().catch((e) => { onlineReady = null; throw e; });
+  return onlineReady;
 }

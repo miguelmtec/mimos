@@ -20,7 +20,7 @@ Life.celebNames = function () {
   const Pa = VP.Party; if (!Pa || typeof Pa.active !== 'function' || !Pa.active()) return [];
   return NAMES.filter(n => typeof Pa.specFor === 'function' && Pa.specFor(n));
 };
-// feat/progression exports the real getMimosShowcaseLook() ({ cats: { mimo: { items } } }); if it is missing or has no look this falls back to the
+// HOOK city-life: feat/progression exports the real getMimosShowcaseLook() ({ cats: { mimo: { items } } }); if it is missing or has no look this falls back to the
 // default outfit ids of data/outfits.json. Accepted shapes: { mimo: { slot: itemId } | [itemId...], ... } optionally wrapped as { look, name }.
 Life.showcaseLook = function () {
   const fn = VP.getMimosShowcaseLook || (VP.Prog && VP.Prog.getMimosShowcaseLook) || (VP.Wardrobe && VP.Wardrobe.getMimosShowcaseLook) || window.getMimosShowcaseLook;

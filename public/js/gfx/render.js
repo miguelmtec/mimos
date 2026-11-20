@@ -194,12 +194,13 @@ function syncDog(e, G, dt) {
 function syncCar(c, G) {
   const K = VP.Art.CARS[c.type];
   const o = obj(c, () => buildCar(c.type, K, c.col));
-  o.position.set(c.x * S, hAt(c.x, c.y), c.y * S); o.rotation.y = Math.PI / 2 - c.a;
+  o.position.set(c.x * S, c.boat ? -0.42 + Math.sin(c.t * 2.2) * 0.05 : hAt(c.x, c.y) + (c.alt || 0), c.y * S); o.rotation.y = Math.PI / 2 - c.a;
+  if (o.userData.rotor) o.userData.rotor.rotation.y = c.t * (c.alt > 0.2 || G.car === c ? 22 : 1);
   const driven = G.car === c;
   if (o.userData.heads) o.userData.heads.visible = driven;
   o.rotation.z = driven ? U.clamp(-(c.da || 0) * 0.02, -0.06, 0.06) : 0;
   setMat(o, c.flash > 0 ? MAT.white : null);
-  shadow(o.position.x, o.position.z, o.position.y, K.wid * S * 0.62, K.len * S * 0.56, o.rotation.y);
+  if (!c.boat) shadow(o.position.x, o.position.z, o.position.y - (c.alt || 0), K.wid * S * 0.62, K.len * S * 0.56, o.rotation.y);
   if (K.cop) { const b = Math.floor(c.t * 6) % 2; glow(o.position.x, o.position.y + 1.7, o.position.z, b ? '#ff2040' : '#2a6bff', 6); }
   if (c.type === 'gold') glow(o.position.x, o.position.y + 0.25, o.position.z, Math.floor(c.t * 2) % 2 ? '#ff4fb8' : '#2de2e6', 7);
   if (driven) { const fxp = Math.cos(c.a), fyp = Math.sin(c.a); glow(o.position.x + fxp * 3.2, o.position.y + 0.5, o.position.z + fyp * 3.2, '#fff6b0', 5); }

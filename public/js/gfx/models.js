@@ -263,6 +263,19 @@ export function animDog(g, st) {
 export function buildCar(type, K, col) {
   const g = new THREE.Group(), b = new GB();
   const S = 1 / 24, L = K.len * S, W = K.wid * S, body = col ? col[0] : K.body, body2 = col ? col[1] : K.body2, hl = L / 2, hw = W / 2;
+  if (K.veh) { // kart, motorbike, bicycle, speedboat, helicopter (forward = +z)
+    const wheel = (x, z, r) => { b.cyl('#120a18', x, r, z, r, 0.16, r, 0, 0, Math.PI / 2); b.cyl('#c0c7d1', x, r, z, r * 0.45, 0.18, r * 0.45, 0, 0, Math.PI / 2); };
+    let rotor = null;
+    if (K.veh === 'kart') { for (const z of [-0.9, 0.9]) for (const sx of [-1, 1]) wheel(sx * 0.7, z, 0.3); b.box(body, 0, 0.42, 0, 1.1, 0.3, 2.3); b.box(body2, 0, 0.6, 1.0, 1.3, 0.14, 0.4); b.box(body2, 0, 0.9, -1.05, 1.3, 0.1, 0.3); b.box('#17101c', 0, 0.72, -0.3, 0.8, 0.5, 0.6); b.cyl('#17101c', 0, 0.85, 0.35, 0.22, 0.05, 0.22, 1.1); }
+    else if (K.veh === 'moto' || K.veh === 'bike') { const m = K.veh === 'moto', r = m ? 0.36 : 0.34; wheel(0, -0.85, r); wheel(0, 0.85, r); if (m) { b.box(body, 0, 0.7, 0, 0.34, 0.5, 1.3); b.sph(body, 0, 0.98, 0.25, 0.26, 0.2, 0.42); b.box(body2, 0, 0.98, -0.42, 0.3, 0.12, 0.6); b.cyl('#c0c7d1', 0.2, 0.4, -0.5, 0.07, 0.8, 0.07, Math.PI / 2); } else { b.box(body, 0, 0.62, 0, 0.07, 0.07, 1.5, 0.3); b.box(body, 0, 0.5, 0.1, 0.07, 0.07, 1.3, -0.3); b.box(body2, 0, 0.98, -0.4, 0.2, 0.07, 0.36); b.box('#c98f4b', 0, 0.86, 1.0, 0.5, 0.3, 0.36); }
+      b.cyl('#59536b', 0, 0.75, 0.75, 0.04, 0.9, 0.04, -0.35); b.box('#17101c', 0, 1.18, 0.6, 0.8, 0.06, 0.06); b.sph('#fff6b0', 0, 0.95, 0.95, 0.1); }
+    else if (K.veh === 'lancha') { b.box(body, 0, 0.3, -0.2, 1.4, 0.6, 2.6); b.add(PR.cone, body, 0, 0.3, 1.75, 0.7, 1.3, 0.3, Math.PI / 2); b.box(body2, 0, 0.62, -0.2, 1.46, 0.08, 2.64); b.box('#9fe8ff', 0, 0.9, 0.5, 1.1, 0.5, 0.08, -0.3); b.box('#17101c', 0, 0.5, -1.6, 0.5, 0.6, 0.3); b.box('#c98f4b', 0, 0.62, -0.6, 1.0, 0.1, 0.9); }
+    else { b.sph(body, 0, 1.2, 0.2, 0.9, 0.85, 1.3); b.sph('#9fe8ff', 0, 1.3, 0.85, 0.72, 0.6, 0.75); b.box(body2, 0, 1.3, -1.6, 0.22, 0.26, 1.9); b.box(body2, 0, 1.8, -2.5, 0.08, 0.9, 0.4); b.cyl('#59536b', 0, 2.15, 0.2, 0.07, 0.4, 0.07); for (const sx of [-1, 1]) { b.box('#59536b', sx * 0.7, 0.12, 0.2, 0.08, 0.08, 2.2); b.box('#59536b', sx * 0.6, 0.45, 0.2, 0.06, 0.6, 0.06); }
+      const rg = new GB(); rg.box('#17101c', 0, 0, 0, 6.4, 0.05, 0.3); rg.box('#17101c', 0, 0, 0, 0.3, 0.05, 6.4); rotor = rg.mesh(); rotor.position.set(0, 2.4, 0.2); }
+    const mesh = b.mesh(); g.add(mesh); if (rotor) g.add(rotor);
+    g.userData = { mesh, heads: null, rotor };
+    return g;
+  }
   for (const z of [-hl * 0.62, hl * 0.58]) for (const sx of [-1, 1]) { b.cyl('#120a18', sx * (hw - 0.02), 0.3, z, 0.3, 0.26, 0.3, 0, 0, Math.PI / 2); b.cyl('#c0c7d1', sx * (hw + 0.115), 0.3, z, 0.14, 0.03, 0.14, 0, 0, Math.PI / 2); }
   if (K.pickup) { // farm pickup: cab in front, open bed with hay
     b.box(body, 0, 0.6, 0, W, 0.5, L); b.box(body2, 0, 0.36, 0, W + 0.04, 0.12, L - 0.1);

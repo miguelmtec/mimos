@@ -29,7 +29,7 @@ const DOG = Game.DOG = {
 };
 // Difficulty curve: mission levels above 20 keep growing, but at half the pace (smoother late game).
 Game.eff = lv => { lv = lv || 1; return lv <= 20 ? lv : 20 + (lv - 20) * 0.5; };
-const CARSTAT = { pickup: [150, 300],  gold: [100, 345], pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
+const CARSTAT = Game.CARSTAT = { kart: [80, 330], moto: [60, 400], bike: [50, 250], lancha: [120, 300], heli: [150, 280], pickup: [150, 300],  gold: [100, 345], pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
 
 // ---------- helpers ----------
 function step(e, dx, dy, mode) {
@@ -900,6 +900,7 @@ const DV = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 function canGo(dir, i, j) { return dir === 0 ? i < W.cols : dir === 2 ? i > 0 : dir === 1 ? j < W.rows : j > 0; }
 function laneCoord(dir, i, j) { return dir === 0 ? W.RY[j] + 48 : dir === 2 ? W.RY[j] - 48 : dir === 1 ? W.RX[i] - 48 : W.RX[i] + 48; }
 function carBlocked(c, x, y) {
+  if (c.veh && VP.Veh && (c.boat || c.fly)) return VP.Veh.blocked(W, c, x, y);
   const ca = Math.cos(c.a), sa = Math.sin(c.a), h = VP.Art.CARS[c.type].len / 2 - 18;
   return W.blocked(x + ca * h, y + sa * h, 17, 3) || W.blocked(x - ca * h, y - sa * h, 17, 3);
 }
@@ -941,14 +942,14 @@ function updCar(c, dt, rdt) {
   }
   // collisions with dogs
   const fast = Math.abs(c.spd) > 80;
-  if (fast && (driven || c.ai === 'parked')) for (const e of G.dogs) {
+  if (fast && !c.fly && !c.boat && (driven || c.ai === 'parked')) for (const e of G.dogs) {
     if (e.dead || U.d2(e.x, e.y, c.x, c.y) > (30 + e.r) * (30 + e.r)) continue;
     hurtDog(e, 70 * Math.abs(c.spd) / 300, 'car', c.x, c.y, 420); c.spd *= e.isBoss ? 0.3 : 0.88; shake(5); hitstop(0.03); sfx('hit', 0.06);
     if (e.isBoss) damageCar(c, 12);
   }
   // car vs car
   for (const o of G.cars) {
-    if (o === c || o.dead) continue;
+    if (o === c || o.dead || c.fly || o.fly) continue;
     const d = Math.hypot(o.x - c.x, o.y - c.y);
     if (d < 46 && d > 0.1) {
       const nx = (o.x - c.x) / d, ny = (o.y - c.y) / d, rel = Math.abs(c.spd) + Math.abs(o.spd);
@@ -1051,8 +1052,9 @@ function enterCar(car) {
 }
 function exitCar(force) {
   const car = G.car; if (!car) return;
+  let vp = null; if (car.veh && VP.Veh && (car.boat || car.fly)) { vp = VP.Veh.exitPoint(G, car, force ? 60 : 3); if (!vp && !force) { say(tr(car.boat ? 'vh_needPier' : 'vh_needLand'), '#ffd23f', 2); return; } }
   G.car = null; car.ai = 'parked'; VP.Audio.engine(0, false); if (!force) sfx('door');
-  for (const c of G.cats) { const p = nearFree(car.x, car.y, 56, 0) || { x: car.x, y: car.y }; c.x = p.x; c.y = p.y; c.inv = 0.8; poof(c.x, c.y - 10, 4); }
+  for (const c of G.cats) { const p = vp ? { x: vp.x + (c.idx - 1) * 14, y: vp.y } : nearFree(car.x, car.y, 56, 0) || { x: car.x, y: car.y }; c.x = p.x; c.y = p.y; c.inv = 0.8; poof(c.x, c.y - 10, 4); }
   G.fieldT = 0;
 }
 Game.enterCar = enterCar; Game.exitCar = exitCar;

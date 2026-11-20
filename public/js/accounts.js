@@ -107,7 +107,7 @@ UI.SCREENS.creator = {
   },
 };
 function keep() { const g = id => { const el = document.getElementById(id); return el ? el.value : null; }; if (g('cname') !== null) { ed.name = g('cname'); ed.breed = g('cbreed'); ed.bio = g('cbio'); ed.instagram = g('cig'); } }
-function preview() { const R3 = VP.R3; if (R3 && R3.ok) R3.showcase([{ spec: A.toSpec(ed.spec), x: 0, z: 0, s: 1.3 }], { dist: 6.2, shift: 1.5, lookY: 1.0 }); }
+function preview() { const R3 = VP.R3; if (R3 && R3.ok) R3.showcase([{ spec: A.toSpec(ed.spec), x: 0, z: 0, s: 1.3 }], { dist: 6.4, shift: 2.5, lookY: 1.0 }); }
 UI.act.creator = el => {
   const i = el.dataset.i; edIdx = i === 'new' || i === 'local' ? i : +i;
   if (edIdx === 'local') ed = VP.S.avatarLocal ? JSON.parse(JSON.stringify(VP.S.avatarLocal)) : blank(); else if (edIdx === 'new') ed = blank(); else ed = JSON.parse(JSON.stringify(A.cats[edIdx]));

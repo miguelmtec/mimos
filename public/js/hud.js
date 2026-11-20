@@ -130,6 +130,7 @@ H.draw = function (G, dt) {
   // ---- controls ----
   controls(G, k, t, touch, a);
   if (G.real < 0.5) { c.fillStyle = 'rgba(18,4,31,' + (1 - G.real * 2) + ')'; c.fillRect(0, 0, w, h); }
+  if (G.W.real) txt('© OpenStreetMap', 6, h - 8, 9, 'rgba(255,255,255,.75)', 'left', false, '600');
   if (VP.debug && R3) txt(R3.fps + 'fps q' + R3.quality + ' dc' + R3.draws + ' tri' + Math.round((R3.tris || 0) / 1000) + 'k', w / 2, h - 12, 11, '#fff');
 };
 
@@ -178,7 +179,7 @@ function radar(G, k, t, ob) {
   if (ob.at && !ob.free) pin(ob.at.x, ob.at.y, GOLD, (4.5 + Math.sin(t * 6)) * k);
   Art.poly(c, [m.x, m.y - 7 * k, m.x - 5 * k, m.y + 5 * k, m.x, m.y + 2 * k, m.x + 5 * k, m.y + 5 * k], '#fff', INK, 1.5);
   c.beginPath(); c.arc(m.x, m.y, m.r, 0, 6.283); c.lineWidth = 3; c.strokeStyle = G.wanted > 0 ? (Math.floor(t * 4) % 2 ? '#ff2040' : '#2a6bff') : PINK; c.stroke();
-  const d = VP.World.distAt(W, a.x, a.y); txt(VP.t('d' + (G.m.d > 4 && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
+  const d = VP.World.distAt(W, a.x, a.y); txt(W.real ? W.real.name.split(' — ').pop().toUpperCase().slice(0, 18) : VP.t('d' + (G.m.d > 4 && !G.free ? G.m.d : d)).toUpperCase(), m.x, m.y + m.r + (G.wanted > 0 || G.wantedFlash > 0 ? 30 : 12) * k, 9.5 * k, '#fff');
 }
 
 function worldLabels(G, R3, k, t) {
@@ -202,6 +203,7 @@ function worldLabels(G, R3, k, t) {
   if (G.car && G.car.hp < G.car.max) { const p = R3.project(G.car.x, G.car.y, 2.2); if (p.on) bar(p.x - 24 * k, p.y, 48 * k, 6 * k, G.car.hp / G.car.max, G.car.hp / G.car.max < 0.35 ? '#ff4f5e' : '#7CFF6B'); }
   if (G.ctx && G.ctx.k === 'car' && !I.touch) { const p = R3.project(G.ctx.car.x, G.ctx.car.y, 2.2); if (p.on) txt('[E] ' + VP.t('enter'), p.x, p.y, 13 * k, TEAL); }
   for (const f of G.friends) if (f.label && Math.abs(f.x - a.x) < 700 && Math.abs(f.y - a.y) < 700) { const p = R3.project(f.x, f.y, 1.7); if (p.on) txt(f.label, p.x, p.y, 11 * k, f.name === 'avatar' ? GOLD : '#fff'); }
+  if (G.W.landmarks) for (const l of G.W.landmarks) { const dl = Math.max(Math.abs(l.gx - a.x), Math.abs(l.gy - a.y)); if (dl > (l.beacon ? 3200 : 1000)) continue; const p = R3.project(l.gx, l.gy, 5); if (p.on) txt((VP.S.tour && VP.S.tour[G.tour] && VP.S.tour[G.tour].seen[l.name] ? '✓ ' : '📍 ') + l.name, p.x, p.y, 10.5 * k, GOLD); }
   // mission beams
   if (G.markers) for (const mk of G.markers) {
     if (U.d2(mk.x, mk.y, a.x, a.y) > 1500 * 1500) continue;
@@ -209,7 +211,7 @@ function worldLabels(G, R3, k, t) {
     if (mk.k === 'shop') txt('🛍 ' + VP.t('shop'), p.x, p.y, 13 * k, GOLD);
     else if (mk.k === 'npc') txt('💬 ' + mk.label, p.x, p.y, 12 * k, '#7CFF6B');
     else if (mk.k === 'race') txt('🏁 ' + mk.label, p.x, p.y, 12 * k, TEAL);
-    else { const m = VP.Missions.get(mk.n); txt((m.boss ? '👑 ' : '') + 'M' + (m.bonus ? '★' : m.n), p.x, p.y - 9 * k, 15 * k, mk.col); txt(VP.mname(m), p.x, p.y + 8 * k, 11.5 * k, '#fff'); }
+    else { const m = VP.Missions.get(mk.n); if (!m) continue; txt((m.boss ? '👑 ' : '') + (m.side ? '★' : 'M' + (m.bonus ? '★' : m.n)), p.x, p.y - 9 * k, 15 * k, mk.col); txt(VP.mname(m), p.x, p.y + 8 * k, 11.5 * k, '#fff'); }
   }
   // floating numbers + sim text particles
   for (const tx of G.texts) { const p = R3.project(tx.x, tx.y + 20, 1.7 + tx.t * 1.3); if (p.on) { c.globalAlpha = Math.min(1, (0.9 - tx.t) * 4); txt(tx.txt, p.x, p.y, tx.size * k * (tx.t < 0.1 ? 1 + (0.1 - tx.t) * 5 : 1), tx.col); c.globalAlpha = 1; } }

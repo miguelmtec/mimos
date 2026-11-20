@@ -17,13 +17,14 @@ M.load = function (data, act) {
   // time trials become side missions (n >= 100)
   M.side = (M.act.trials || []).map((t, i) => ({ n: 100 + i, id: t.id, geo: t.d, d: t.d, type: 'race', name: [t.name.pt, t.name.en], p: { route: t.cps, time: t.time, cps: t.cps.length, start: t.start, reward: t.reward || 100 }, lv: t.lv || 5, par: Math.round(t.time * 0.8), hunger: 1, boss: null, bonus: true, side: true }));
 };
-M.get = n => M.list.find(m => m.n === n) || M.side.find(m => m.n === n);
+M.tourList = [];
+M.get = n => M.list.find(m => m.n === n) || M.side.find(m => m.n === n) || M.tourList.find(m => m.n === n);
 M.next = n => { const i = M.list.findIndex(m => m.n === n); const nx = M.list[i + 1]; return nx && nx.d === M.list[i].d ? nx : (n === 50 ? null : (nx && n < 50 ? nx : null)); };
 M.unlocked = m => {
   if (m.side) return true;
   if (!m.bonus) return m.n <= VP.S.unlocked;
   const d = M.DIST[m.d];
-  if (!VP.Shop || !VP.Shop.has(d.grant)) return false;
+  if (!d || !VP.Shop || !VP.Shop.has(d.grant)) return false;
   return m.n === d.from || !!VP.S.stars[m.n - 1];
 };
 M.par = m => m.par || (m.p.time ? Math.round(m.p.time * 0.72) : 120);
@@ -282,6 +283,51 @@ const TYPES = {
       for (let i = 0; i < p.waves; i++) { B.wait(i ? 2.5 : 2, 'o_waveIn', [i + 1, p.waves]); B.wave(pack(B, Math.min(10, Math.round(4 + i * 1.3 + B.lv / 14))), { raid: true, txt: 'o_defend', args: [i + 1, p.waves], hold: { x: h.x, y: h.y + 90 } }); }
     },
   },
+  // "Volta ao Mundo": missions on real maps, built from the city's landmarks
+  tour: {
+    setup(B) {
+      const p = B.p, G = B.G, W = B.W, L = W.landmarks, comu = (W.real.tags || []).includes('comunidade');
+      const pick = i => { if (L.length) { const l = L[(i * 7 + B.m.n) % L.length]; return { x: l.gx, y: l.gy, name: l.name }; } const q = W.randWalk(B.rng); return { x: q.x, y: q.y, name: '' }; };
+      const far = (from, i) => { let best = pick(i), bd = 0; for (let k = 0; k < Math.max(1, Math.min(8, L.length)); k++) { const c = pick(i + k), d = U.d2(c.x, c.y, from.x, from.y); if (d > bd && d < 9000 * 9000) { bd = d; best = c; } } return best; };
+      const start = W.tourStart || pick(0);
+      B.begin(start, { traffic: comu ? 0 : 8, coffee: 8, parked: comu ? 0 : 10 });
+      if (comu) { G.noPolice = true; G.noHeat = true; }
+      const kind = p.kind;
+      if (kind === 'race') {
+        const car = Game.addCar(B.getaway(), start.x, start.y, 0); car.hp = car.max = 260; Game.enterCar(car); G.noHeat = true;
+        let cur = start, dist = 0; const cps = []; for (let k = 0; k < 5; k++) { const c = far(cur, k * 3 + 1); dist += Math.hypot(c.x - cur.x, c.y - cur.y); cps.push(c); cur = c; }
+        G.mtimer = Math.round(dist / 24 / 7 + 40);
+        cps.forEach((pt, k) => B.step({ txt: 'o_tourCp', args: [k + 1, cps.length, pt.name], car: true, at: () => pt, done: () => !!G.car && U.d2(G.car.x, G.car.y, pt.x, pt.y) < 130 * 130 }));
+      } else if (kind === 'deliver') {
+        const dest = far(start, 2); G.mtimer = Math.round(Math.hypot(dest.x - start.x, dest.y - start.y) / 24 / 3.2 + 50);
+        if (!comu) B.dogs({ x: dest.x, y: dest.y }, pack(B, gsize(B)));
+        B.goto(dest, comu ? 'o_tourCarry' : 'o_tourDeliver', { args: [dest.name] });
+      } else if (kind === 'brawl') {
+        const spot = far(start, 4); B.goto(spot, 'o_tourGo', { args: [spot.name] }); G.noPolice = true; G.noHeat = true;
+        for (let i = 0; i < 3; i++) { B.wait(2, 'o_waveIn', [i + 1, 3]); B.wave(pack(B, 4 + i * 2), { args: [i + 1, 3] }); }
+      } else if (kind === 'feast' || kind === 'treats') {
+        for (let i = 0; i < 26; i++) { const q = W.randWalk(B.rng); if (U.d2(q.x, q.y, start.x, start.y) < 1500 * 1500 || i < 8) Game.addItem(B.rng.pick(['treat', 'donut', 'sushi', 'hotdog']), q.x, q.y); }
+        for (let i = 0; i < 4; i++) { const q = Game.nearFree(start.x, start.y, 120 + i * 60, 0); if (q) Game.addProp({ k: 'stand', x: q.x, y: q.y, food: B.rng.pick(['sushi', 'hotdog', 'donut']), free: true }); }
+        G.mtimer = 120; G.restock = 9;
+        B.step({ txt: comu ? 'o_tourTreats' : 'o_eat', args: [p.n || 22], cat: 'morticia', act: 'attack', at: () => nearestFood(G), done: () => G.stat.eaten >= (p.n || 22), prog: () => [Math.min(p.n || 22, G.stat.eaten), p.n || 22] });
+      } else if (kind === 'escape') {
+        B.wantedOn(2); const dest = far(start, 5);
+        B.step({ txt: 'o_survive', t: 0, fight: true, roam: true, tick(dt) { this.t += dt; }, done() { return this.t >= 35; }, prog() { return [Math.floor(this.t), 35]; }, at: () => null });
+        B.goto(dest, 'o_tourGo', { args: [dest.name] });
+        B.step({ txt: 'o_done', enter() { G.minWanted = 0; G.heat = 0; G.noPolice = true; }, done: () => true, at: () => null });
+      } else if (kind === 'rescue') { // kitten stuck up high: climb, then bring it home
+        let top = pick(1), th = -1; for (let k = 0; k < Math.max(1, L.length); k++) { const c = pick(k), h = W.hpx ? W.hpx(c.x, c.y) : 0, d = U.d2(c.x, c.y, start.x, start.y); if (d > 300 * 300 && h + d * 1e-9 > th) { th = h; top = c; } }
+        const kit = Game.addFriend(top.x, top.y, 'f1'); kit.stay = true;
+        B.goto(top, 'o_tourKitten', { args: [top.name], enter() {}, });
+        B.step({ txt: 'o_done', enter() { kit.stay = false; VP.Audio.sfx('revive'); Game.fx.say(VP.t('freed'), '#7CFF6B'); }, done: () => true, at: () => null });
+        B.goto(start, 'o_escort');
+      } else { // 'kites': on-foot checkpoints
+        let cur = start, dist = 0; const cps = []; for (let k = 0; k < 4; k++) { const c = far(cur, k * 2 + 3); dist += Math.hypot(c.x - cur.x, c.y - cur.y); cps.push(c); cur = c; }
+        G.mtimer = Math.round(dist / 24 / 3 + 45);
+        cps.forEach((pt, k) => B.step({ txt: 'o_tourKite', args: [k + 1, cps.length, pt.name], at: () => pt, done: () => { const a = G.car || G.cats[G.active]; return U.d2(a.x, a.y, pt.x, pt.y) < 90 * 90; } }));
+      }
+    },
+  },
   boss: {
     setup(B) {
       const G = B.G, A = B.R('arena');
@@ -319,11 +365,11 @@ function nearestLoot(G) {
 // ---------- lifecycle ----------
 M.world = () => VP.City || (VP.City = World.gen({ seed: 7 }));
 M.start = function (m) {
-  const type = TYPES[m.type], p = m.p, W = M.world();
+  const type = TYPES[m.type], p = m.p, W = m.tourCity ? VP.CityCache[m.tourCity] : M.world();
   const B = { m, p, lv: m.lv, geo: m.geo, rng: U.rng(m.n * 977 + 13), comps: {} };
   if (type.plan) type.plan(B);
   W.reset();
-  for (const role in B.comps) { const lot = W.roles[m.geo][role]; lot.props = W.setComp(lot, B.comps[role]); }
+  if (!W.real) for (const role in B.comps) { const lot = W.roles[m.geo][role]; lot.props = W.setComp(lot, B.comps[role]); }
   const G = Game.create(W, m);
   B.W = W; B.G = G; mk(B);
   G.mtimer = null;
@@ -370,6 +416,36 @@ M.startFree = function (pos, opts) {
   }
   return G;
 };
+// ---------- Volta ao Mundo (real cities) ----------
+M.cities = [];
+M.loadCities = idx => { M.cities = (idx && idx.cities) || []; M.osm = (idx && idx.attribution) || '© OpenStreetMap contributors'; };
+const TOUR_KINDS = ['race', 'deliver', 'brawl', 'feast', 'escape'], COMU_KINDS = ['deliver', 'treats', 'rescue', 'kites'];
+M.tourMissions = function (id) {
+  const ci = M.cities.findIndex(c => c.id === id), meta = M.cities[ci], W = VP.CityCache[id], comu = (W.real.tags || []).includes('comunidade');
+  const kinds = comu ? COMU_KINDS : TOUR_KINDS;
+  const list = kinds.map((kind, k) => ({ n: 1000 + ci * 10 + k, type: 'tour', tourCity: id, name: [VP.L['tk_' + kind][0], VP.L['tk_' + kind][1]], p: { kind, comu }, lv: Math.min(40, 4 + ci * 2 + k * 2), par: 150, hunger: 1, boss: null, bonus: true, side: true, d: 0, geo: 0 }));
+  M.tourList = M.tourList.filter(m => m.tourCity !== id).concat(list);
+  return list;
+};
+M.startTour = function (id) {
+  const W = VP.CityCache[id], meta = W.meta, C = W.real, comu = (C.tags || []).includes('comunidade'); W.reset();
+  const m = { n: 0, d: 0, geo: 0, type: 'free', name: [C.name, C.name], p: {}, lv: Math.max(1, Math.min(30, VP.S.unlocked)), hunger: 0.35, free: true };
+  const G = Game.create(W, m);
+  const B = mk({ m, p: {}, lv: m.lv, geo: 0, rng: U.rng(321 + id.length), W, G });
+  const L = W.landmarks, S = VP.S;
+  if (!W.tourStart) { let best = W.snap(W.pw / 2, W.ph / 2) || W.randWalk(B.rng), bd = 1e18; for (const rd of W.roads) if (rd.w >= 6) for (const q of rd.pts) { const d = U.d2(q.x, q.y, W.pw / 2, W.ph / 2); if (d < bd && !W.blocked(q.x, q.y, 40, 0)) { bd = d; best = { x: q.x, y: q.y }; } } W.tourStart = best; }
+  const sp = W.tourStart;
+  B.begin(sp, { paws: 1, traffic: comu ? 0 : (meta.traffic || 10), coffee: 10, parked: comu ? 0 : 14 });
+  G.free = true; G.tour = id; G.steps = []; G.markers = []; G.npcs = [];
+  S.paws = S.paws || {}; S.quests = S.quests || {}; S.tour = S.tour || {}; S.tour[id] = S.tour[id] || { seen: {} };
+  if (comu) { G.noPolice = true; G.noHeat = true; } // community maps: friendly, no cops, no wanted level
+  else for (let i = 0; i < 6; i++) { const q = W.randWalk(B.rng); if (U.d2(q.x, q.y, sp.x, sp.y) > 600 * 600) B.dogs(q, pack(B, 2), { aggro: 170 }); }
+  const r = U.rng(700 + id.length * 7); for (let i = 0; i < 5; i++) { const q = W.randWalk(r), pid = id + '_' + i; if (!S.paws[pid]) { const it = Game.addItem('gpaw', q.x, q.y); it.pid = pid; } }
+  const ms = M.tourMissions(id);
+  ms.forEach((mm, k) => { const l = L.length ? L[(k * 5 + 2) % L.length] : null, q = l ? { x: l.gx, y: l.gy } : W.randWalk(r); G.markers.push({ x: q.x + 60, y: q.y + 40, k: 'mission', n: mm.n, col: VP.S.stars[mm.n] ? '#2de2e6' : '#ff4fb8' }); });
+  if (S.avatar) { const f = Game.addFriend(sp.x + 30, sp.y + 50, 'avatar'); f.spec = S.avatar; f.label = S.avatar.label || ''; }
+  return G;
+};
 M.current = G => G.steps[G.step] || null;
 M.update = function (G, dt) {
   if (G.over) return;
@@ -383,8 +459,9 @@ M.update = function (G, dt) {
     for (const mk of G.markers) if (U.d2(a.x, a.y, mk.x, mk.y) < 62 * 62) on = mk;
     if (on && G.onMarker !== on && !(G.car && Math.abs(G.car.spd) > 160)) VP.UI.marker(on);
     G.onMarker = on;
+    if (G.tour) { const seen = VP.S.tour[G.tour].seen; for (const l of G.W.landmarks) if (!seen[l.name] && U.d2(a.x, a.y, l.gx, l.gy) < 110 * 110) { seen[l.name] = 1; VP.S.cash += 20; VP.persist(); VP.Audio.sfx('paw'); Game.fx.say('📸 ' + l.name + ' (' + Object.keys(seen).length + '/' + G.W.landmarks.length + ')', '#ffd23f', 3); } }
     // persist where the player is every few seconds
-    G.saveT = (G.saveT || 0) + dt; if (G.saveT > 5 && !G.car && !G.trial) { G.saveT = 0; VP.S.pos = { x: Math.round(a.x), y: Math.round(a.y) }; VP.S.cash += G.stat.cash - (G.bank || 0); G.bank = G.stat.cash; VP.persist(); }
+    G.saveT = (G.saveT || 0) + dt; if (G.saveT > 5 && !G.car && !G.trial) { G.saveT = 0; if (!G.tour) VP.S.pos = { x: Math.round(a.x), y: Math.round(a.y) }; VP.S.cash += G.stat.cash - (G.bank || 0); G.bank = G.stat.cash; VP.persist(); }
     return;
   }
   const st = G.steps[G.step];
@@ -403,7 +480,7 @@ M.update = function (G, dt) {
 // what the HUD shows
 M.objective = function (G) {
   if (G.free && G.quest) { const q = G.quest, cur = Math.min(q.def.n, Math.round(G.stat[q.key] - q.base)), done = cur >= q.def.n; return { txt: done ? VP.t('q_return', q.def.name[VP.lang() === 'pt' ? 'pt' : 'en']) : VP.t('q_' + q.def.type, q.def.n), prog: [cur, q.def.n], at: done ? q.mk : null, cat: null, free: true }; }
-  if (G.free) { let b = null, bd = 1e12; const a = G.cats[G.active]; for (const mk of G.markers) if (mk.k === 'mission') { const d = U.d2(a.x, a.y, mk.x, mk.y); if (d < bd) { bd = d; b = mk; } } return { txt: VP.t(G.trial ? 'o_trial' : 'o_free'), at: b, cat: null, free: true }; }
+  if (G.free) { let b = null, bd = 1e12; const a = G.cats[G.active]; for (const mk of G.markers) if (mk.k === 'mission') { const d = U.d2(a.x, a.y, mk.x, mk.y); if (d < bd) { bd = d; b = mk; } } return { txt: G.tour ? VP.t('o_tour', G.W.real.name) : VP.t(G.trial ? 'o_trial' : 'o_free'), at: b, cat: null, free: true }; }
   const st = G.steps[G.step];
   if (!st) return { txt: G.needRevive ? VP.t('o_reviveAll') : VP.t('o_done'), at: G.needRevive ? G.cats.find(c => c.down) : null, cat: null };
   return { txt: VP.t.apply(null, [st.txt].concat(st.args || [])), prog: st.prog ? st.prog() : null, at: st.at ? st.at() : null, cat: st.cat || null, car: !!st.car, step: st };

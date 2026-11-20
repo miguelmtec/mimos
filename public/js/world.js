@@ -108,7 +108,7 @@ World.gen = function (cfg) {
   w.reset = () => { grid.set(w.pristine); flap.set(w.pristineFlap); for (const l of w.comps) l.props = setComp(w, l, {}); };
   return w;
 };
-World.distAt = (w, px, py) => { const c = U.clamp(Math.floor((px / T - 2) / 14), 0, COLS - 1), r = U.clamp(Math.floor((py / T - 2) / 14), 0, ROWS - 1); return r >= 4 ? (c < 4 ? 0 : c < 8 ? 2 : 3) : (c < 6 ? 1 : 4); };
+World.distAt = (w, px, py) => { if (w.real) return 0; const c = U.clamp(Math.floor((px / T - 2) / 14), 0, COLS - 1), r = U.clamp(Math.floor((py / T - 2) / 14), 0, ROWS - 1); return r >= 4 ? (c < 4 ? 0 : c < 8 ? 2 : 3) : (c < 6 ? 1 : 4); };
 
 // compound (fenced yard). spec: {gate:'open'|'fence'|'switch'|'gap'|'key', vault:bool}. Returns its props.
 function setComp(w, lot, spec) {
@@ -250,6 +250,7 @@ function finalize(w) {
     let h = 0, t = 0; queue[t++] = sy * W + sx; dist[sy * W + sx] = 0;
     while (h < t) {
       const i = queue[h++], d = dist[i] + 1, x = i % W;
+      if (w.fieldMax && d > w.fieldMax) continue;
       if (x > 0 && dist[i - 1] < 0 && P[grid[i - 1]]) { dist[i - 1] = d; queue[t++] = i - 1; }
       if (x < W - 1 && dist[i + 1] < 0 && P[grid[i + 1]]) { dist[i + 1] = d; queue[t++] = i + 1; }
       if (i >= W && dist[i - W] < 0 && P[grid[i - W]]) { dist[i - W] = d; queue[t++] = i - W; }
@@ -308,4 +309,63 @@ function finalize(w) {
   w.redrawMini();
 }
 
+
+// ---------- real cities (OpenStreetMap extracts, see data/cities/) ----------
+// Rasterises the vector map onto the same tile grid the simulation uses, so every system (AI, cars, police) works unchanged.
+World.MPT = 3; // metres per tile in real cities
+World.fromCity = function (C, meta) {
+  const MPT = World.MPT, half = C.half, N = Math.ceil(half * 2 / MPT), W = N, H = N;
+  const grid = new Uint8Array(W * H), gnd = new Uint8Array(W * H), flap = new Uint8Array(W * H);
+  const w = {
+    W, H, grid, gnd, flap, cols: 0, rows: 0, pal: PAL[(meta && meta.pal) || 0], pw: W * T, ph: H * T, RX: [], RY: [], lots: [], blds: [], deco: [], palms: [], lamps: [], glows: [],
+    spawn: { stands: [], crates: [], trash: [], parked: [], treats: [], props: [] }, roles: [{}, {}, {}, {}, {}], comps: [], real: C, meta: meta || {}, fieldMax: 120,
+  };
+  const tx = m => (m + half) / MPT, px = m => (m + half) / MPT * T;
+  w.px = px; w.set = (x, y, t, g) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; grid[i] = t; if (g) gnd[i] = g; };
+  for (let i = 0; i < W * H; i++) { grid[i] = FLOOR; gnd[i] = G_LOT; }
+  const fillPoly = (P, off, fn) => { // scanline fill of a closed polygon given as flat metres [x,z,...] starting at index off
+    let y0 = 1e9, y1 = -1e9; const n = (P.length - off) >> 1;
+    for (let i = 0; i < n; i++) { const y = tx(P[off + i * 2 + 1]); if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    for (let y = Math.max(0, Math.floor(y0)); y <= Math.min(H - 1, Math.ceil(y1)); y++) {
+      const yc = y + 0.5, xs = [];
+      for (let i = 0, j = n - 1; i < n; j = i++) { const ay = tx(P[off + i * 2 + 1]), by = tx(P[off + j * 2 + 1]); if ((ay > yc) !== (by > yc)) { const ax = tx(P[off + i * 2]), bx = tx(P[off + j * 2]); xs.push(ax + (yc - ay) / (by - ay) * (bx - ax)); } }
+      xs.sort((a, b) => a - b);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.max(0, Math.round(xs[k])); x < Math.min(W, Math.round(xs[k + 1])); x++) fn(y * W + x);
+    }
+  };
+  const line = (P, off, halfW, fn) => { for (let i = off; i + 3 < P.length; i += 2) { const ax = tx(P[i]), ay = tx(P[i + 1]), bx = tx(P[i + 2]), by = tx(P[i + 3]), len = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.ceil(len * 2)); for (let k = 0; k <= n; k++) { const cx = ax + (bx - ax) * k / n, cy = ay + (by - ay) * k / n; for (let y = Math.floor(cy - halfW); y <= Math.floor(cy + halfW); y++) for (let x = Math.floor(cx - halfW); x <= Math.floor(cx + halfW); x++) if (x >= 0 && y >= 0 && x < W && y < H) fn(y * W + x); } } };
+  for (const P of C.green || []) fillPoly(P, 0, i => { gnd[i] = G_GRASS; });
+  for (const P of C.beach || []) fillPoly(P, 0, i => { gnd[i] = G_SAND; });
+  for (const P of C.water || []) fillPoly(P, 0, i => { grid[i] = WATER; gnd[i] = G_WATER; });
+  for (const P of C.waterways || []) line(P, 0, 0.9, i => { grid[i] = WATER; gnd[i] = G_WATER; });
+  // sea: flood-fill from the right-hand side of the OSM coastline
+  if (C.coast && C.coast.length) {
+    const bar = new Uint8Array(W * H), st = [];
+    for (const P of C.coast) line(P, 0, 0.6, i => { bar[i] = 1; });
+    for (const P of C.coast) for (let i = 0; i + 3 < P.length; i += 2) { const dx = P[i + 2] - P[i], dz = P[i + 3] - P[i + 1], l = Math.hypot(dx, dz); if (l < 1) continue; const sx = Math.floor(tx((P[i] + P[i + 2]) / 2 + -dz / l * MPT * 2.5)), sy = Math.floor(tx((P[i + 1] + P[i + 3]) / 2 + dx / l * MPT * 2.5)); if (sx >= 0 && sy >= 0 && sx < W && sy < H && !bar[sy * W + sx]) st.push(sy * W + sx); }
+    const seen = new Uint8Array(W * H);
+    while (st.length) { const i = st.pop(); if (seen[i] || bar[i]) continue; seen[i] = 1; grid[i] = WATER; gnd[i] = G_WATER; const x = i % W; if (x > 0) st.push(i - 1); if (x < W - 1) st.push(i + 1); if (i >= W) st.push(i - W); if (i < W * (H - 1)) st.push(i + W); }
+    let sea = 0; for (let i = 0; i < W * H; i++) sea += seen[i];
+    if (sea > W * H * 0.8) for (let i = 0; i < W * H; i++) if (seen[i]) { grid[i] = FLOOR; gnd[i] = G_LOT; } // orientation looked wrong: keep it dry rather than flood the city
+  }
+  w.roads = [];
+  for (const R of C.roads) {
+    const foot = R[1] === 1, hw = Math.max(foot ? 0.5 : 0.95, R[0] / MPT / 2);
+    line(R, 2, hw, i => { grid[i] = FLOOR; if (gnd[i] !== G_ROAD) gnd[i] = foot ? G_WALK : G_ROAD; });
+    if (!foot) { const pts = []; for (let i = 2; i + 1 < R.length; i += 2) if (Math.abs(R[i]) < half - 6 && Math.abs(R[i + 1]) < half - 6) pts.push({ x: px(R[i]), y: px(R[i + 1]) }); let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); if (pts.length >= 2 && len > 500) w.roads.push({ pts, len, w: R[0] }); }
+  }
+  for (const B of C.buildings) fillPoly(B, 1, i => { if (gnd[i] !== G_ROAD && gnd[i] !== G_WALK) { grid[i] = WALL; gnd[i] = G_ROOF; } });
+  w.landmarks = (C.landmarks || []).filter(l => Math.abs(l[1]) < half - 20 && Math.abs(l[2]) < half - 20).map(l => ({ name: l[0], x: px(l[1]), y: px(l[2]), h: l[3] || 10 }));
+  finalize(w);
+  // snap landmarks to the nearest walkable tile (they usually sit inside their building)
+  const near = (x, y) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < 14; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W - 2 && Y < H - 2 && grid[Y * W + X] === FLOOR && (gnd[Y * W + X] === G_ROAD || gnd[Y * W + X] === G_WALK)) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };
+  w.snap = near;
+  w.landmarks = w.landmarks.map(l => { const p = near(l.x, l.y); return p ? Object.assign(l, { gx: p.x, gy: p.y }) : null; }).filter(Boolean);
+  w.walkD = [w.walkList, w.walkList, w.walkList, w.walkList, w.walkList];
+  w.randWalkD = (d, rng) => w.randWalk(rng);
+  w.pristine = grid.slice();
+  w.reset = () => { grid.set(w.pristine); };
+  w.setComp = () => [];
+  return w;
+};
 })();

@@ -135,7 +135,7 @@ export function buildCat(spec) {
   for (const sx of [-1, 1]) for (let i = 0; i < 2; i++) h.box('#ffffff', sx * 0.38, -0.13 - i * 0.05, ez - 0.02, 0.26, 0.012, 0.012, 0, sx * -0.4, sx * (0.1 - i * 0.25));
   // head accessories
   if (A.bow) { h.cone(A.bow, -0.17, 0.5, 0.1, 0.16, 0.3, 0.1, 0, 0, -Math.PI / 2 + 0.2); h.cone(A.bow, 0.17, 0.5, 0.1, 0.16, 0.3, 0.1, 0, 0, Math.PI / 2 - 0.2); h.sph('#ff8fd0', 0, 0.5, 0.1, 0.08); }
-  if (A.glasses) { for (const sx of [-1, 1]) { h.cyl('#2a1436', sx * ex, ey + 0.02, ez + 0.1, 0.17, 0.03, 0.15, Math.PI / 2); h.tor(A.glasses, sx * ex, ey + 0.02, ez + 0.11, 0.17, 0.16, 0.17); } h.box(A.glasses, 0, ey + 0.05, ez + 0.11, 0.14, 0.03, 0.03); }
+  if (A.glasses) { for (const sx of [-1, 1]) { h.cyl('#2a1436', sx * ex, ey + 0.02, ez + 0.1, 0.17, 0.03, 0.15, Math.PI / 2); h.tor(A.glasses, sx * ex, ey + 0.02, ez + 0.11, 0.17, 0.16, 0.06); } h.box(A.glasses, 0, ey + 0.05, ez + 0.11, 0.14, 0.03, 0.03); }
   if (A.crown) { h.cyl(A.crown, 0, 0.5, 0, 0.16, 0.1); for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; h.cone(A.crown, Math.sin(a) * 0.13, 0.6, Math.cos(a) * 0.13, 0.05, 0.14); } h.lo('#ff4fb8', 0, 0.52, 0.16, 0.035); }
   if (A.hat) { h.cyl(A.hat, 0, 0.46, 0, 0.5, 0.04); h.cyl(A.hat, 0, 0.56, 0, 0.3, 0.2); }
   if (A.santa) { h.cyl('#ffffff', 0, 0.42, 0, 0.36, 0.1); h.cone('#e01e37', 0.06, 0.66, -0.04, 0.3, 0.5, 0.3, 0, 0, -0.35); h.sph('#ffffff', 0.24, 0.86, -0.04, 0.09); }

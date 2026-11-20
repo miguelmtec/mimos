@@ -57,7 +57,7 @@ SCREENS.title = {
 ACT.lang = () => VP.setLang(VP.lang() === 'pt' ? 'en' : 'pt');
 ACT.mute = () => { VP.Audio.toggleMute(); UI.relabel(); };
 ACT.title = () => { endGame(); VP.Audio.music(6); UI.show('title'); };
-ACT.play = () => UI.free();
+ACT.play = () => { if (G && G.W && G.W.real) UI.tour(G.W.real.id); else UI.free(); };
 ACT.map = () => UI.show('map');
 ACT.how = () => UI.show('how');
 ACT.rank = () => UI.show('rank');
@@ -122,8 +122,8 @@ SCREENS.brief = {
     const hero = m.boss ? (art('boss_' + (m.d + 1)) || art('title_bg')) : m.d === 6 ? art('shop_season') : m.d === 5 ? art('shop_vip') : art('title_bg');
     const best = VP.S.best[n];
     return `${corner(G ? 'closeBrief' : 'map')}<div class="wrap narrow" style="margin-top:46px">
-      <div class="hero" style="background-image:url('${hero}');${m.boss ? 'box-shadow:inset 0 0 0 3px #ffd23f,0 0 30px #ffd23f66' : ''}"><div class="cap"><span>${m.boss ? '👑 ' + t('bossM') + ' · ' : ''}${t('d' + m.d).toUpperCase()} · ${m.side ? '🏁 ' + t('trial') : t('mission').toUpperCase() + ' ' + (m.bonus ? '★' + (m.n - D.from + 1) : m.n)}</span><b>${esc(VP.mname(m))}</b></div></div>
-      <div class="panel"><p>${t(m.side ? 'b_trial' : 'b_' + m.type)}</p>${m.boss ? `<p class="small">💡 ${t('bossTip')}</p>` : ''}
+      <div class="hero" style="background-image:url('${hero}');${m.boss ? 'box-shadow:inset 0 0 0 3px #ffd23f,0 0 30px #ffd23f66' : ''}"><div class="cap"><span>${m.boss ? '👑 ' + t('bossM') + ' · ' : ''}${m.tourCity ? '✈ ' + esc(VP.CityCache[m.tourCity].real.name).toUpperCase() : t('d' + m.d).toUpperCase() + ' · ' + (m.side ? '🏁 ' + t('trial') : t('mission').toUpperCase() + ' ' + (m.bonus ? '★' + (m.n - D.from + 1) : m.n))}</span><b>${esc(VP.mname(m))}</b></div></div>
+      <div class="panel"><p>${t(m.tourCity ? 'b_tour' : m.side ? 'b_trial' : 'b_' + m.type)}</p>${m.boss ? `<p class="small">💡 ${t('bossTip')}</p>` : ''}
         ${need ? `<div class="need">${need.map(c => `<img src="${art('portrait_' + c)}" alt="">`).join('')}<div><b>${need.length === 3 ? t('need_all') : need.map(c => t('need_' + c)).join(' · ')}</b></div></div>` : ''}
         <p class="small">⏱ ${t('par')}: ${U.fmtTime(M.par(m))}${m.p.time ? ' · ⌛ ' + U.fmtTime(m.p.time) : ''} ${best ? ' · ' + t('best') + ': ' + best : ''} ${VP.S.stars[n] ? ' · ' + stars(VP.S.stars[n]) : ''}</p></div>
       <button class="btn big" data-act="start" data-n="${n}">▶ ${t('start')}</button>
@@ -140,12 +140,13 @@ SCREENS.pause = {
     ${G && !G.free ? `<p><b>${esc(VP.mname(G.m))}</b><br><span class="small">${esc(M.objective(G).txt)}</span></p>` : `<p class="small">${t('o_free')}</p>`}
     <button class="btn big" data-act="resume">▶ ${t('resume')}</button>
     <div class="grid2">${G && !G.free ? `<button class="btn ghost sm" data-act="restart">↻ ${t('restart')}</button><button class="btn ghost sm" data-act="quit">🌴 ${t('quit')}</button>` : `<button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>`}
+    <button class="btn ghost sm" data-act="world">✈ ${t('world')}</button><button class="btn ghost sm" data-act="account">👤 ${t('account')}</button>
     <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button>
     <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="title">🏠 Menu</button></div></div>`,
 };
 ACT.resume = () => { UI.hide(); UI.paused = false; VP.Audio.pause(false); };
 ACT.restart = () => UI.startMission(G.m.n);
-ACT.quit = () => UI.free();
+ACT.quit = () => ACT.play();
 
 // ---------- results ----------
 SCREENS.result = {
@@ -241,20 +242,21 @@ SCREENS.nowebgl = { cls: 'center', hideHud: true, html: () => `<div class="wrap 
 function endGame() { if (G) { Game.end(); G = null; } UI.state = 'menu'; UI.paused = false; }
 function begin(g) {
   G = g; UI.state = 'play'; UI.paused = false; UI.hide();
-  if (VP.R3 && VP.R3.ok) { VP.R3.attach(); VP.R3.snapCamera(-Math.PI / 2); }
+  if (VP.R3 && VP.R3.ok) { VP.R3.attach(G); VP.R3.snapCamera(-Math.PI / 2); }
   I.reset(); I.enabled = true; VP.Audio.unlock(); VP.Audio.pause(false);
 }
 UI.free = function (pos, keep, opts) {
   if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
-  const p = pos || (G && !G.trial && G.cats ? { x: G.cats[G.active].x, y: G.cats[G.active].y } : VP.S.pos);
+  const p = pos || (G && !G.trial && G.cats && !G.W.real ? { x: G.cats[G.active].x, y: G.cats[G.active].y } : VP.S.pos);
   endGame(); begin(M.startFree(p, opts)); void keep;
   UI.songD = -1;
 };
+UI.tour = function (id) { if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; } if (!VP.CityCache[id]) return; endGame(); begin(M.startTour(id)); const meta = VP.CityCache[id].meta; VP.Audio.music([0, 1, 2, 3, 4, 2, 6][meta.mood || 0]); UI.songD = -2; Game.fx.say('✈ ' + VP.CityCache[id].real.name, '#ffd23f', 3); };
 UI.startMission = function (n) {
   if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
   const m = M.get(n); if (!m || !M.unlocked(m)) return;
   endGame(); begin(M.start(m));
-  VP.Audio.music(m.boss ? 5 : M.DIST[m.d].song);
+  VP.Audio.music(m.boss ? 5 : m.tourCity ? [0, 1, 2, 3, 4, 2, 6][VP.CityCache[m.tourCity].meta.mood || 0] : M.DIST[m.d].song);
   if (m.boss) { VP.Audio.sfx('boss'); Game.fx.say(t('boss_' + m.boss).toUpperCase() + '!', '#ffd23f', 3); } else Game.fx.say(VP.mname(m), '#fff', 2.6);
 };
 UI.marker = function (mk) {
@@ -286,7 +288,7 @@ function frame(ts) {
     if (!UI.paused && !UI.screen) {
       I.poll();
       if (I.take('pause')) UI.pause(); else Game.update(dt);
-      if (G && G.free) { const d = VP.World.distAt(G.W, G.cats[G.active].x, G.cats[G.active].y); if (d !== UI.songD) { UI.songD = d; VP.Audio.music(M.DIST[d].song); } }
+      if (G && G.free && !G.tour) { const d = VP.World.distAt(G.W, G.cats[G.active].x, G.cats[G.active].y); if (d !== UI.songD) { UI.songD = d; VP.Audio.music(M.DIST[d].song); } }
     }
     if (G && G.over) { G.real += dt; for (const c of G.cats) c.t += dt; }
   }
@@ -296,10 +298,10 @@ function frame(ts) {
 
 VP.DATA = {};
 UI.boot = function () {
-  const files = ['missions', 'items', 'outfits', 'activities'];
+  const files = ['missions', 'items', 'outfits', 'activities', 'cities/index'];
   Promise.all(files.map(f => fetch('data/' + f + '.json').then(r => r.json()))).then(d => {
     files.forEach((f, i) => { VP.DATA[f] = d[i]; });
-    M.load(d[0], d[3]); if (VP.Wardrobe) VP.Wardrobe.load(d[2]);
+    M.load(d[0], d[3]); M.loadCities(d[4]); if (VP.Wardrobe) VP.Wardrobe.load(d[2]);
     boot2();
   }).catch(e => { console.error('data', e); document.getElementById('ui').innerHTML = '<div class="screen on center"><p>😿 Não deu para carregar o jogo. Recarregue a página.<br>Could not load the game. Please reload.</p></div>'; });
 };

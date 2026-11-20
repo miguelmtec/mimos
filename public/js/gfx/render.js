@@ -1,6 +1,7 @@
 // VICE PAWS — Three.js renderer: syncs the simulation (VP.Game.G) to a 3D scene. No game logic here.
 import { THREE, GB, MAT, buildCat, animCat, CAT_SPECS, buildDog, animDog, buildCar, itemGeo, buildProp } from './models.js';
 import { buildCity, MOODS, LAND_H, glowMaterial } from './city.js';
+import { buildRealCity } from './realcity.js';
 
 const VP = window.VP, U = VP.U, I = VP.I, S = 1 / 24;
 const R = VP.R3 = { ok: false, lost: false, quality: 2, fps: 60, mode: 'game', draws: 0 };
@@ -14,6 +15,15 @@ const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 
 const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 820);
 R.mobile = mobile;
 
+// ---------- world (static city) swapping ----------
+let cityGroup = null;
+R.setWorld = function (nw) {
+  if (nw === W && city) return;
+  if (cityGroup) { scene.remove(cityGroup); cityGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.dispose && o.material !== MAT.lit && o.material !== MAT.flat && o.material !== MAT.glow) { if (o.material.map) o.material.map.dispose(); if (o.material.emissiveMap) o.material.emissiveMap.dispose(); o.material.dispose(); } }); }
+  W = nw; cityGroup = new THREE.Group(); scene.add(cityGroup);
+  city = nw.real ? buildRealCity(nw, cityGroup, VP) : buildCity(nw, cityGroup, VP); R.city = city;
+  mood.cur = null; if (R.ok) R.resize();
+};
 // ---------- init ----------
 R.init = function (cv) {
   canvas = cv;
@@ -29,8 +39,7 @@ R.init = function (cv) {
   camera = new THREE.PerspectiveCamera(55, 1, 0.5, 1400);
   hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 2.2); scene.add(hemi);
   sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(-0.75, 0.6, -0.3); scene.add(sun);
-  W = VP.Missions.world();
-  city = buildCity(W, scene, VP); R.city = city;
+  R.setWorld(VP.Missions.world());
   dyn = new THREE.Group(); scene.add(dyn);
   initFx(); initStage();
   R.ok = true; R.resize();
@@ -114,7 +123,8 @@ function pt(x, y, z, col, alpha, size, shape) {
 }
 function glow(x, y, z, col, size) { if (gn >= fx.GN) return; const i = gn++; fx.gpos[i * 3] = x; fx.gpos[i * 3 + 1] = y; fx.gpos[i * 3 + 2] = z; _c.set(col); fx.gcol[i * 3] = _c.r; fx.gcol[i * 3 + 1] = _c.g; fx.gcol[i * 3 + 2] = _c.b; fx.gsize[i] = size; }
 function shadow(x, z, y, rx, rz, rot) { if (sn >= 48) return; _e.set(0, rot || 0, 0); _q.setFromEuler(_e); _m4.compose(_p.set(x, y + 0.03, z), _q, _s.set(rx, 1, rz)); fx.shadows.setMatrixAt(sn++, _m4); }
-const hAt = (px, py) => W.gnd[Math.floor(py / 48) * W.W + Math.floor(px / 48)] === 1 ? 0 : LAND_H;
+const hAt = (px, py) => W.real ? W.hpx(px, py) : (W.gnd[Math.floor(py / 48) * W.W + Math.floor(px / 48)] === 1 ? 0 : LAND_H);
+const H0 = (px, py) => W.real ? W.hpx(px, py) : 0;
 R.hAt = hAt;
 
 // ---------- entity meshes ----------
@@ -173,9 +183,9 @@ function syncCar(c, G) {
   o.rotation.z = driven ? U.clamp(-(c.da || 0) * 0.02, -0.06, 0.06) : 0;
   setMat(o, c.flash > 0 ? MAT.white : null);
   shadow(o.position.x, o.position.z, o.position.y, K.wid * S * 0.62, K.len * S * 0.56, o.rotation.y);
-  if (K.cop) { const b = Math.floor(c.t * 6) % 2; glow(o.position.x, 1.7, o.position.z, b ? '#ff2040' : '#2a6bff', 6); }
-  if (c.type === 'gold') glow(o.position.x, 0.25, o.position.z, Math.floor(c.t * 2) % 2 ? '#ff4fb8' : '#2de2e6', 7);
-  if (driven) { const fxp = Math.cos(c.a), fyp = Math.sin(c.a); glow(o.position.x + fxp * 3.2, 0.5, o.position.z + fyp * 3.2, '#fff6b0', 5); }
+  if (K.cop) { const b = Math.floor(c.t * 6) % 2; glow(o.position.x, o.position.y + 1.7, o.position.z, b ? '#ff2040' : '#2a6bff', 6); }
+  if (c.type === 'gold') glow(o.position.x, o.position.y + 0.25, o.position.z, Math.floor(c.t * 2) % 2 ? '#ff4fb8' : '#2de2e6', 7);
+  if (driven) { const fxp = Math.cos(c.a), fyp = Math.sin(c.a); glow(o.position.x + fxp * 3.2, o.position.y + 0.5, o.position.z + fyp * 3.2, '#fff6b0', 5); }
 }
 function syncItem(it) {
   const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : 1.35); return m; });
@@ -211,7 +221,7 @@ function syncBullet(b) {
     const g = new GB(); if (b.k === 'hair') g.lo('#b08a6e', 0, 0, 0, 0.36); else g.lo('#d7f25a', 0, 0, 0, 0.26);
     return g.mesh();
   });
-  const yy = b.k === 'hair' ? 0.5 + (b.z || 0) * S : 0.75;
+  const yy = (b.k === 'hair' ? 0.5 + (b.z || 0) * S : 0.75) + H0(b.x, b.y);
   o.position.set(b.x * S, yy, (b.y + (b.k === 'hair' ? 0 : 12)) * S);
   if (b.k === 'bolt') { o.rotation.y = Math.PI / 2 - Math.atan2(b.vy, b.vx) - Math.PI / 2; glow(o.position.x, yy, o.position.z, '#8ff3ff', 2.2); } else o.rotation.y += 0.2;
 }
@@ -250,12 +260,12 @@ function syncParts(G) {
     else if (k === 'flash') { size = p.size * S * 5; y = 0.8; }
     else if (k === 'bite' || k === 'slash') { size = p.size * S * 3.4 * (0.6 + f); y = 0.8; a = 1 - f; }
     else if (k === 'fly') { y = 1.2; size = 0.5; }
-    pt(x, y, z, k === 'ghost' ? '#ffffff' : p.col, a, size, SHAPE[k] === undefined ? 0 : SHAPE[k]);
+    pt(x, y + H0(p.x, p.y), z, k === 'ghost' ? '#ffffff' : p.col, a, size, SHAPE[k] === undefined ? 0 : SHAPE[k]);
   }
 }
 function weather(G, t, m) {
   const n = R.quality === 0 ? 70 : 150;
-  if (m === 3) for (let i = 0; i < n; i++) { const hx = (i * 0.618034) % 1, hz = (i * 0.754877) % 1, sp = 16 + (i % 5) * 2; const y = 12 - ((t * sp + i * 1.37) % 12); pt(cam.x + (hx - 0.5) * 34 + y * 0.12, y, cam.z + (hz - 0.5) * 34, '#bcd8ff', 0.55, 0.9, 4); }
+  if (m === 3) for (let i = 0; i < n; i++) { const hx = (i * 0.618034) % 1, hz = (i * 0.754877) % 1, sp = 16 + (i % 5) * 2; const y = 12 - ((t * sp + i * 1.37) % 12); pt(cam.x + (hx - 0.5) * 34 + y * 0.12, y + (cam.by || 0), cam.z + (hz - 0.5) * 34, '#bcd8ff', 0.55, 0.9, 4); }
   if (m === 6) for (let i = 0; i < n; i++) { const hx = (i * 0.618034) % 1, hz = (i * 0.754877) % 1; const y = 10 - ((t * (1.4 + (i % 4) * 0.3) + i * 0.77) % 10); pt(cam.x + (hx - 0.5) * 36 + Math.sin(t + i) * 0.6, y, cam.z + (hz - 0.5) * 36, '#ffffff', 0.9, 0.16 + (i % 3) * 0.05, 0); }
 }
 
@@ -275,12 +285,13 @@ function applyMood(idx, dt) {
   city.waterMat.color.copy(c.water).multiplyScalar(0.9);
   mood.i = idx;
 }
-R.moodOf = G => { if (G.m && G.m.d > 4 && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active]; return VP.World.distAt(W, a.x, a.y); };
+R.moodOf = G => { if (G.W.real) return G.W.meta.mood || 0; if (G.m && G.m.d > 4 && !G.free) return G.m.d; if (VP.S.xmas && VP.Shop && VP.Shop.has('season')) return 6; const a = G.car || G.cats[G.active]; return VP.World.distAt(W, a.x, a.y); };
 
 // ---------- camera ----------
 function updateCamera(G, dt) {
   const a = G.car || G.cats[G.active];
-  const tx = a.x * S, tz = a.y * S;
+  const tx = a.x * S, tz = a.y * S, by = H0(a.x, a.y);
+  cam.by = cam.by === undefined || !cam.init ? by : cam.by + (by - cam.by) * Math.min(1, dt * 6);
   // manual look (desktop RMB drag / HUD) + gentle auto-follow
   cam.yaw += I.look; I.look = 0;
   if (G.car) { const d = U.angDiff(cam.yaw, G.car.a + (G.car.spd < -20 ? Math.PI : 0)); cam.yaw += d * Math.min(1, dt * (0.8 + Math.min(2.2, Math.abs(G.car.spd) / 120))); }
@@ -295,21 +306,22 @@ function updateCamera(G, dt) {
   const k = cam.init ? Math.min(1, dt * 9) : 1; cam.init = true;
   cam.x += (tx - cam.x) * k; cam.z += (tz - cam.z) * k;
   const sh = G.shake * 0.012, ex = maxD < wantDist ? (wantDist - cam.dist) * 0.5 : 0;
-  camera.position.set(cam.x - fx0 * cam.dist * Math.cos(pitch) + (Math.random() - 0.5) * sh, 1.3 + cam.dist * Math.sin(pitch) + ex + (Math.random() - 0.5) * sh, cam.z - fz0 * cam.dist * Math.cos(pitch));
-  camera.lookAt(cam.x + fx0 * 3.2, 1.2, cam.z + fz0 * 3.2);
+  const cpx = cam.x - fx0 * cam.dist * Math.cos(pitch), cpz = cam.z - fz0 * cam.dist * Math.cos(pitch); let cpy = cam.by + 1.3 + cam.dist * Math.sin(pitch) + ex; if (W.real) cpy = Math.max(cpy, W.hpx(cpx / S, cpz / S) + 1.6);
+  camera.position.set(cpx + (Math.random() - 0.5) * sh, cpy + (Math.random() - 0.5) * sh, cpz);
+  camera.lookAt(cam.x + fx0 * 3.2, cam.by + 1.2, cam.z + fz0 * 3.2);
   I.yaw = cam.yaw; R.yaw = cam.yaw;
   G.view = { x0: a.x - 600, x1: a.x + 600, y0: a.y - 600, y1: a.y + 600 };
   // mouse -> world point (desktop aim)
-  if (I.useMouse && !I.touch) { ndc.set(I.mouse.x / R.w * 2 - 1, -(I.mouse.y / R.h) * 2 + 1); ray.setFromCamera(ndc, camera); if (ray.ray.intersectPlane(plane, _v)) I.mw = { x: _v.x / S, y: _v.z / S }; }
+  if (I.useMouse && !I.touch) { ndc.set(I.mouse.x / R.w * 2 - 1, -(I.mouse.y / R.h) * 2 + 1); plane.constant = -0.6 - (cam.by || 0); ray.setFromCamera(ndc, camera); if (ray.ray.intersectPlane(plane, _v)) I.mw = { x: _v.x / S, y: _v.z / S }; }
 }
 R.snapCamera = function (yaw) { cam.init = false; if (yaw !== undefined) cam.yaw = yaw; };
 R.project = function (px, py, h) {
-  _v.set(px * S, h === undefined ? 1 : h, py * S).project(camera);
+  _v.set(px * S, (h === undefined ? 1 : h) + H0(px, py), py * S).project(camera);
   return { x: (_v.x + 1) / 2 * R.w, y: (1 - _v.y) / 2 * R.h, on: _v.z < 1 && _v.z > -1 && Math.abs(_v.x) < 1.15 && Math.abs(_v.y) < 1.15, z: _v.z };
 };
 
 // ---------- frame ----------
-R.attach = function () { for (const [, o] of ents) dyn.remove(o); ents.clear(); cam.init = false; };
+R.attach = function (G) { if (G && G.W) R.setWorld(G.W); for (const [, o] of ents) dyn.remove(o); ents.clear(); cam.init = false; };
 R.render = function (G, dt) {
   if (!R.ok || R.lost) return;
   frame++; pn = 0; gn = 0; sn = 0; rn = 0;
@@ -362,7 +374,7 @@ function initStage() {
   b.cyl('#2a1048', 0, -0.2, 0, 3.2, 0.4, 3.2); b.cyl('#3a1a6a', 0, 0.04, 0, 2.8, 0.1, 2.8);
   const ped = b.mesh(MAT.flat); stage.add(ped);
   const n = new GB(); n.tor('#ff4fb8', 0, 0.02, 0, 3.2, 3.2, 0.5, Math.PI / 2); n.tor('#2de2e6', 0, 0.1, 0, 2.8, 2.8, 0.4, Math.PI / 2);
-  for (let i = 0; i < 24; i++) { const a = i / 24 * 6.283; n.box(i % 2 ? '#ff4fb8' : '#2de2e6', Math.sin(a) * 9, 3, Math.cos(a) * 9 - 4, 0.08, 9, 0.08); }
+  for (let i = 0; i < 13; i++) { const a = (i / 12 - 0.5) * 3.0; n.box(i % 2 ? '#ff4fb8' : '#2de2e6', Math.sin(a) * 11, 4, -Math.cos(a) * 11 - 1, 0.1, 12, 0.1); }
   stage.add(n.mesh(MAT.glow));
   const grid = new GB(); for (let i = -10; i <= 10; i++) { grid.box('#7a2a9a', i * 2, -0.38, -6, 0.04, 0.02, 40); grid.box('#7a2a9a', 0, -0.38, i * 2 - 6, 40, 0.02, 0.04); } stage.add(grid.mesh(MAT.glow));
   stageGroup = new THREE.Group(); stage.add(stageGroup);
@@ -384,7 +396,7 @@ function renderStage(dt) {
   R.stageT += dt; const t = R.stageT, o = R.stageOpts || {};
   if (o.spin !== false) stageGroup.rotation.y = t * 0.8;
   for (const s of stageItems) if (!s.it.car) animCat(s.g, { t, walk: o.dance ? 1 : 0, hop: o.dance ? Math.abs(Math.sin(t * 6 + s.g.position.x)) * 0.35 : 0 });
-  const portrait = R.w < R.h, dist = (o.dist || 7) * (portrait ? 1.25 : 1);
+  const portrait = R.w < R.h, dist = (o.dist || 7) * (portrait ? 1.45 : 1);
   stageCam.fov = portrait ? 48 : 38; stageCam.updateProjectionMatrix();
   stageCam.position.set(0, 2.2 + (o.lift || 0), dist); stageCam.lookAt(0, (o.lookY === undefined ? 0.9 : o.lookY) - (portrait ? (o.shift === undefined ? 1.2 : o.shift) : 0), 0);
   if (o.sparkle) for (let i = 0; i < 26; i++) { const a = i * 2.4 + t * 0.5, r = 1.6 + (i % 5) * 0.35, y = ((t * 0.5 + i * 0.37) % 3.2); pn < fx.N && 0; void a; void r; void y; }

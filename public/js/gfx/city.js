@@ -76,8 +76,6 @@ export function buildCity(W, scene, VP) {
 
   // ---------- buildings (one merged mesh, window texture + emissive map) ----------
   {
-    const winTex = canvasTex(128, 128, (c) => { c.fillStyle = '#e8e2f0'; c.fillRect(0, 0, 128, 128); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { c.fillStyle = '#39406a'; c.fillRect(x * 32 + 8, y * 32 + 7, 17, 19); c.fillStyle = '#5a64a0'; c.fillRect(x * 32 + 8, y * 32 + 7, 17, 4); c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(x * 32, y * 32 + 30, 32, 2); } }, { wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping });
-    const emTex = canvasTex(128, 128, (c) => { c.fillStyle = '#000'; c.fillRect(0, 0, 128, 128); const r = VP.U.rng(31); const cols = ['#ffe9a8', '#ffe9a8', '#ffd27a', '#ff9fe0', '#8ff3ff', '#fff']; for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (r() < 0.56) { c.fillStyle = r.pick(cols); c.fillRect(x * 32 + 9, y * 32 + 8, 15, 17); } }, { wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping });
     const P = [], N = [], C = [], UV = [];
     const neon = new GB();
     const face = (ax, az, bx, bz, y0, y1, nx, nz, c, uo) => {
@@ -110,7 +108,7 @@ export function buildCity(W, scene, VP) {
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
-    city.bMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: winTex, emissiveMap: emTex, emissive: 0xffffff, emissiveIntensity: 0.5 });
+    city.bMat = bldMaterial(VP);
     const m = new THREE.Mesh(g, city.bMat); m.frustumCulled = false; scene.add(m);
     city.neonGB = neon;
     // sign text atlas
@@ -165,11 +163,8 @@ export function buildCity(W, scene, VP) {
 
   // ---------- palms + lamps (instanced) ----------
   {
-    const pg = new GB();
-    let px = 0, py = 0; for (let i = 0; i < 4; i++) { const lean = i * 0.08; pg.add(PR.cyl6, i % 2 ? '#9a6a3b' : '#86592f', px, py + 0.95, 0, 0.22 - i * 0.028, 1.96, 0.22 - i * 0.028, 0, 0, -lean); px += Math.sin(lean) * 1.9; py += Math.cos(lean) * 1.9; }
-    for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; pg.box(i % 2 ? '#2fae7a' : '#1f8f6a', px + Math.cos(a) * 1.0, py + 0.12, Math.sin(a) * 1.0, 2.0, 0.07, 0.62, 0, -a, -0.3); pg.box(i % 2 ? '#27a070' : '#188060', px + Math.cos(a) * 2.35, py - 0.52, Math.sin(a) * 2.35, 1.2, 0.06, 0.42, 0, -a, -0.85); }
-    pg.lo('#8a5a2b', px, py - 0.05, 0, 0.3);
-    const palms = W.palms, im = new THREE.InstancedMesh(pg.geo(), MAT.lit, palms.length), mt = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), sc = new THREE.Vector3();
+    const pg = palmGeo();
+    const palms = W.palms, im = new THREE.InstancedMesh(pg, MAT.lit, palms.length), mt = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), sc = new THREE.Vector3();
     const tint = [new THREE.Color('#ffffff'), new THREE.Color('#9a8ad0'), new THREE.Color('#ffffff'), new THREE.Color('#7a94a8'), new THREE.Color('#d8a8f0')];
     palms.forEach((p, i) => { const s = Math.max(0.95, (p.s || 1)) * (0.95 + rng() * 0.3); e.set(0, rng() * 6.283, 0); q.setFromEuler(e); mt.compose(pos.set(p.x * S, LAND_H, p.y * S), q, sc.set(s, s * (0.9 + rng() * 0.3), s)); im.setMatrixAt(i, mt); im.setColorAt(i, tint[World.distAt(W, p.x, p.y)]); });
     im.frustumCulled = false; scene.add(im); city.palms = im; city.palmCount = palms.length;
@@ -179,31 +174,47 @@ export function buildCity(W, scene, VP) {
     lm.frustumCulled = false; scene.add(lm);
   }
 
-  // ---------- glow sprites (additive points) ----------
-  {
-    const n = city.glowPts.length, P = new Float32Array(n * 3), C = new Float32Array(n * 3), Sz = new Float32Array(n);
-    city.glowPts.forEach((g, i) => { P[i * 3] = g.x; P[i * 3 + 1] = g.y; P[i * 3 + 2] = g.z; const c = lin(g.col); C[i * 3] = c[0]; C[i * 3 + 1] = c[1]; C[i * 3 + 2] = c[2]; Sz[i] = g.s; });
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); g.setAttribute('size', new THREE.BufferAttribute(Sz, 1));
-    city.glowMat = glowMaterial(); const pts = new THREE.Points(g, city.glowMat); pts.frustumCulled = false; scene.add(pts); city.glow = pts;
-  }
-
-  // ---------- water + sky ----------
-  {
-    const wt = canvasTex(128, 128, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, 128, 128); c.strokeStyle = 'rgba(255,255,255,1)'; const r = VP.U.rng(9); c.fillStyle = 'rgba(0,0,0,.14)'; for (let i = 0; i < 26; i++) { const x = r() * 128, y = r() * 128; c.beginPath(); c.ellipse(x, y, 10 + r() * 16, 2 + r() * 2, 0, 0, 6.283); c.fill(); } }, { wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping });
-    wt.repeat.set(90, 90);
-    city.waterMat = new THREE.MeshBasicMaterial({ color: 0x27c4d6, map: wt });
-    const wm = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), city.waterMat); wm.rotation.x = -Math.PI / 2; wm.position.set(TW * TL / 2, -0.5, TH * TL / 2); scene.add(wm); city.waterTex = wt;
-    city.skyMat = new THREE.ShaderMaterial({
-      side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, sunC: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(-0.75, 0.16, -0.3).normalize() }, night: { value: 0 } },
-      vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: 'uniform vec3 top; uniform vec3 hor; uniform vec3 sunC; uniform vec3 sunDir; uniform float night; varying vec3 vD;\nfloat h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid main(){ vec3 d = normalize(vD); float h = clamp(d.y*1.6+0.08, 0.0, 1.0); vec3 c = mix(hor, top, pow(h, 0.55)); float s = max(dot(d, sunDir), 0.0); c += sunC * (pow(s, 380.0)*1.6 + pow(s, 12.0)*0.35 + pow(s, 3.0)*0.12); float band = smoothstep(0.0,0.04,abs(fract(d.y*26.0+0.5)-0.5)); if (s > 0.9965 && d.y < sunDir.y) c = mix(c, hor, (1.0-band)*0.8); vec2 g = floor(d.xz/max(d.y,0.05)*42.0); float st = step(0.985, h21(g)) * step(0.12, d.y) * night; c += vec3(st)*0.7; gl_FragColor = vec4(c, 1.0); }',
-    });
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 20, 12), city.skyMat); sky.frustumCulled = false; scene.add(sky); city.sky = sky;
-  }
+  glowPoints(city, scene);
+  skyWater(city, scene, VP, TW * TL / 2, TH * TL / 2);
   return city;
 }
 
+export function bldMaterial(VP) {
+  const winTex = canvasTex(128, 128, (c) => { c.fillStyle = '#e8e2f0'; c.fillRect(0, 0, 128, 128); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { c.fillStyle = '#39406a'; c.fillRect(x * 32 + 8, y * 32 + 7, 17, 19); c.fillStyle = '#5a64a0'; c.fillRect(x * 32 + 8, y * 32 + 7, 17, 4); c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(x * 32, y * 32 + 30, 32, 2); } }, { wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping });
+  const emTex = canvasTex(128, 128, (c) => { c.fillStyle = '#000'; c.fillRect(0, 0, 128, 128); const r = VP.U.rng(31); const cols = ['#ffe9a8', '#ffe9a8', '#ffd27a', '#ff9fe0', '#8ff3ff', '#fff']; for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (r() < 0.56) { c.fillStyle = r.pick(cols); c.fillRect(x * 32 + 9, y * 32 + 8, 15, 17); } }, { wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping });
+  return new THREE.MeshLambertMaterial({ vertexColors: true, map: winTex, emissiveMap: emTex, emissive: 0xffffff, emissiveIntensity: 0.5 });
+}
+export function palmGeo() {
+  const pg = new GB();
+    let px = 0, py = 0; for (let i = 0; i < 4; i++) { const lean = i * 0.08; pg.add(PR.cyl6, i % 2 ? '#9a6a3b' : '#86592f', px, py + 0.95, 0, 0.22 - i * 0.028, 1.96, 0.22 - i * 0.028, 0, 0, -lean); px += Math.sin(lean) * 1.9; py += Math.cos(lean) * 1.9; }
+    for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; pg.box(i % 2 ? '#2fae7a' : '#1f8f6a', px + Math.cos(a) * 1.0, py + 0.12, Math.sin(a) * 1.0, 2.0, 0.07, 0.62, 0, -a, -0.3); pg.box(i % 2 ? '#27a070' : '#188060', px + Math.cos(a) * 2.35, py - 0.52, Math.sin(a) * 2.35, 1.2, 0.06, 0.42, 0, -a, -0.85); }
+    pg.lo('#8a5a2b', px, py - 0.05, 0, 0.3);
+  return pg.geo();
+}
+export function treeGeo() {
+  const g = new GB(); g.add(PR.cyl6, '#7a5a3b', 0, 1.1, 0, 0.22, 2.2, 0.22); g.lo('#2f9a5a', 0, 3.2, 0, 1.7, 1.5, 1.7); g.lo('#3fb870', 0.5, 4.2, 0.2, 1.1, 1.0, 1.1); g.lo('#278a50', -0.6, 3.9, -0.3, 1.0, 0.9, 1.0);
+  return g.geo();
+}
+export function glowPoints(city, scene) {
+  const n = city.glowPts.length, P = new Float32Array(n * 3), C = new Float32Array(n * 3), Sz = new Float32Array(n);
+  city.glowPts.forEach((g, i) => { P[i * 3] = g.x; P[i * 3 + 1] = g.y; P[i * 3 + 2] = g.z; const c = lin(g.col); C[i * 3] = c[0]; C[i * 3 + 1] = c[1]; C[i * 3 + 2] = c[2]; Sz[i] = g.s; });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); g.setAttribute('size', new THREE.BufferAttribute(Sz, 1));
+  city.glowMat = glowMaterial(); const pts = new THREE.Points(g, city.glowMat); pts.frustumCulled = false; scene.add(pts); city.glow = pts;
+}
+export function skyWater(city, scene, VP, cx, cz, waterY) {
+  const wt = canvasTex(128, 128, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, 128, 128); const r = VP.U.rng(9); c.fillStyle = 'rgba(0,0,0,.14)'; for (let i = 0; i < 26; i++) { const x = r() * 128, y = r() * 128; c.beginPath(); c.ellipse(x, y, 10 + r() * 16, 2 + r() * 2, 0, 0, 6.283); c.fill(); } }, { wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping });
+  wt.repeat.set(90, 90);
+  city.waterMat = new THREE.MeshBasicMaterial({ color: 0x27c4d6, map: wt });
+  const wm = new THREE.Mesh(new THREE.PlaneGeometry(3600, 3600), city.waterMat); wm.rotation.x = -Math.PI / 2; wm.position.set(cx, waterY === undefined ? -0.5 : waterY, cz); scene.add(wm); city.waterTex = wt;
+  city.skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, sunC: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(-0.75, 0.16, -0.3).normalize() }, night: { value: 0 } },
+    vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 hor; uniform vec3 sunC; uniform vec3 sunDir; uniform float night; varying vec3 vD;\nfloat h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid main(){ vec3 d = normalize(vD); float h = clamp(d.y*1.6+0.08, 0.0, 1.0); vec3 c = mix(hor, top, pow(h, 0.55)); float s = max(dot(d, sunDir), 0.0); c += sunC * (pow(s, 380.0)*1.6 + pow(s, 12.0)*0.35 + pow(s, 3.0)*0.12); float band = smoothstep(0.0,0.04,abs(fract(d.y*26.0+0.5)-0.5)); if (s > 0.9965 && d.y < sunDir.y) c = mix(c, hor, (1.0-band)*0.8); vec2 g = floor(d.xz/max(d.y,0.05)*42.0); float st = step(0.985, h21(g)) * step(0.12, d.y) * night; c += vec3(st)*0.7; gl_FragColor = vec4(c, 1.0); }',
+  });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 20, 12), city.skyMat); sky.frustumCulled = false; scene.add(sky); city.sky = sky;
+}
+export { canvasTex, lin };
 export function glowMaterial() {
   return new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,

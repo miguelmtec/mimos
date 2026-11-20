@@ -1,0 +1,36 @@
+{
+ "version": 1,
+ "attribution": "© OpenStreetMap contributors (ODbL)",
+ "cities": [
+  {
+   "id": "miami",
+   "name": "Miami Beach",
+   "country": "EUA",
+   "file": "miami.json",
+   "kb": 127,
+   "landmarks": 73,
+   "tags": [],
+   "order": 0,
+   "flag": "🇺🇸",
+   "mood": 0,
+   "pal": 0,
+   "palms": 1,
+   "stars": 0
+  },
+  {
+   "id": "rio",
+   "name": "Rio de Janeiro — Copacabana",
+   "country": "Brasil",
+   "file": "rio.json",
+   "kb": 109,
+   "landmarks": 3,
+   "tags": [],
+   "order": 1,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 0
+  }
+ ]
+}

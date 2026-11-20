@@ -130,15 +130,25 @@ Game.populate = function (o) {
   const rng = U.rng(G.id * 31 + 5);
   const nCoffee = o.coffee === undefined ? 16 : o.coffee;
   for (let i = 0; i < nCoffee; i++) { const p = W.randWalk(rng); Game.addItem('coffee', p.x, p.y); }
-  for (let i = 0; i < W.cols * W.rows * 2; i++) { const p = W.randWalk(rng); Game.addItem(rng() < 0.25 ? 'cash' : 'treat', p.x, p.y); }
+  for (let i = 0; i < (W.real ? 130 : W.cols * W.rows * 2); i++) { const p = W.randWalk(rng); Game.addItem(rng() < 0.25 ? 'cash' : 'treat', p.x, p.y); }
   if (rng() < 0.7) { const p = W.randWalk(rng); Game.addItem('catnip', p.x, p.y); }
   if (rng() < 0.5) { const p = W.randWalk(rng); Game.addItem('milk', p.x, p.y); }
   // traffic
   const nT = o.traffic === undefined ? 20 : o.traffic;
   for (let i = 0; i < (o.paws || 0); i++) { const p = W.randWalk(rng); Game.addItem('paw', p.x, p.y); }
   for (let i = 0; i < nT; i++) spawnTraffic(rng);
+  if (W.real) for (let i = 0; i < (o.parked === undefined ? 14 : o.parked); i++) { const p = W.randWalk(rng); if (W.gnd[Math.floor(p.y / T) * W.W + Math.floor(p.x / T)] === 1 && !W.blocked(p.x, p.y, 40, 3)) Game.addCar(rng.pick(['sedan', 'sport', 'taxi', 'sedan']), p.x, p.y, rng() * 6.283); }
 };
 function spawnTraffic(rng) {
+  if (W.real) { // real cities: cars follow the road polylines of the map
+    if (!W.roads.length) return;
+    const road = rng.pick(W.roads), wi = rng.int(0, road.pts.length - 1), p = road.pts[wi];
+    for (const c of G.cars) if (U.d2(c.x, c.y, p.x, p.y) < 150 * 150) return;
+    for (const c of G.cats) if (U.d2(c.x, c.y, p.x, p.y) < 220 * 220) return;
+    if (W.blocked(p.x, p.y, 30, 3)) return;
+    Game.addCar(rng.pick(['sedan', 'sedan', 'taxi', 'sport']), p.x, p.y, 0, { ai: 'path', road, wi, dirn: rng() < 0.5 ? 1 : -1, spd: 80 });
+    return;
+  }
   const hor = rng() < 0.5, fwd = rng() < 0.5;
   let x, y, dir;
   if (hor) { const j = rng.int(0, W.rows); dir = fwd ? 0 : 2; y = W.RY[j] + (fwd ? 48 : -48); x = rng.range(W.RX[0] + 100, W.RX[W.cols] - 100); }
@@ -800,6 +810,7 @@ function updCar(c, dt, rdt) {
     if (I.attack && !mimo.down && mimo.cd <= 0) { let ang = I.aim; if (ang === null) ang = autoAim(c, 480, 'bolt'); if (ang !== null) { const o = { x: c.x, y: c.y + 12 }; mimo.x = c.x; mimo.y = c.y + 12; shoot(mimo, ang, false); mimo.cd = mimo.exhausted ? 0.5 : 0.22; void o; } }
   } else if (c.ai === 'traffic') updTraffic(c, dt);
   else if (c.ai === 'cop') updCopCar(c, dt);
+  else if (c.ai === 'path') updPathCar(c, dt);
   else if (c.ai === 'target') updTargetCar(c, dt);
   else { c.spd *= Math.pow(0.05, dt); }
   if (c.ai !== 'traffic' || driven) {
@@ -833,7 +844,7 @@ function updCar(c, dt, rdt) {
         damageCar(c, hostile(o) && G.car === c ? dmg * 0.3 : hostile(c) ? dmg * 2.6 : dmg * 0.5);
         damageCar(o, hostile(c) && G.car === o ? dmg * 0.3 : hostile(o) ? dmg * 2.6 : dmg * 0.5);
         o.px += nx * rel * 0.5; o.py += ny * rel * 0.5; c.spd *= 0.55;
-        if (o.ai === 'traffic') { o.ai = 'parked'; if (involvesPlayer && !G.noHeat) G.heat = Math.min(5, G.heat + 0.2); }
+        if (o.ai === 'traffic' || o.ai === 'path') { o.ai = 'parked'; if (involvesPlayer && !G.noHeat) G.heat = Math.min(5, G.heat + 0.2); }
       }
     }
   }
@@ -886,6 +897,21 @@ function updCopCar(c, dt) {
   c.spd += (top * Math.max(0.3, Math.cos(diff)) - c.spd) * Math.min(1, dt * 1.6);
   if (c.stuckT === undefined) c.stuckT = 0;
   if (Math.abs(c.spd) < 30) { c.stuckT += dt; if (c.stuckT > 1.5) { c.spd = -160; c.a += 0.9; c.stuckT = 0; } } else c.stuckT = 0;
+}
+function updPathCar(c, dt) {
+  const pts = c.road.pts;
+  if (c.wi < 0 || c.wi >= pts.length) { c.dirn = -c.dirn; c.wi = U.clamp(c.wi + c.dirn * 2, 0, pts.length - 1); }
+  const wp = pts[c.wi], prev = pts[U.clamp(c.wi - c.dirn, 0, pts.length - 1)];
+  let ox = 0, oy = 0; { const dx = wp.x - prev.x, dy = wp.y - prev.y, l = Math.hypot(dx, dy); if (l > 1) { const off = Math.min(40, c.road.w * 4); ox = -dy / l * off; oy = dx / l * off; } }
+  const tx = wp.x + ox, ty = wp.y + oy, dx = tx - c.x, dy = ty - c.y;
+  if (dx * dx + dy * dy < 70 * 70) c.wi += c.dirn;
+  const want = Math.atan2(dy, dx), diff = U.angDiff(c.a, want);
+  c.a += U.clamp(diff, -3 * dt, 3 * dt);
+  let top = 100; const ax = c.x + Math.cos(c.a) * 62, ay = c.y + Math.sin(c.a) * 62;
+  for (const k of G.cats) if (!k.down && !G.car && U.d2(k.x, k.y, ax, ay) < 46 * 46) top = 0;
+  for (const o of G.cars) if (o !== c && !o.dead && U.d2(o.x, o.y, ax, ay) < 50 * 50) top = 0;
+  c.spd += (top * Math.max(0.3, Math.cos(diff)) - c.spd) * Math.min(1, dt * 3);
+  if (top > 0 && Math.abs(c.spd) < 12) { c.stuckT = (c.stuckT || 0) + dt; if (c.stuckT > 2.5) { c.stuckT = 0; c.dirn = -c.dirn; c.wi = U.clamp(c.wi + c.dirn, 0, pts.length - 1); c.a += 3.14; } } else c.stuckT = 0;
 }
 function updTargetCar(c, dt) {
   const wp = c.route[c.wi % c.route.length];
@@ -969,7 +995,7 @@ function updContext(dt) {
   }
   G.revive = 0;
   let car = null; bd = 70 * 70;
-  for (const k of G.cars) if (!k.dead && k.ai !== 'cop' && k.ai !== 'target' && !k.locked) { const d = U.d2(k.x, k.y, c.x, c.y); if (d < bd) { bd = d; car = k; } }
+  for (const k of G.cars) if (!k.dead && k.ai !== 'cop' && k.ai !== 'target' && !k.locked && !(k.ai === 'path' && Math.abs(k.spd) > 60)) { const d = U.d2(k.x, k.y, c.x, c.y); if (d < bd) { bd = d; car = k; } }
   if (car) { G.ctx = { k: 'car', car }; if (I.take('ctx')) { if (car.needKey && !G.flags.key) say(tr('needKey'), '#ffd23f', 2); else enterCar(car); } return; }
   I.take('ctx');
 }

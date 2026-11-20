@@ -66,7 +66,7 @@ S.tryon = {
   after: () => {
     const M3 = VP.R3; if (!M3 || !M3.ok) return;
     const sp = n => M3.spec(n, true);
-    M3.showcase([{ spec: sp('mimo'), x: -1.5, z: 0.6 }, { spec: sp('mimosa'), x: 0, z: 1.2 }, { spec: sp('morticia'), x: 1.4, z: 0.7 }, { car: 'gold', x: 0, z: -1.2, s: 0.8 }], { dist: 8.5, shift: 1.5 });
+    M3.showcase([{ spec: sp('mimo'), x: -1.5, z: 0.6 }, { spec: sp('mimosa'), x: 0, z: 1.2 }, { spec: sp('morticia'), x: 1.4, z: 0.7 }, { car: 'gold', x: 0, z: -1.2, s: 0.8 }], { dist: 9, shift: 2.4 });
   },
 };
 UI.act.tryOn = () => UI.show('tryon');
@@ -84,7 +84,7 @@ UI.act.mural = () => UI.show('mural');
 S.thanks = {
   cls: 'clear', hideHud: true, stage: true,
   html: () => `<div class="wrap narrow" style="margin-top:auto"><h2 class="gold">💖 ${t('thanks')}</h2><p>${t('thanksSub')}</p><div class="row"><button class="btn ghost sm" data-act="mural">🌟 ${t('mural')}</button><button class="btn" data-act="shop">${t('close')}</button></div></div>`,
-  after: () => { const M3 = VP.R3; if (!M3 || !M3.ok) return; const sp = n => M3.spec(n, Shop.has('vip')); M3.showcase([{ spec: sp('mimo'), x: -1.4 }, { spec: sp('mimosa'), x: 0, z: 0.5 }, { spec: sp('morticia'), x: 1.3 }], { dance: true, spin: false, dist: 7.5 }); UI.confetti(); },
+  after: () => { const M3 = VP.R3; if (!M3 || !M3.ok) return; const sp = n => M3.spec(n, Shop.has('vip')); M3.showcase([{ spec: sp('mimo'), x: -1.4 }, { spec: sp('mimosa'), x: 0, z: 0.5 }, { spec: sp('morticia'), x: 1.3 }], { dance: true, spin: false, dist: 7.5, shift: 2.2 }); UI.confetti(); },
 };
 
 // ---------- checkout ----------

@@ -81,7 +81,7 @@ ACT.paRole = el => { Pa.set(true, el.dataset.n); UI.show('party'); };
 ACT.paComp = el => { Pa.setComp(el.dataset.s, el.dataset.id); UI.show('party'); };
 // title: first-launch card, now a small dismissible pill above the play button (the cat buttons live in the "Meu Gato" sheet)
 { const s = SC.title, h0 = s.html; s.html = a => {
-    let html = h0(a); const has = !!VP.S.avatar, seen = VP.S.prog && VP.S.prog.seen && VP.S.prog.seen.creator;
+    let html = h0(a); const has = !!VP.S.avatar || !!(VP.Acct && VP.Acct.user && VP.Acct.user.admin && VP.Acct.status === 'in'), seen = VP.S.prog && VP.S.prog.seen && VP.S.prog.seen.creator;
     const card = !has && !seen ? `<div class="pg-card tl-pill"><button class="pl-go" data-act="myCat"><span class="em">🐱</span><span class="tx"><b>${t('cr_card')}</b></span><span class="go">${t('cr_cardGo')}</span></button><button class="pl-x" data-act="cardNo" aria-label="x">✕</button></div>` : '';
     return html.replace('<!--vp:toast-->', card);
   }; }

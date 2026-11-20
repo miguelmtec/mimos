@@ -96,10 +96,11 @@ UI.SCREENS.account = {
         <p class="small" style="margin-top:10px">🔒 ${t('ac_note')}</p></div>
         ${local}${VP.S.avatar ? `<button class="btn teal" data-act="party">🐱 ${t('pa_title')}</button>` : ''}${priv}</div>`;
     }
-    return head + `<div class="panel t"><p class="small">✉ ${esc(A.user.email)} · ☁ ${t('ac_cloud')}</p></div>
-      <h3>🐱 ${t('ac_mycats')} (${A.cats.length}/5)</h3>
+    const own = A.user.admin ? `<div class="panel t" style="border-color:#ffd23f"><h3 class="gold" style="margin:0 0 6px">👑 ${t('ac_ownTitle')}</h3><p>${t('ac_ownText')}</p><div class="row"><button class="btn gold" data-act="acMimos">🐾 ${t('ac_ownPlay')}</button></div></div>` : '';
+    return head + `<div class="panel t"><p class="small">✉ ${esc(A.user.email)} · ☁ ${t('ac_cloud')}</p></div>${own}
+      <h3>🐱 ${A.user.admin ? t('ac_otherCats') : t('ac_mycats')} (${A.cats.length}/5)</h3>
       ${A.cats.map((c, i) => `<div class="mrow"><div style="flex:1"><b>${esc(c.name)}</b> <span class="small">· ${esc(c.breed)} ${c.isPublic ? '· 🌍' : '· 🔒'}</span></div><button class="btn ghost sm" data-act="acUse" data-i="${i}">${VP.S.avatarId === c.id ? '✓ ' + t('ac_playing') : t('ac_play')}</button><button class="btn sm" data-act="creator" data-i="${i}">✎</button></div>`).join('')}
-      ${A.cats.length < 5 ? `<button class="btn" data-act="creator" data-i="new">＋ ${t('ac_create')}</button>` : ''}
+      ${A.cats.length < 5 ? `<button class="btn${A.user.admin ? ' ghost sm' : ''}" data-act="creator" data-i="new">＋ ${t('ac_create')}</button>` : ''}
       ${VP.S.avatar ? `<button class="btn teal" data-act="party">🐱 ${t('pa_title')}</button>` : ''}
       <div class="row"><button class="btn ghost sm" data-act="acLogout">${t('ac_logout')}</button><button class="btn ghost sm" data-act="privacy">🔒 ${t('ac_privacy')}</button><button class="btn ghost sm" data-act="acDelete" style="color:#ff6b6b">🗑 ${t('ac_delete')}</button></div></div>`;
   },
@@ -142,7 +143,7 @@ A.handleLogin = async function (r) {
   if (r.status === 200 && r.awaitingGuardian) { A.user = null; A.cats = []; A.status = 'awaiting'; setPending(true); A.step = null; UI.show('account'); return; }
   if (r.status === 200 && r.user) {
     A.step = null; const me = r.user.needsAge ? { cats: [] } : await api('/api/me');
-    A.accept(r.user, me.cats); if (A.status === 'in') UI.confetti(); UI.show('account'); if (A.status === 'in') { await A.pull(); A.push(); }
+    A.accept(Object.assign({}, r.user, (me && me.user) || {}), me.cats); if (A.status === 'in') UI.confetti(); UI.show('account'); if (A.status === 'in') { await A.pull(); A.push(); }
     return;
   }
   if (r.status === 503) { A.status = 'offline'; UI.show('account'); }
@@ -173,7 +174,7 @@ UI.act.acAge = async el => {
   if (b.age < 18) { const g = ((document.getElementById('aguard') || {}).value || '').trim(); if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(g) || g.toLowerCase() === String((A.user || {}).email).toLowerCase()) { UI.toast(t('ac_guardBad'), 3200); return; } body.guardianEmail = g; }
   el.disabled = true; const r = await api('/api/auth/age', 'POST', body); el.disabled = false;
   if (r.status === 200 && r.awaitingGuardian) { A.pendingEmail = (A.user || {}).email || ''; A.user = null; A.cats = []; A.status = 'awaiting'; setPending(true); UI.show('account'); return; }
-  if (r.status === 200) { A.user = Object.assign({}, A.user, { needsAge: false }); const me = await api('/api/me'); A.accept(A.user, me.cats); UI.confetti(); if (r.band === 'teen') UI.toast(t('ac_teenNote'), 4000); UI.show('account'); await A.pull(); A.push(); return; }
+  if (r.status === 200) { A.user = Object.assign({}, A.user, { needsAge: false }); const me = await api('/api/me'); A.accept(Object.assign({}, A.user, (me && me.user) || {}), me.cats); UI.confetti(); if (r.band === 'teen') UI.toast(t('ac_teenNote'), 4000); UI.show('account'); await A.pull(); A.push(); return; }
   if (r.status === 409) { A.init(); return; }
   UI.toast(r.status === 400 && r.field === 'guardianEmail' ? t('ac_guardBad') : errMsg(r), 3200);
 };
@@ -185,6 +186,7 @@ UI.act.acGResend = async el => {
 UI.act.acGTry = () => { A.status = 'guest'; A.step = null; UI.show('account'); };    // "already approved? sign in"
 UI.act.acLogout = async () => { await api('/api/auth/logout', 'POST'); A.user = null; A.cats = []; A.status = 'guest'; A.step = null; UI.show('account'); };
 UI.act.acDelete = async () => { if (!confirm(t('ac_delAsk'))) return; const r = await api('/api/me', 'DELETE'); if (r.status === 200) { A.user = null; A.cats = []; A.status = 'guest'; A.step = null; VP.S.avatarId = null; setPending(false); UI.toast(t('ac_deleted'), 3000); UI.show('account'); } else UI.toast(errMsg(r)); };
+UI.act.acMimos = () => { VP.S.avatar = null; VP.S.avatarId = null; VP.persist && VP.persist(); UI.toast(t('ac_ownOn')); UI.show('title'); };
 UI.act.acUse = el => { const c = A.cats[+el.dataset.i]; if (VP.S.avatarId === c.id) { VP.S.avatar = null; VP.S.avatarId = null; } else { VP.S.avatar = Object.assign(A.toSpec(c.spec), { label: c.name }); VP.S.avatarId = c.id; if (VP.Party) VP.Party.S().role = VP.Party.roleSlot(c.spec.role || 'shooter'); } VP.persist(); if (VP.Party) VP.Party.apply(); UI.show('account'); };
 UI.SCREENS.privacy = { hideHud: true, html: () => `<div class="corner l"><button class="chip" data-act="account">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="teal">🔒 ${t('ac_privacy')}</h2><div class="panel t">${t('ac_privTxt')}</div><a class="btn ghost" href="privacy.html" target="_blank" rel="noopener">${t('ac_privFull')}</a></div>` };
 UI.act.privacy = () => UI.show('privacy');

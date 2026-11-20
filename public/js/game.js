@@ -69,7 +69,7 @@ Game.addCats = function (x, y) {
     const st = CAT[name];
     G.cats.push({
       kind: 'cat', name, idx, x: x + (idx - 1) * 34, y: y + (idx === 0 ? 0 : 22), r: name === 'morticia' ? 11 : 13, hp: st.hp, max: st.hp, spd: st.spd,
-      face: 1, aim: 0, t: idx * 1.3, walk: 0, kx: 0, ky: 0, cd: 0, cd2: 0, cdS: name === 'mimo' ? 4 : 6, flash: 0, inv: 1, down: false, root: 0, atk: 0, mouth: 0,
+      face: 1, aim: 0, t: idx * 1.3, walk: 0, kx: 0, ky: 0, cd: 0, cd2: 0, cdS: 1.5, flash: 0, inv: 1, down: false, root: 0, atk: 0, mouth: 0,
       energy: 100, belly: 70, exhausted: false, combo: 0, comboT: 0, dashT: 0, dx: 0, dy: 0, invis: 0, recoil: 0, idle: 0, hitSet: null, aiT: 0, stuck: 0,
     });
   });
@@ -415,8 +415,8 @@ function doSpecial(c) {
     for (const b of G.bullets) if (b.from === 'dog' && U.d2(b.x, b.y, c.x, c.y) < 210 * 210) b.life = 0;
     for (const k of G.cats) k.root = 0;
   } else {
-    if (c.belly < 100) { text(c.x, c.y - 50, tr('needFull'), '#ffb347', 13); return; }
-    G.feast = 5; c.belly = 55; sfx('feast'); say(tr('feast') + '!', '#ffb347', 1.6); shake(6);
+    if (!c.feastReady) { text(c.x, c.y - 50, tr('needFull'), '#ffb347', 13); return; }
+    G.feast = 5; c.belly = 55; c.feastReady = false; sfx('feast'); say(tr('feast') + '!', '#ffb347', 1.6); shake(6);
   }
 }
 Game.special = doSpecial;
@@ -444,6 +444,7 @@ function updCat(c, dt) {
   if (c.name === 'morticia') {
     if (!G.car) c.belly = Math.max(0, c.belly - dt * 0.85 * G.hungerMul);
     if (c.belly <= 0) { c.hungerT = (c.hungerT || 0) + dt; if (c.hungerT > 1 && !G.car) { c.hungerT = 0; if (c.hp > 12) { c.hp = Math.max(12, c.hp - 3); c.flash = 0.1; } text(c.x, c.y - 46, tr('hungry'), '#ffb347', 13); if (!G.tut.hungry) { G.tut.hungry = 1; say(tr('tipHungry'), '#ffb347', 3); } } }
+    if (c.belly >= 99.5 && !c.feastReady) { c.feastReady = true; text(c.x, c.y - 56, tr('feast') + '!', '#ffd23f', 15); sfx('paw', 0.5); }
     if (G.feast > 0) feastTick(c, dt);
   }
   if (G.car) { c.x = G.car.x; c.y = G.car.y; return; }

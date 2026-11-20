@@ -106,7 +106,7 @@ I.bind = function (cv) {
     if (hit) {
       if (hit === 'atk') { I.atk.id = e.pointerId; I.atk.ox = I.atk.x = p.x; I.atk.oy = I.atk.y = p.y; }
       else if (hit === 'pause') I.pressed.pause = true;
-      else if (hit[0] === 'c') I.pressed.sw = +hit[1];
+      else if (hit.length === 2 && hit[0] === 'c') I.pressed.sw = +hit[1];
       else { I.pressed[hit] = true; I.held[hit] = e.pointerId; }
       return;
     }

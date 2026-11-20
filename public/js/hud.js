@@ -82,7 +82,7 @@ H.draw = function (G, dt) {
     if (need) { c.beginPath(); c.arc(b.x, b.y, b.r + 5 + Math.sin(t * 8) * 2.5, 0, 6.283); c.lineWidth = 3; c.strokeStyle = GOLD; c.stroke(); }
     bar(b.x - b.r, b.y + b.r + 3, b.r * 2, 7 * k, cat.hp / cat.max, cat.hp / cat.max < 0.3 ? '#ff4f5e' : '#7CFF6B');
     let f = 0, mc = col;
-    if (cat.name === 'mimo') { f = cat.energy / 100; mc = cat.exhausted ? '#7f8ab0' : '#8ff3ff'; } else if (cat.name === 'mimosa') f = 1 - Math.max(0, cat.cdS) / 12; else { f = cat.belly / 100; mc = cat.belly >= 100 ? GOLD : '#ffb347'; }
+    if (cat.name === 'mimo') { f = cat.energy / 100; mc = cat.exhausted ? '#7f8ab0' : '#8ff3ff'; } else if (cat.name === 'mimosa') f = 1 - Math.max(0, cat.cdS) / 12; else { f = cat.feastReady ? 1 : cat.belly / 100; mc = cat.feastReady ? GOLD : '#ffb347'; }
     bar(b.x - b.r, b.y + b.r + 11 * k, b.r * 2, 5 * k, f, mc);
     if (!touch) txt('' + (i + 1), b.x - b.r + 5, b.y - b.r + 6, 11 * k, '#fff');
   });
@@ -142,7 +142,7 @@ function controls(G, k, t, touch, a) {
     const n = a.name;
     if (n === 'mimo') button(b.special, '#8ff3ff', 'zzz', VP.t('nap'), Math.max(0, a.cdS) / 18, a.cdS <= 0);
     else if (n === 'mimosa') button(b.special, '#ff7ac0', 'roar', VP.t('roar'), Math.max(0, a.cdS) / 12, a.cdS <= 0);
-    else button(b.special, a.belly >= 100 ? GOLD : '#ffb347', 'steak', VP.t('feast'), 1 - a.belly / 100, a.belly >= 100);
+    else button(b.special, a.feastReady ? GOLD : '#ffb347', 'steak', VP.t('feast'), a.feastReady ? 0 : 1 - a.belly / 100, !!a.feastReady);
     button(b.dash, '#fff', n === 'mimo' ? 'ball' : n === 'mimosa' ? 'dash' : 'smoke', VP.t(n === 'mimo' ? 'hairLbl' : n === 'mimosa' ? 'dashLbl' : 'smokeLbl'), Math.max(0, a.cd2) / (n === 'mimo' ? 5 : n === 'mimosa' ? 2.4 : 4), a.cd2 <= 0);
   }
   if (G.ctx) {

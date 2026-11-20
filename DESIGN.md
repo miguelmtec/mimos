@@ -265,8 +265,8 @@ OnlineTransport {
 ### Polling: `POST /api/online/tick`
 
 ```
-{ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, need?, idle?}
- -> {you: {id}, room: "rio#1", others: [{id, x, z, ry, anim, car?, cv, emote?, es?, phrase?, ps?, paws?, age, name?, cat?}], n, cap, ts, paw: {slot, ms, n}}
+{ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, trade?, need?, idle?}
+ -> {you: {id}, room: "rio#1", others: [{id, x, z, ry, anim, car?, cv, emote?, es?, phrase?, ps?, paws?, trade?, age, name?, cat?}], n, cap, ts, paw: {slot, ms, n}}
 ```
 
 - **Salas:** uma por mapa (`city` ou o id da cidade), em instâncias de 30 (`rio#1`, `rio#2`…). O primeiro tick manda `room: "rio"` e recebe a instância; no máximo 8 instâncias por mapa, 20 salas e 300 jogadores no total (`503 busy` → "Cidade cheia, tente já já"), 8 presenças por endereço (hash).
@@ -290,8 +290,15 @@ OnlineTransport {
 ### Segurança (o público inclui crianças)
 
 - **Não existe texto livre em lugar nenhum do protocolo.** Frases são um índice de uma lista fixa (`on_p0`…`on_p11` em `i18n.js`, cada um lê no seu idioma); o servidor recusa qualquer coisa que não seja um inteiro de 0 a 11.
+- **Trocas** só de roupas de moedas, com confirmação dos dois lados (acima). Nada de valor real muda de mão.
 - **Silenciar** (toque no gato ou na lista) esconde o gato e as frases dele só para quem silenciou. **Denunciar** pede um de 4 motivos fixos, grava para revisão e silencia.
 - Só aparecem o gato, o nome do gato ou o apelido sorteado. Presença some em 10 s e é apagada em 30 s. Nota de privacidade: `public/privacy.html#online`.
+
+### Nível, roupa e troca segura
+
+- **Roupa e nível:** o tíquete aceita `wear=a,b,c` (até 6 ids de `outfits.json`, do gato estrela escolhido) e `lv=1..100`; os dois ficam dentro da aparência assinada (`cat: {star, wear, lv}`), então valem igual no polling e no WebSocket. O cliente monta o gato remoto com `Wardrobe.specOf(star, wear)` (ids desconhecidos são ignorados) e desenha a etiqueta `Nv 8 · nome`. São dados de enfeite declarados pelo cliente, como a coroa VIP do ranking; o nível vem do sistema de progressão quando ele existe (`VP.Prog.level`), senão 1 nível a cada 5 estrelas.
+- **Troca (`O.trade*` em `online.js`):** só mudam de mão **roupas compradas com moedas** (nunca moedas, nunca itens VIP, de temporada ou de pacotes Pix), uma por uma ou como presente. Fluxo: tocar no gato → "Trocar roupa" → escolher o que dá; o outro recebe um convite que pode recusar ("Agora não" silencia convites daquele gato por 1 min); os dois veem os dois lados e **os dois confirmam**; qualquer mudança desfaz a confirmação do outro e trava o botão por 3 s; item que você já tem ou que não é trocável bloqueia a confirmação; 5 trocas por dia; gato silenciado não consegue convidar.
+- No fio é `trade: {to, give, st}` no tick (coluna `vp_presence.trade`, entregue só ao destinatário) ou `{t:"tr"}` no WebSocket: um id de item validado por formato, nunca texto. O inventário mora no aparelho (como todo o progresso), então o servidor só repassa a oferta; cada cliente aplica a troca uma vez quando vê as duas confirmações do mesmo par.
 
 ### Servidor em tempo real (pronto, opcional)
 

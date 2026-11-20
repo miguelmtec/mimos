@@ -204,8 +204,8 @@ Shared presence for the online free-roam mode. Design, limits and cost notes: `D
 
 | Route | Body / query | Answer |
 |---|---|---|
-| `GET /api/online/ticket` | `?cat=mimo\|mimosa\|morticia`, or `?catId=<uuid>` (own registered cat, needs login), or `?spec=<json Spec>`; optional header `x-vp-ticket: <previous ticket>` keeps a guest's id and nickname | `{you: {id, name, guest}, cat, ticket, exp, ttl}` |
-| `POST /api/online/tick` | `{ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, need?, idle?}` | `{you: {id}, room, others: [...], n, cap, ts, paw}` |
+| `GET /api/online/ticket` | `?cat=mimo\|mimosa\|morticia`, or `?catId=<uuid>` (own registered cat, needs login), or `?spec=<json Spec>`; optional `&wear=a,b` (outfit item ids, max 6) and `&lv=1..100` (level badge); optional header `x-vp-ticket: <previous ticket>` keeps a guest's id and nickname | `{you: {id, name, guest}, cat, ticket, exp, ttl}` |
+| `POST /api/online/tick` | `{ticket, room, x, z, ry, anim, car?, emote?, es?, phrase?, ps?, paws?, trade?: {to, give, st}, need?, idle?}` | `{you: {id}, room, others: [...], n, cap, ts, paw}` |
 | `POST /api/online/report` | `{ticket, targetId, reason, room?}` | `{ok, stored}` |
 | `POST /api/online/leave` | `{ticket}` | `{ok}` |
 

@@ -25,6 +25,7 @@ A Cidade Online é um passeio opcional em que os gatos de vários jogadores apar
 
 - **O que os outros veem:** a posição do seu gato na cidade compartilhada, a aparência dele e um nome: o nome do gato cadastrado ou um **apelido sorteado** (como "Gato Veloz 123"). Nunca o e-mail, nunca o nome de uma pessoa.
 - **Não existe chat livre.** Só dá para usar frases prontas de uma lista fixa ("Oi!", "Miau!", "Bora correr?") e emotes. Ninguém consegue digitar uma mensagem para outra pessoa.
+- **O que mais aparece:** o nível e a roupa do gato. Dá para trocar roupas compradas com moedas do jogo com outro gato; os dois lados precisam confirmar e nada é digitado. Itens pagos nunca são trocados.
 - **Silenciar e denunciar:** tocando em um gato você pode escondê-lo da sua tela ou denunciá-lo. A denúncia guarda o motivo (de uma lista fixa), o nome e a aparência do gato denunciado e os identificadores dos dois gatos, para a gente revisar.
 - **Tempo de guarda:** a posição e os dados de presença são apagados **30 segundos depois que você para de jogar online** (em até 10 segundos você já some para os outros). Enquanto você está online guardamos também um identificador embaralhado do endereço IP, só para limitar abusos; ele é apagado junto.
 - Dá para jogar tudo sem entrar na Cidade Online. As missões continuam offline.

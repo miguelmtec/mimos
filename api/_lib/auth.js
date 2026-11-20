@@ -17,7 +17,7 @@ const pepper = () => sha256(`vp-pepper:${process.env.AUTH_SECRET || dbUrl() || '
 const hmac = (s) => createHmac('sha256', pepper()).update(s).digest('hex');
 
 export const newCode = () => String(randomInt(0, 1_000_000)).padStart(6, '0');
-export const codeHash = (email, code) => hmac(`code:${email}:${code}`);
+export const codeHash = (email, code, purpose = 'login') => hmac(`code:${purpose}:${email}:${code}`);
 export const ipHash = (ip) => hmac(`ip:${ip}`).slice(0, 32);
 export const newToken = () => randomBytes(32).toString('base64url');
 export const tokenHash = (token) => sha256(`session:${token}`);
@@ -56,18 +56,46 @@ export const publicUser = (u) => ({
   id: u.id, email: u.email, lang: u.lang, createdAt: new Date(u.created_at).toISOString(),
 });
 
-/** Returns the logged-in user ({id, email, lang, createdAt}) or null. */
+/** ADMIN_EMAILS (comma separated). */
+export const isAdminEmail = (email) =>
+  (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean).includes(String(email).toLowerCase());
+
+/** A legacy (code-only) account, or one without password / document / birth date, must complete its profile. */
+export const profileIncomplete = (row) => !row.pw_hash || !(row.cpf_hash || row.doc_hash) || !row.birth_enc;
+
+/** What the owner (and only the owner) gets to see of their own record. Never the CPF/document itself. */
+export const ownerView = (row) => ({
+  ...publicUser(row),
+  status: row.status,
+  hasPassword: Boolean(row.pw_hash),
+  needsProfile: profileIncomplete(row),
+  country: row.country || null,
+  doc: row.doc_mask ? { type: row.doc_type, masked: row.doc_mask } : null,
+});
+
+/**
+ * Returns the logged-in, ACTIVE user (ownerView shape) or null.
+ * Accounts that are pending e-mail verification or waiting for a guardian never get a session,
+ * and a session of an account that was suspended into those states stops working.
+ */
 export async function getUser(sql, req) {
   const token = readToken(req);
   if (!token) return null;
-  const rows = await sql`select u.id, u.email, u.lang, u.created_at
+  const rows = await sql`select u.id, u.email, u.lang, u.created_at, u.status, u.pw_hash, u.doc_mask, u.country, u.doc_type,
+      u.cpf_hash, u.doc_hash, u.birth_enc
     from vp_sessions s join vp_users u on u.id = s.user_id
     where s.token_hash = ${tokenHash(token)} and s.expires_at > now()`;
-  return rows[0] ? publicUser(rows[0]) : null;
+  const row = rows[0];
+  return row && row.status === 'active' ? ownerView(row) : null;
 }
 
-export async function requireUser(sql, req) {
+/**
+ * Game endpoints need a complete, active account: a legacy account that has not yet set a password and
+ * document is answered 403 'profile-incomplete' (the client then shows the "complete your profile" form).
+ */
+export async function requireUser(sql, req, { allowIncomplete = false } = {}) {
   const user = await getUser(sql, req);
   if (!user) throw fail(401, 'unauthorized');
+  if (user.needsProfile && !allowIncomplete) throw fail(403, 'profile-incomplete');
   return user;
 }

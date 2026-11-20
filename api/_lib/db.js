@@ -67,6 +67,49 @@ const tables = (sql) => [
     user_id uuid primary key references vp_users(id) on delete cascade,
     data jsonb not null,
     updated_at timestamptz not null default now())`,
+  // ---------- secure accounts (password + document + guardian) ----------
+  // All idempotent: ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS, safe on existing databases.
+  // Legacy rows (e-mail code only) keep working: they get status 'active' and must complete the profile.
+  () => sql`alter table vp_users
+    add column if not exists status text not null default 'active',
+    add column if not exists email_verified_at timestamptz,
+    add column if not exists pw_hash text,
+    add column if not exists pw_changed_at timestamptz,
+    add column if not exists country text,
+    add column if not exists doc_type text,
+    add column if not exists cpf_hash text,
+    add column if not exists doc_hash text,
+    add column if not exists doc_enc text,
+    add column if not exists doc_mask text,
+    add column if not exists birth_enc text,
+    add column if not exists birth_ym text,
+    add column if not exists age_band text,
+    add column if not exists totp_enc text,
+    add column if not exists totp_on boolean not null default false,
+    add column if not exists totp_last bigint not null default 0`,
+  () => sql`alter table vp_login_codes add column if not exists purpose text not null default 'login'`,
+  () => sql`create table if not exists vp_tokens (
+    token_hash text primary key,
+    user_id uuid not null references vp_users(id) on delete cascade,
+    purpose text not null,
+    expires_at timestamptz not null,
+    used_at timestamptz,
+    created_at timestamptz not null default now())`,
+  () => sql`create table if not exists vp_guardians (
+    user_id uuid primary key references vp_users(id) on delete cascade,
+    enc text not null,
+    ghash text not null,
+    approved_at timestamptz,
+    created_at timestamptz not null default now())`,
+  () => sql`create table if not exists vp_login_attempts (
+    id bigserial primary key,
+    acct text not null,
+    ip_hash text not null,
+    ok boolean not null,
+    created_at timestamptz not null default now())`,
+  () => sql`create table if not exists vp_locks (
+    acct text primary key,
+    until_at timestamptz not null)`,
 ];
 
 const indexes = (sql) => [
@@ -75,6 +118,14 @@ const indexes = (sql) => [
   () => sql`create index if not exists vp_sessions_user_idx on vp_sessions (user_id)`,
   () => sql`create index if not exists vp_sessions_expires_idx on vp_sessions (expires_at)`,
   () => sql`create index if not exists vp_cats_user_idx on vp_cats (user_id, created_at)`,
+  // one account per CPF / per foreign document. Partial: an unverified (pending) sign-up does not hold the
+  // document, so nobody can squat someone else's CPF with an e-mail they do not control.
+  () => sql`create unique index if not exists vp_users_cpf_uq on vp_users (cpf_hash) where status <> 'pending'`,
+  () => sql`create unique index if not exists vp_users_doc_uq on vp_users (doc_hash) where status <> 'pending'`,
+  () => sql`create index if not exists vp_tokens_user_idx on vp_tokens (user_id, purpose, created_at desc)`,
+  () => sql`create index if not exists vp_guardians_ghash_idx on vp_guardians (ghash, created_at desc)`,
+  () => sql`create index if not exists vp_attempts_acct_idx on vp_login_attempts (acct, created_at desc)`,
+  () => sql`create index if not exists vp_attempts_ip_idx on vp_login_attempts (ip_hash, created_at desc)`,
   () => sql`create index if not exists vp_cats_public_idx on vp_cats (created_at desc) where is_public`,
 ];
 

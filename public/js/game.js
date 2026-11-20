@@ -1119,6 +1119,7 @@ function updContext(dt) {
     I.take('ctx'); return;
   }
   G.revive = 0;
+  if (VP.Life && VP.Life.context(G, c)) return; // HOOK city-life
   let car = null; bd = 70 * 70;
   for (const k of G.cars) if (!k.dead && k.ai !== 'cop' && k.ai !== 'target' && !k.locked && !(k.ai === 'path' && Math.abs(k.spd) > 60)) { const d = U.d2(k.x, k.y, c.x, c.y); if (d < bd) { bd = d; car = k; } }
   if (car && !G.noCars) { G.ctx = { k: 'car', car }; if (I.take('ctx')) { if (car.needKey && !G.flags.key) say(tr('needKey'), '#ffd23f', 2); else enterCar(car); } return; }
@@ -1192,6 +1193,7 @@ Game.update = function (dt) {
   if (G.car && G.car.dead) G.car = null;
   VP.Missions.update(G, dt);
   if (!G) return;
+  if (VP.Life) VP.Life.update(G, dt); // HOOK city-life
   // camera
   const a = active(); let tx = a.x, ty = a.y - 10;
   if (G.car) { tx += Math.cos(G.car.a) * G.car.spd * 0.3; ty += Math.sin(G.car.a) * G.car.spd * 0.3; }

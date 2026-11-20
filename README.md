@@ -22,6 +22,7 @@ Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**,
 - **Treino de primeira vez** (andar, atacar, trocar, reanimar), pulável, com dicas para toque e teclado.
 - **Cartão para compartilhar** (PNG 1080×1350 com os gatos na roupa atual) e link **"Desafie um amigo"** (`?c=missão-pontos-nome`).
 - **Atividades livres:** 25 patinhas douradas, 5 contra-relógios, 5 missões de bairro com gatos NPC.
+- **Cidade viva:** pedestres, gatos de rua, cachorros na guia, pombos, ônibus, vans e motos que param no semáforo e freiam para gatos; barracas e lojas (cachorro-quente, peixaria, padaria, sorveteria, pet shop, feirinha) que vendem por Moedas do jogo ou em troca de um favor; coisas de gato para fazer (derrubar copos, dormir na caixa, arranhar sofá, escalar, tomar sol, laser, novelo), mapa grande com destino, lista de Atividades, modo foto, rádio, dia e noite, chuva. Sem violência. Ver [docs/CITY_LIFE.md](docs/CITY_LIFE.md).
 - **Guarda-roupa** por slots (cabeça, olhos, pescoço, roupa, costas, rastro) com moedas ganhas nas missões.
 - **Guarda-roupa com 80 itens** e **Loja dos Mimos (Pix):** Pacote VIP, Temporada Natal Neon, +10 vidas, apoio (a partir de R$0,99) e pacotes de visual de R$0,99/R$1,99 (Praia, Agro, Festa, Natal). Só enfeite e bônus; dá para zerar sem pagar. Sem sorteio, sem dobrador de moedas.
 - **Conta opcional:** login por código no e-mail, "Meus gatos" (crie seu gato 3D), progresso na nuvem e a "Cidade dos Gatos" (gatos públicos de outros jogadores passeando).

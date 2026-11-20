@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "note": "Gente e bichos da cidade. Ninguém aqui machuca nem xinga ninguém: as falas são curtas, simpáticas e ficam em life/i18n.js (chaves lf_*).",
+  "caps": {
+    "peds": [16, 30, 44], "cats": [3, 5, 7], "dogs": [2, 3, 4], "birds": [8, 14, 22], "vehicles": [3, 5, 8], "flies": [3, 5, 8],
+    "mobile": 0.8, "ambient": 0.55, "min": 0.4
+  },
+  "radius": { "spawnMin": 380, "spawnMax": 860, "despawn": 1180, "first": 140, "lod": 760 },
+  "skin": ["#fbe0cb", "#f6d3b3", "#f1c9a5", "#eebf98", "#e6b58a", "#dba878", "#c98f5f", "#a9744a", "#8d5a36", "#6f4428"],
+  "hair": ["#1d1412", "#3b2416", "#5a3a22", "#8a5a2b", "#c98f4b", "#e8d089", "#b03a2e", "#d9d9de", "#6b3fa0", "#ff7ac0", "#2de2e6"],
+  "tops": ["#ff4fb8", "#2de2e6", "#ffd23f", "#7CFF6B", "#ff8a5c", "#b967ff", "#ffffff", "#27c4d6", "#e01e37", "#2a6bff", "#f7a6c4", "#3fc27f", "#fff3a8", "#17121d", "#ff9d6e", "#8fc4ff"],
+  "bottoms": ["#27285c", "#3a2a66", "#1d2440", "#4a5568", "#8a5a2b", "#f2efe6", "#2f5560", "#5a2a4a", "#d9b87c", "#17121d", "#56607a"],
+  "hats": ["#ffd23f", "#ffffff", "#e01e37", "#2a6bff", "#ff4fb8", "#17121d", "#f2c282"],
+  "roles": [
+    { "id": "walker", "w": 34, "spd": [52, 74] },
+    { "id": "pair", "w": 14, "spd": [46, 60] },
+    { "id": "jogger", "w": 8, "spd": [120, 150] },
+    { "id": "dogwalker", "w": 9, "spd": [48, 62] },
+    { "id": "tourist", "w": 8, "spd": [40, 56] },
+    { "id": "kid", "w": 9, "spd": [60, 86] },
+    { "id": "eater", "w": 10, "spd": [40, 56] },
+    { "id": "sitter", "w": 8, "spd": [50, 60] }
+  ],
+  "snacks": ["hotdog", "donut", "sushi", "steak", "treat"],
+  "streetCats": [
+    { "fur": "#f6a94a", "fur2": "#fff3df", "pattern": "tabby", "patchA": "#d9822b", "eye": "#7bd88f", "name": { "pt": "Caramelo", "en": "Caramel" }, "mood": "friendly" },
+    { "fur": "#2b2b33", "fur2": "#ffffff", "pattern": "tuxedo", "eye": "#ffd23f", "name": { "pt": "Frajola", "en": "Tux" }, "mood": "friendly" },
+    { "fur": "#b9b3ad", "fur2": "#dddddd", "pattern": "tabby", "patchA": "#8d8780", "eye": "#7bd88f", "name": { "pt": "Cinzento", "en": "Smoky" }, "mood": "shy" },
+    { "fur": "#ffffff", "fur2": "#ffffff", "pattern": "solid", "eye": "#6fc3ff", "name": { "pt": "Floquinho", "en": "Snowflake" }, "mood": "friendly" },
+    { "fur": "#fffaf2", "fur2": "#ffffff", "pattern": "calico", "patchA": "#f28a2e", "patchB": "#2b1f24", "eye": "#f2b01e", "name": { "pt": "Pintada", "en": "Patches" }, "mood": "shy" },
+    { "fur": "#8a5a2b", "fur2": "#d9a066", "pattern": "tabby", "patchA": "#5a3a22", "eye": "#ffd23f", "name": { "pt": "Paçoca", "en": "Peanut" }, "mood": "friendly" },
+    { "fur": "#f2e6d0", "fur2": "#ffffff", "pattern": "points", "patchA": "#5a4030", "eye": "#3fa9f5", "name": { "pt": "Sião", "en": "Siam" }, "mood": "grumpy" },
+    { "fur": "#17121d", "fur2": "#2b2b33", "pattern": "solid", "eye": "#7CFF6B", "name": { "pt": "Sombra", "en": "Shadow" }, "mood": "shy" },
+    { "fur": "#d9a066", "fur2": "#fff3df", "pattern": "tabby", "patchA": "#b5763a", "eye": "#7bd88f", "name": { "pt": "Mel", "en": "Honey" }, "mood": "friendly" },
+    { "fur": "#9aa0a8", "fur2": "#c9ced6", "pattern": "solid", "eye": "#f2b01e", "name": { "pt": "Chumbinho", "en": "Pebble" }, "mood": "grumpy" }
+  ],
+  "gang": { "name": { "pt": "Turma do Beco", "en": "The Alley Crew" }, "size": 4, "gift": 25, "acc": [{ "scarf": "#e01e37" }, { "glasses": "#17121d" }, { "collar": "#ffd23f" }, { "hat": "#2a6bff" }] },
+  "petDogs": [
+    { "col": "#d9a066", "col2": "#fff3df", "s": 0.8, "name": "Totó" },
+    { "col": "#ffffff", "col2": "#f2efe6", "s": 0.62, "name": "Floco" },
+    { "col": "#5a3a22", "col2": "#8a5a2b", "s": 1.0, "name": "Thor" },
+    { "col": "#2b2b33", "col2": "#ffffff", "s": 0.7, "name": "Pingo" },
+    { "col": "#e8d089", "col2": "#fff3a8", "s": 0.9, "name": "Caramelo" }
+  ],
+  "chance": { "petOnMeow": 0.55, "snackOnMeow": 0.3, "kidFollow": 0.85, "catFriendly": 0.6, "window": 0.5 }
+}

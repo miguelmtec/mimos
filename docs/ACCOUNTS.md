@@ -1,9 +1,19 @@
 # Vice Paws — accounts, cat profiles and cloud save
 
-Backend for player accounts. Players register **their cats**, not themselves: the only personal datum is the e-mail, and it is never returned by any public endpoint.
+Backend for player accounts. Players register **their cats**, not themselves. Personal data kept, in total:
 
-- Vercel Node functions in `api/`, Neon Postgres, Resend for the login e-mail.
-- No password: a 6-digit code by e-mail, then an HttpOnly session cookie.
+| Data | Why | How it is kept |
+|---|---|---|
+| e-mail | identify the account, send codes | plain text in `vp_users`; returned only to its owner, never by a public endpoint |
+| Google account id (`sub`) | "Sign in with Google" | opaque number in `vp_users.google_sub` (no name, no photo) |
+| birth month/year + age band | ECA Digital (Lei 15.211/2025) and LGPD art. 14 | month/year AES-256-GCM encrypted (`birth_enc`), band in clear (`child`/`teen`/`adult`) |
+| guardian e-mail (under 18 only) | approval (under 16) or notice (16-17) | AES-256-GCM encrypted in `vp_guardians` |
+
+**There is no password and no document (CPF/RG) anywhere.** Retention: as long as the account exists; `DELETE /api/me` removes everything at once. Rights (access, correction, deletion) are served through `DELETE /api/me` or by e-mail to **jogo@mtec.tec.br**. The player-facing text is `public/privacy.html`.
+
+- Vercel Node functions in `api/`, Neon Postgres, Resend for e-mails.
+- Two ways in: **Sign in with Google** (ID token verified on the server) or a 6-digit code by e-mail; both end in the same HttpOnly session cookie.
+- Age step on the first login of every account (new or legacy). Under 16: the account is "awaiting guardian" (guest/offline play only: no session, no ranking, no online, no purchases) until the guardian approves by a single-use link. 16-17: active, the guardian is notified.
 - Everything is same-origin JSON. The client only needs `fetch` (the cookie travels by itself).
 
 ## Setup (owner)
@@ -17,13 +27,27 @@ Backend for player accounts. Players register **their cats**, not themselves: th
 | `DATABASE_URL` | yes | Neon connection string (`POSTGRES_URL` is also accepted). Without it every endpoint answers `503 {"error":"offline"}`. |
 | `RESEND_API_KEY` | yes | Resend API key. Without it `POST /api/auth/start` answers `503 {"error":"mail-offline"}`. |
 | `MAIL_FROM` | yes, in practice | Sender on your verified domain, e.g. `Vice Paws <jogo@seudominio.com.br>`. The default is `Vice Paws <jogo@resend.dev>`: Resend's shared `resend.dev` domain is for testing and only delivers to the address that owns the Resend account, so real players will not get codes until this is set. |
-| `AUTH_SECRET` | recommended | Any long random string. Keys the hashes of login codes and IPs. Falls back to a value derived from `DATABASE_URL`. |
+| `GOOGLE_CLIENT_ID` | for Google sign-in | OAuth Client ID (see "Google sign-in setup" below). Public. When empty, `GET /api/auth/config` answers `{"googleClientId":null}` and the game hides the Google button (the e-mail code keeps working). |
+| `AUTH_SECRET` | **required in production** | A long random string (16+ chars, e.g. `openssl rand -base64 48`). Keys the hashes of login codes and IPs and, through HKDF, the AES-256-GCM key for the birth month/year and guardian e-mail. In production (`VERCEL_ENV=production`) without it the age step answers `503 misconfigured`. **Do not change it later**: encrypted fields would become unreadable. |
+| `PUBLIC_URL` | no | Base URL used in the guardian e-mail link. Default `https://vice-paws.vercel.app`. |
+| `ADMIN_EMAILS` | no | Comma separated e-mails of the owner(s); `GET /api/me` adds `admin: true` ("Edição dos Mimos"). Nothing else. |
 | `ALLOWED_ORIGINS` | no | Extra allowed origins, comma separated, e.g. `https://vicepaws.app`. Only needed if the game is served from a different origin than the API. |
 
 Notes:
-- **Function count**: the Vercel Hobby plan allows 12 functions per deployment. This API adds 5 (`auth/[action]`, `me`, `cats/index`, `cats/[action]`, `save`) to the existing 4 (`scores`, `pix/*`), so 9 in total. Files under `api/_lib/` are not functions.
+- **Function count**: the Hobby plan allows 12 functions per deployment. The secure-accounts work added **no** function file (Google, age and guardian actions live in `auth/[action].js`). Note: today `api/` holds 13 function files (`auth/[action]`, `cats/[action]`, `cats/index`, `community`, `me`, `online/[action]`, `pix/create`, `pix/status`, `pix/webhook`, `rewards/[action]`, `save`, `scores`, `style`), which is already over 12; merge some (for example `pix/*` into one dynamic file) before deploying on Hobby. Files under `api/_lib/` are not functions.
 - **Origin check**: mutating requests are accepted from `https://vice-paws.vercel.app`, preview deployments `https://vice-paws-*.vercel.app`, `http://localhost:*`, the request's own host (custom domains work with no configuration) and `ALLOWED_ORIGINS`.
 - **Tests**: `npm test` (no install needed, Node 20+). They use an in-memory stand-in for `neon()` and a mocked Resend. To also prove the SQL on a real, throwaway Postgres: `VP_TEST_PG_URL=postgres://user@127.0.0.1:5432/scratch npm test` (it drops the `vp_*` account tables of that database).
+
+## Google sign-in setup (owner)
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/), select or create a project, then **APIs & Services → OAuth consent screen**: user type *External*, app name "Vice Paws", support e-mail jogo@mtec.tec.br, scopes: only the defaults `openid`, `email`, `profile`. Add the privacy policy link `https://vice-paws.vercel.app/privacy.html`, then publish the app (*In production*), otherwise only test users can sign in.
+2. **APIs & Services → Credentials → Create credentials → OAuth client ID**, application type **Web application**, name "Vice Paws web".
+3. **Authorized JavaScript origins**: `https://vice-paws.vercel.app` (add your custom domain and `http://localhost:3000` for local tests if you want). Leave *Authorized redirect URIs* empty: the button uses the ID-token flow, not redirects.
+4. Copy the **Client ID** (`123…apps.googleusercontent.com`; there is no secret to store).
+5. Vercel → Project → Settings → Environment Variables: `GOOGLE_CLIENT_ID` = that value (Production and Preview), then redeploy. Preview deployments have other origins: add them to the authorized origins or test Google only in production.
+6. Check: `curl https://vice-paws.vercel.app/api/auth/config` returns the client id, and the account screen shows the Google button.
+
+The server never trusts the browser: `POST /api/auth/google` verifies the RS256 signature against Google's JWKS (`https://www.googleapis.com/oauth2/v3/certs`, cached per its `cache-control`), `aud` = `GOOGLE_CLIENT_ID`, `iss` in `accounts.google.com` / `https://accounts.google.com`, `exp`/`iat` with 5 minutes of skew and `email_verified === true`. Only the e-mail and the `sub` are used.
 
 ## Conventions (client)
 
@@ -51,6 +75,17 @@ Notes:
 
 ## Login
 
+### `GET /api/auth/config`
+
+`200 { "googleClientId": "…apps.googleusercontent.com" | null }`. Public (a client id is not a secret).
+
+### `POST /api/auth/google`
+
+```json
+{ "credential": "<Google ID token>", "lang": "pt" }
+```
+`200 { "ok": true, "user": { "id", "email", "lang", "createdAt", "status": "active", "needsAge": true|false } }` and the session cookie (the session of the cookie sent with the request, if any, is dropped: the session is rotated). Looks the user up by Google `sub`, then by e-mail (an existing e-mail-code account gets linked), otherwise creates it. If the account is **awaiting guardian**: `200 { "ok": true, "awaitingGuardian": true }` and no cookie. Every verification failure is the same `401 { "error": "invalid-credential" }`; `409 account-conflict` if that e-mail is linked to a different Google account; `503 google-offline` (no `GOOGLE_CLIENT_ID`), `502 google-unavailable` (Google's keys unreachable).
+
 ### `POST /api/auth/start`
 
 ```json
@@ -69,9 +104,28 @@ Limits: 5 codes per hour per e-mail, 20 per hour per IP (`429 {"error":"rate-lim
 { "email": "dona@example.com", "code": "042917" }
 ```
 ```json
-200 { "ok": true, "user": { "id": "7b0c…", "email": "dona@example.com", "lang": "pt", "createdAt": "2026-11-20T01:10:00.000Z" } }
+200 { "ok": true, "user": { "id": "7b0c…", "email": "dona@example.com", "lang": "pt", "createdAt": "2026-11-20T01:10:00.000Z", "status": "active", "needsAge": true } }
 ```
-Also sets `Set-Cookie: vp_session=…; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=5184000` (60 days). The account is created on the first successful verify. A wrong code is `400 invalid-code`; after 5 wrong tries the code is locked (`429 too-many-attempts`) and the player must ask for a new one.
+Also sets `Set-Cookie: vp_session=…; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=5184000` (60 days), rotating any previous session of that browser. The account is created on the first successful verify (people without Google). A wrong code is `400 invalid-code`; after 5 wrong tries the code is locked (`429 too-many-attempts`). An account awaiting its guardian gets `200 { "ok": true, "awaitingGuardian": true }` and no cookie.
+
+### `POST /api/auth/age` (needs the session; once per account)
+
+```json
+{ "birth": "2012-05", "guardianEmail": "responsavel@example.com" }
+```
+`birth` is month/year (`YYYY-MM` or `MM/YYYY`). Age is rounded to the protective side (without the day, a person counts as younger until their birthday month is over). Until it is given, `/api/cats`, `/api/save`, `/api/rewards/*` answer `403 { "error": "age-required" }` and `/api/online` treats the player as a guest; `GET /api/me` shows `needsAge: true`.
+- 18 or older: `200 { "ok": true, "band": "adult", "user": … }`.
+- 16-17 (`guardianEmail` required, not the player's own): `200 { "band": "teen", "mailSent": true }`; the account is active and the guardian receives a notice.
+- under 16 (`guardianEmail` required): `200 { "band": "child", "awaitingGuardian": true, "mailSent": true }`; all sessions are dropped, the cookie is cleared and the guardian receives an approval e-mail with `…/guardian.html#t=<token>`. The token is 32 random bytes (only its SHA-256 is stored), valid 7 days, single use, kept in the URL **fragment** so it never reaches a server log or a Referer.
+- Birth month/year can be written only once (`409 already-set` afterwards): nobody can "grow up" by calling it again. Corrections go through jogo@mtec.tec.br. At most 8 guardian mails per guardian address per day (`429`).
+
+### `POST /api/auth/guardian-approve`
+
+`{ "token": "<43 chars>" }` → `200 { "ok": true }` and the account becomes active (the player is told by e-mail); any invalid, used or expired token is `400 invalid-token`. `public/guardian.html` is the page of the e-mail link: opening it does nothing, only its button sends the POST (mail scanners that open links cannot burn the token).
+
+### `POST /api/auth/guardian-resend`
+
+`{ "email": "<the player's e-mail>" }` → always `200 { "ok": true }` (no way to tell whether the account exists; the response takes at least 700 ms). If that account is awaiting a guardian, a fresh link is sent (older links stop working); at most 3 per hour.
 
 ### `POST /api/auth/logout`
 
@@ -80,14 +134,14 @@ No body. `200 {"ok": true}` and the cookie is cleared (only this device's sessio
 ### `GET /api/me`
 
 ```json
-200 { "user": { "id": "…", "email": "…", "lang": "pt", "createdAt": "…" }, "cats": [ /* Cat, oldest first */ ] }
+200 { "user": { "id": "…", "email": "…", "lang": "pt", "createdAt": "…", "status": "active", "needsAge": false }, "cats": [ /* Cat, oldest first */ ] }
 401 { "error": "unauthorized" }
 ```
 Call it on boot to know whether the player is logged in.
 
 ### `DELETE /api/me`
 
-Deletes the account and everything attached to it (cats, save, sessions, pending codes). `200 {"ok": true, "deleted": true}`. Ask for confirmation in the UI: it cannot be undone.
+Deletes the account and all personal data: the e-mail, `google_sub`, the encrypted birth month/year, the guardian record and tokens, cats, save, sessions, pending codes and online presence rows; a notice is e-mailed to the old address. `vp_ranking` is keyed by a nickname chosen in the game (not by account), so rows whose name equals one of the player's cat names are renamed to `anon-xxxxxxxx` (score kept, name gone). Works before the age step too. `200 {"ok": true, "deleted": true}`. The UI asks for confirmation: it cannot be undone.
 
 ## Cats
 
@@ -223,8 +277,10 @@ const api = (path, method = 'GET', body) =>
     .then(async (r) => ({ status: r.status, ...(await r.json().catch(() => ({}))) }));
 
 const me = await api('/api/me');                       // 401 -> guest, 503 -> offline mode
+await api('/api/auth/google', 'POST', { credential, lang });   // or: start + verify with the e-mail code
 await api('/api/auth/start', 'POST', { email, lang }); // player types the code from the e-mail
 const { ok, user } = await api('/api/auth/verify', 'POST', { email, code });
+if (user.needsAge) await api('/api/auth/age', 'POST', { birth: '2012-05', guardianEmail });
 const { cat } = await api('/api/cats', 'POST', { name, breed, spec });
 await api('/api/save', 'PUT', { data: progress });
 ```
@@ -233,7 +289,10 @@ await api('/api/save', 'PUT', { data: progress });
 
 | Path | What |
 |---|---|
-| `api/auth/[action].js` | `start`, `verify`, `logout` |
+| `api/auth/[action].js` | `config`, `google`, `start`, `verify`, `age`, `guardian-approve`, `guardian-resend`, `logout` |
+| `api/_lib/google.js` | Google ID-token verification (node:crypto, JWKS cache) |
+| `api/_lib/secure.js` | AES-256-GCM (HKDF key from `AUTH_SECRET`), keyed hash, age rules |
+| `public/guardian.html` | page of the guardian's approval link |
 | `api/me.js` | profile + account deletion |
 | `api/cats/index.js` | CRUD of the player's cats |
 | `api/cats/[action].js` | `public` gallery, `suggest-colors` |
@@ -249,3 +308,4 @@ await api('/api/save', 'PUT', { data: progress });
 | `db/schema.sql` | schema reference |
 | `public-docs-privacy.md` | privacy note (PT) to show in the game |
 | `tests/accounts.test.mjs` | handler tests |
+| `tests/secure-accounts.test.mjs` | Google (mock JWKS), age, guardian flow, deletion, privacy |

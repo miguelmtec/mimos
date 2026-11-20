@@ -118,6 +118,7 @@ function copy(text) {
   function fallback() { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) { /* ignore */ } ta.remove(); ok(); }
 }
 UI.act.buy = async el => {
+  if (VP.Acct && VP.Acct.minorBlock && VP.Acct.minorBlock()) { UI.toast(t('ac_guardBlock'), 3500); return; }
   const product = el.dataset.p; el.disabled = true;
   let r, j = null;
   try { r = await fetch('/api/pix/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ product, name: VP.S.name || '' }) }); j = await r.json().catch(() => null); } catch (e) { r = null; }

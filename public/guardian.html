@@ -1,0 +1,32 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex"><title>Aprovação do responsável — Vice Paws</title>
+<style>body{font-family:system-ui,sans-serif;background:#12041f;color:#fff;max-width:560px;margin:0 auto;padding:24px 18px;line-height:1.55}a{color:#2de2e6}h1{color:#ff4fb8;font-size:24px}button{font:inherit;font-weight:700;background:#ff2e93;color:#fff;border:0;border-radius:12px;padding:14px 22px;cursor:pointer;width:100%;margin:14px 0}button[disabled]{opacity:.5}.box{background:#1d0b33;border-radius:14px;padding:16px 18px}.ok{color:#21e6d0}.err{color:#ff8a8a}</style></head><body>
+<h1 id="h">Aprovação do responsável 🐾</h1>
+<div class="box"><p id="p"></p><button id="go" hidden></button><p id="r" role="status"></p></div>
+<p><a id="priv" href="privacy.html">Política de privacidade</a> · jogo@mtec.tec.br</p>
+<script>
+(function () {
+  // The approval link carries the token in the #fragment (never sent to a server or in a Referer). Opening the
+  // page does nothing: only the button sends it, so mail scanners that "click" links cannot burn the token.
+  var en = /^en/i.test(navigator.language || ''), T = en ? {
+    h: 'Guardian approval 🐾', p: 'A child or teen under 16 created an account in the game Vice Paws and named you as the guardian. Approving enables the account (Brazilian law 15.211/2025 and LGPD art. 14). We keep only an e-mail, a birth month/year (encrypted) and the child\'s cats: no password, no documents. If you do not know about this, just close this page.',
+    go: 'Approve the account', busy: 'Approving…', ok: 'Done! The account is approved. The player can sign in now.', bad: 'This link is invalid, was already used or has expired. Ask the player to use "Resend to guardian" in the game.', none: 'This page needs the link from the e-mail.', net: 'No connection. Try again.', priv: 'Privacy policy'
+  } : {
+    h: 'Aprovação do responsável 🐾', p: 'Uma criança ou adolescente com menos de 16 anos criou uma conta no jogo Vice Paws e informou você como responsável. Aprovar libera a conta (Lei 15.211/2025 e LGPD art. 14). Guardamos só um e-mail, o mês/ano de nascimento (criptografado) e os gatos da criança: sem senha e sem documentos. Se você não sabe do que se trata, é só fechar esta página.',
+    go: 'Aprovar a conta', busy: 'Aprovando…', ok: 'Pronto! A conta foi aprovada. O jogador já pode entrar.', bad: 'Este link é inválido, já foi usado ou venceu. Peça para o jogador usar "Reenviar ao responsável" no jogo.', none: 'Esta página precisa do link enviado por e-mail.', net: 'Sem conexão. Tente de novo.', priv: 'Política de privacidade'
+  };
+  document.documentElement.lang = en ? 'en' : 'pt-BR'; document.title = T.h;
+  var $ = function (i) { return document.getElementById(i); };
+  $('h').textContent = T.h; $('p').textContent = T.p; $('priv').textContent = T.priv;
+  var m = /(?:^|[#&])t=([A-Za-z0-9_-]{43})(?:&|$)/.exec(location.hash), token = m && m[1];
+  try { history.replaceState(null, '', location.pathname); } catch (e) { }
+  var go = $('go'), r = $('r');
+  if (!token) { r.className = 'err'; r.textContent = T.none; return; }
+  go.hidden = false; go.textContent = T.go;
+  go.onclick = function () {
+    go.disabled = true; go.textContent = T.busy; r.textContent = '';
+    fetch('/api/auth/guardian-approve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: token }) })
+      .then(function (x) { if (x.ok) { go.hidden = true; r.className = 'ok'; r.textContent = T.ok; } else { go.hidden = true; r.className = 'err'; r.textContent = T.bad; } })
+      .catch(function () { go.disabled = false; go.textContent = T.go; r.className = 'err'; r.textContent = T.net; });
+  };
+})();
+</script></body></html>

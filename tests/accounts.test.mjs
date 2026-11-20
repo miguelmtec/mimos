@@ -69,7 +69,13 @@ async function login(email = 'dona@example.com', lang = 'pt') {
   assert.equal(s.status, 200, JSON.stringify(s.body));
   const v = await auth('verify', { email, code: lastCode() });
   assert.equal(v.status, 200, JSON.stringify(v.body));
-  return { cookie: cookieOf(v), user: v.body.user };
+  const cookie = cookieOf(v);
+  if (v.body.user.needsAge) {            // first login: the age step (adult), as the client does
+    const a = await auth('age', { birth: '1990-05' }, { headers: { cookie } });
+    assert.equal(a.status, 200, JSON.stringify(a.body));
+    v.body.user.needsAge = false;
+  }
+  return { cookie, user: v.body.user };
 }
 
 const CAT = {
@@ -205,7 +211,8 @@ test('verify creates the session cookie and the account; /api/me works with it',
   assert.equal(v.body.user.lang, 'en');
   assert.match(v.body.user.id, /^[0-9a-f-]{36}$/);
   assert.ok(!Number.isNaN(Date.parse(v.body.user.createdAt)));
-  assert.deepEqual(Object.keys(v.body.user).sort(), ['createdAt', 'email', 'id', 'lang']);
+  assert.deepEqual(Object.keys(v.body.user).sort(), ['createdAt', 'email', 'id', 'lang', 'needsAge', 'status']);
+  assert.equal(v.body.user.needsAge, true);
 
   const cookie = v.headers['set-cookie'];
   assert.match(cookie, /^vp_session=[A-Za-z0-9_-]{43}; /);
@@ -633,10 +640,10 @@ test('db/schema.sql documents every table and index the code creates', async () 
   const schema = await readFile(new URL('../db/schema.sql', import.meta.url), 'utf8');
   const code = await readFile(new URL('../api/_lib/db.js', import.meta.url), 'utf8');
   const names = [...code.matchAll(/create (?:table|index) if not exists (\w+)/g)].map((m) => m[1]);
-  assert.equal(names.length, 15);   // 11 for accounts + vp_presence, vp_online_reports and their 2 indexes (Cidade Online)
+  assert.equal(names.length, 19);   // 15 for accounts (+ vp_tokens, vp_guardians and 2 indexes) + vp_presence, vp_online_reports and their 2 indexes (Cidade Online)
   for (const n of names) assert.ok(schema.includes(`if not exists ${n} `), n);
   const columns = (src, table) => new RegExp(`create table if not exists ${table} \\(([\\s\\S]*?)\\)\\s*[;\`]`).exec(src)[1].replace(/--.*$/gm, '').replace(/\s+/g, ' ').trim();
-  for (const t of ['vp_users', 'vp_login_codes', 'vp_sessions', 'vp_cats', 'vp_saves', 'vp_online_reports']) assert.equal(columns(schema, t), columns(code, t), t);
+  for (const t of ['vp_login_codes', 'vp_sessions', 'vp_cats', 'vp_saves', 'vp_online_reports', 'vp_tokens', 'vp_guardians']) assert.equal(columns(schema, t), columns(code, t), t);
   // presence: unlogged first, a normal table as the fallback, the same columns in all three places
   const unlogged = (src) => columns(src.replace('create unlogged table', 'create table'), 'vp_presence');
   assert.equal(unlogged(schema), unlogged(code));

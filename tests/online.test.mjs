@@ -65,7 +65,9 @@ async function login(email = 'dona@example.com') {
   assert.equal(s.status, 200);
   const code = /: (\d{6})\n/.exec(mails.at(-1).text)[1];
   const v = await call(authHandler, { method: 'POST', url: '/api/auth/verify', body: { email, code } });
-  return { cookie: String(v.headers['set-cookie']).split(';')[0], user: v.body.user };
+  const cookie = String(v.headers['set-cookie']).split(';')[0];
+  if (v.body.user.needsAge) await call(authHandler, { method: 'POST', url: '/api/auth/age', body: { birth: '1990-05' }, cookie });
+  return { cookie, user: v.body.user };
 }
 const CAT = { name: 'Frajola', breed: 'srd', spec: { furBase: '#222222', pattern: 'tuxedo', patchColors: ['#ffffff'], accessories: ['bowtie'] } };
 

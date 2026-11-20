@@ -1,5 +1,5 @@
 'use strict';
-// VICE PAWS — accounts client: e-mail code login, "Meus gatos" creator (parametric cat), cloud save, public gallery
+// VICE PAWS — accounts client: Sign in with Google + e-mail code login, age step / guardian approval, "Meus gatos" creator (parametric cat), cloud save, public gallery
 (function () {
 const VP = window.VP, UI = VP.UI, t = (...a) => VP.t(...a);
 const A = VP.Acct = { user: null, cats: [], status: 'unknown', gallery: [], email: '' };
@@ -38,11 +38,23 @@ const blank = () => ({ name: '', breed: 'vira-lata', bio: '', instagram: '', isP
 
 // ---------- boot + cloud save ----------
 A.init = async function () {
+  api('/api/auth/config').then(c => { if (c.status === 200 && c.googleClientId) { A.googleId = c.googleClientId; if (UI.screen === 'account') UI.show('account'); } });
   const me = await api('/api/me');
-  if (me.status === 200 && me.user) { A.user = me.user; A.cats = me.cats || []; A.status = 'in'; A.pull(); }
-  else A.status = me.status === 401 ? 'guest' : 'offline';
+  if (me.status === 200 && me.user) A.accept(me.user, me.cats);
+  else A.status = me.status === 401 ? (pending() ? 'awaiting' : 'guest') : 'offline';
   if (UI.screen === 'title' || UI.screen === 'account') UI.relabel();
   A.loadGallery();
+};
+// A minor waiting for a guardian plays as a guest. The flag only survives a reload (no session exists for them);
+// it is a courtesy lock on the client: guests are anonymous by design, the server cannot tell who they are.
+const pending = () => { try { return localStorage.getItem('vp_guardian_pending') === '1'; } catch (e) { return false; } };
+const setPending = on => { try { on ? localStorage.setItem('vp_guardian_pending', '1') : localStorage.removeItem('vp_guardian_pending'); } catch (e) { } };
+A.minorBlock = () => A.status === 'awaiting' || pending();
+// a logged-in session: 'in' (complete) or 'age' (the age step is still due: nothing else works until it is given)
+A.accept = function (user, cats) {
+  A.user = user;
+  if (user.needsAge) { A.status = 'age'; A.cats = []; return; }
+  A.status = 'in'; A.cats = cats || []; setPending(false); A.pull();
 };
 A.loadGallery = async function () { const g = await api('/api/cats/public?limit=24'); if (g.status === 200 && Array.isArray(g.cats)) A.gallery = g.cats; };
 A.pull = async function () {
@@ -61,12 +73,29 @@ UI.SCREENS.account = {
   hideHud: true,
   html: () => {
     const head = `<div class="corner l"><button class="chip" data-act="back">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="teal">👤 ${t('account')}</h2>`;
+    const local = `<button class="btn ghost" data-act="creator" data-i="local">🐱 ${t('ac_create')} (${t('ac_local')})</button>`;
+    const priv = `<button class="btn ghost sm" data-act="privacy">🔒 ${t('ac_privacy')}</button>`;
     if (A.status === 'offline' || A.status === 'unknown') return head + `<div class="panel t"><p>${t('ac_offline')}</p></div><button class="btn" data-act="creator" data-i="local">🐱 ${t('ac_create')}</button><button class="btn ghost" data-act="privacy">🔒 ${t('ac_privacy')}</button></div>`;
-    if (A.status !== 'in') return head + `<div class="panel t"><p>${t('ac_why')}</p>
-      ${A.step === 'code' ? `<p class="small">${t('ac_sent', esc(A.email))}</p><input class="txt" id="acode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code"><div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="acBackEmail">${t('ac_other')}</button><button class="btn" data-act="acVerify">${t('ac_enter')}</button></div>`
-        : `<input class="txt" id="aemail" type="email" inputmode="email" placeholder="voce@email.com" value="${esc(A.email)}" autocomplete="email"><div class="row" style="margin-top:10px"><button class="btn" data-act="acStart">✉ ${t('ac_send')}</button></div>`}
-      <p class="small" style="margin-top:10px">🔒 ${t('ac_note')}</p></div>
-      <button class="btn ghost" data-act="creator" data-i="local">🐱 ${t('ac_create')} (${t('ac_local')})</button>${VP.S.avatar ? `<button class="btn teal" data-act="party">🐱 ${t('pa_title')}</button>` : ''}<button class="btn ghost sm" data-act="privacy">🔒 ${t('ac_privacy')}</button></div>`;
+    if (A.status === 'awaiting') return head + `<div class="panel t" id="gpend"><p><b>⏳ ${t('ac_gwTitle')}</b></p><p>${t('ac_gwTxt')}</p><p class="small">${t('ac_gwGuest')}</p></div>
+      <input class="txt" id="gemail" type="email" inputmode="email" placeholder="${t('ac_gwYour')}" value="${esc(A.pendingEmail || '')}" autocomplete="email">
+      <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="acGResend">✉ ${t('ac_resend')}</button><button class="btn ghost sm" data-act="acGTry">${t('ac_gwTry')}</button></div>
+      ${local}${priv}</div>`;
+    if (A.status === 'age') return head + `<div class="panel t" id="agepanel"><p><b>🎂 ${t('ac_ageTitle')}</b></p><p class="small">${t('ac_ageWhy')}</p>
+      <input class="txt" id="abirth" inputmode="numeric" maxlength="7" placeholder="${t('ac_birthPh')}" autocomplete="off">
+      <div id="agbox" style="display:none;margin-top:10px"><p class="small">${t('ac_ageGuard')}</p><input class="txt" id="aguard" type="email" inputmode="email" placeholder="${t('ac_gmailPh')}" autocomplete="off"></div>
+      <div class="row" style="margin-top:10px"><button class="btn" data-act="acAge">${t('ac_ageOk')}</button></div>
+      <p class="small" style="margin-top:10px">🔒 ${t('ac_lgpd')}</p></div>
+      <div class="row"><button class="btn ghost sm" data-act="acLogout">${t('ac_logout')}</button>${priv}<button class="btn ghost sm" data-act="acDelete" style="color:#ff6b6b">🗑 ${t('ac_delete')}</button></div></div>`;
+    if (A.status !== 'in') {
+      const mailMode = A.step === 'email' || A.step === 'code' || !A.googleId;
+      return head + `<div class="panel t"><p>${t('ac_why')}</p>
+        ${A.googleId ? `<div id="gbtn" style="display:flex;justify-content:center;min-height:44px;margin:10px 0"></div>` : ''}
+        ${!mailMode ? `<button class="btn ghost" data-act="acMail">✉ ${t('ac_codeBtn')}</button>`
+          : A.step === 'code' ? `<p class="small">${t('ac_sent', esc(A.email))}</p><input class="txt" id="acode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code"><div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="acBackEmail">${t('ac_other')}</button><button class="btn" data-act="acVerify">${t('ac_enter')}</button></div>`
+          : `${A.googleId ? `<p class="small" style="text-align:center">${t('ac_or')}</p>` : ''}<input class="txt" id="aemail" type="email" inputmode="email" placeholder="voce@email.com" value="${esc(A.email)}" autocomplete="email"><div class="row" style="margin-top:10px"><button class="btn ${A.googleId ? 'ghost' : ''}" data-act="acStart">✉ ${t('ac_send')}</button></div>`}
+        <p class="small" style="margin-top:10px">🔒 ${t('ac_note')}</p></div>
+        ${local}${VP.S.avatar ? `<button class="btn teal" data-act="party">🐱 ${t('pa_title')}</button>` : ''}${priv}</div>`;
+    }
     return head + `<div class="panel t"><p class="small">✉ ${esc(A.user.email)} · ☁ ${t('ac_cloud')}</p></div>
       <h3>🐱 ${t('ac_mycats')} (${A.cats.length}/5)</h3>
       ${A.cats.map((c, i) => `<div class="mrow"><div style="flex:1"><b>${esc(c.name)}</b> <span class="small">· ${esc(c.breed)} ${c.isPublic ? '· 🌍' : '· 🔒'}</span></div><button class="btn ghost sm" data-act="acUse" data-i="${i}">${VP.S.avatarId === c.id ? '✓ ' + t('ac_playing') : t('ac_play')}</button><button class="btn sm" data-act="creator" data-i="${i}">✎</button></div>`).join('')}
@@ -74,10 +103,51 @@ UI.SCREENS.account = {
       ${VP.S.avatar ? `<button class="btn teal" data-act="party">🐱 ${t('pa_title')}</button>` : ''}
       <div class="row"><button class="btn ghost sm" data-act="acLogout">${t('ac_logout')}</button><button class="btn ghost sm" data-act="privacy">🔒 ${t('ac_privacy')}</button><button class="btn ghost sm" data-act="acDelete" style="color:#ff6b6b">🗑 ${t('ac_delete')}</button></div></div>`;
   },
+  after: () => {
+    if (A.status === 'guest') A.gisRender();
+    const b = document.getElementById('abirth');
+    if (b) b.addEventListener('input', () => {
+      const d = b.value.replace(/\D/g, '').slice(0, 6); b.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+      const y = A.parseBirth(b.value), box = document.getElementById('agbox');
+      if (box) box.style.display = y && y.age < 18 ? 'block' : 'none';
+    });
+  },
 };
 UI.act.account = () => UI.show('account');
-UI.act.acBackEmail = () => { A.step = null; UI.show('account'); };
-const errMsg = r => r.status === 503 ? t('ac_offline') : r.status === 429 ? t('ac_rate') : r.error === 'invalid-code' ? t('ac_badcode') : r.status === 422 ? t('ac_mod') : r.status === 400 ? t('ac_invalid') + (r.field ? ' (' + r.field + ')' : '') : r.status === 409 ? t('ac_limit') : t('ac_err');
+UI.act.acBackEmail = () => { A.step = 'email'; UI.show('account'); };
+UI.act.acMail = () => { A.step = 'email'; UI.show('account'); };
+const errMsg = r => r.status === 503 ? t('ac_offline') : r.status === 429 ? t('ac_rate') : r.error === 'invalid-code' ? t('ac_badcode') : r.status === 401 && r.error === 'invalid-credential' ? t('ac_gerr') : r.status === 502 ? t('ac_goff') : r.status === 422 ? t('ac_mod') : r.status === 400 ? t('ac_invalid') + (r.field ? ' (' + r.field + ')' : '') : r.status === 409 ? t('ac_limit') : t('ac_err');
+
+// ---------- Sign in with Google (Google Identity Services); the button and One Tap only exist on this screen ----------
+A.loadGis = function () {
+  if (window.google && window.google.accounts && window.google.accounts.id) return Promise.resolve(true);
+  A._gis = A._gis || new Promise(ok => { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = () => ok(true); s.onerror = () => { A._gis = null; ok(false); }; document.head.appendChild(s); });
+  return A._gis;
+};
+A.gisRender = async function () {
+  if (!A.googleId || !document.getElementById('gbtn')) return;
+  if (!(await A.loadGis())) { const b = document.getElementById('gbtn'); if (b) b.innerHTML = `<p class="small">${t('ac_goff')}</p>`; return; }
+  const g = window.google.accounts.id, box = document.getElementById('gbtn');
+  if (!box || A.status !== 'guest') return;
+  if (A._gisId !== A.googleId) { g.initialize({ client_id: A.googleId, callback: r => A.google(r && r.credential), auto_select: false, cancel_on_tap_outside: true }); A._gisId = A.googleId; }
+  box.innerHTML = '';
+  g.renderButton(box, { type: 'standard', theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', width: 280, locale: VP.lang() === 'en' ? 'en' : 'pt-BR' });
+  if (UI.screen === 'account') g.prompt();       // One Tap: only on the account screen
+};
+A.google = async function (credential) {
+  if (!credential) { UI.toast(t('ac_gerr'), 3200); return; }
+  A.handleLogin(await api('/api/auth/google', 'POST', { credential, lang: VP.lang() }));
+};
+A.handleLogin = async function (r) {
+  if (r.status === 200 && r.awaitingGuardian) { A.user = null; A.cats = []; A.status = 'awaiting'; setPending(true); A.step = null; UI.show('account'); return; }
+  if (r.status === 200 && r.user) {
+    A.step = null; const me = r.user.needsAge ? { cats: [] } : await api('/api/me');
+    A.accept(r.user, me.cats); if (A.status === 'in') UI.confetti(); UI.show('account'); if (A.status === 'in') { await A.pull(); A.push(); }
+    return;
+  }
+  if (r.status === 503) { A.status = 'offline'; UI.show('account'); }
+  UI.toast(errMsg(r), 3200);
+};
 UI.act.acStart = async el => {
   const email = (document.getElementById('aemail').value || '').trim(); if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) { UI.toast(t('ac_invalid')); return; }
   el.disabled = true; const r = await api('/api/auth/start', 'POST', { email, lang: VP.lang() }); el.disabled = false;
@@ -86,11 +156,35 @@ UI.act.acStart = async el => {
 UI.act.acVerify = async el => {
   const code = (document.getElementById('acode').value || '').replace(/\D/g, ''); if (code.length !== 6) return;
   el.disabled = true; const r = await api('/api/auth/verify', 'POST', { email: A.email, code }); el.disabled = false;
-  if (r.status === 200 && r.user) { A.user = r.user; A.status = 'in'; A.step = null; const me = await api('/api/me'); A.cats = me.cats || []; UI.confetti(); UI.show('account'); await A.pull(); A.push(); }
-  else UI.toast(errMsg(r), 3200);
+  if (r.status === 200 && (r.user || r.awaitingGuardian)) { A.pendingEmail = A.email; await A.handleLogin(r); } else UI.toast(errMsg(r), 3200);
 };
-UI.act.acLogout = async () => { await api('/api/auth/logout', 'POST'); A.user = null; A.cats = []; A.status = 'guest'; UI.show('account'); };
-UI.act.acDelete = async () => { if (!confirm(t('ac_delAsk'))) return; const r = await api('/api/me', 'DELETE'); if (r.status === 200) { A.user = null; A.cats = []; A.status = 'guest'; VP.S.avatarId = null; UI.toast(t('ac_deleted'), 3000); UI.show('account'); } else UI.toast(errMsg(r)); };
+
+// ---------- age step (ECA Digital / LGPD art. 14): birth month/year, once ----------
+// "MM/AAAA" -> {birth:'YYYY-MM', age} (age rounded to the protective side, like the server) or null
+A.parseBirth = function (v) {
+  const m = /^(\d{2})\/(\d{4})$/.exec(String(v || '').trim()); if (!m) return null;
+  const mo = +m[1], y = +m[2], now = new Date(), ny = now.getFullYear(), nm = now.getMonth() + 1;
+  if (mo < 1 || mo > 12 || y < 1900 || y > ny || (y === ny && mo > nm)) return null;
+  return { birth: y + '-' + String(mo).padStart(2, '0'), age: ny - y - (nm <= mo ? 1 : 0) };
+};
+UI.act.acAge = async el => {
+  const b = A.parseBirth((document.getElementById('abirth') || {}).value); if (!b) { UI.toast(t('ac_birthBad')); return; }
+  const body = { birth: b.birth };
+  if (b.age < 18) { const g = ((document.getElementById('aguard') || {}).value || '').trim(); if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(g) || g.toLowerCase() === String((A.user || {}).email).toLowerCase()) { UI.toast(t('ac_guardBad'), 3200); return; } body.guardianEmail = g; }
+  el.disabled = true; const r = await api('/api/auth/age', 'POST', body); el.disabled = false;
+  if (r.status === 200 && r.awaitingGuardian) { A.pendingEmail = (A.user || {}).email || ''; A.user = null; A.cats = []; A.status = 'awaiting'; setPending(true); UI.show('account'); return; }
+  if (r.status === 200) { A.user = Object.assign({}, A.user, { needsAge: false }); const me = await api('/api/me'); A.accept(A.user, me.cats); UI.confetti(); if (r.band === 'teen') UI.toast(t('ac_teenNote'), 4000); UI.show('account'); await A.pull(); A.push(); return; }
+  if (r.status === 409) { A.init(); return; }
+  UI.toast(r.status === 400 && r.field === 'guardianEmail' ? t('ac_guardBad') : errMsg(r), 3200);
+};
+UI.act.acGResend = async el => {
+  const email = ((document.getElementById('gemail') || {}).value || '').trim(); if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) { UI.toast(t('ac_invalid')); return; }
+  el.disabled = true; const r = await api('/api/auth/guardian-resend', 'POST', { email }); el.disabled = false;
+  UI.toast(r.status === 200 ? t('ac_resent') : errMsg(r), 3500);
+};
+UI.act.acGTry = () => { A.status = 'guest'; A.step = null; UI.show('account'); };    // "already approved? sign in"
+UI.act.acLogout = async () => { await api('/api/auth/logout', 'POST'); A.user = null; A.cats = []; A.status = 'guest'; A.step = null; UI.show('account'); };
+UI.act.acDelete = async () => { if (!confirm(t('ac_delAsk'))) return; const r = await api('/api/me', 'DELETE'); if (r.status === 200) { A.user = null; A.cats = []; A.status = 'guest'; A.step = null; VP.S.avatarId = null; setPending(false); UI.toast(t('ac_deleted'), 3000); UI.show('account'); } else UI.toast(errMsg(r)); };
 UI.act.acUse = el => { const c = A.cats[+el.dataset.i]; if (VP.S.avatarId === c.id) { VP.S.avatar = null; VP.S.avatarId = null; } else { VP.S.avatar = Object.assign(A.toSpec(c.spec), { label: c.name }); VP.S.avatarId = c.id; if (VP.Party) VP.Party.S().role = VP.Party.roleSlot(c.spec.role || 'shooter'); } VP.persist(); if (VP.Party) VP.Party.apply(); UI.show('account'); };
 UI.SCREENS.privacy = { hideHud: true, html: () => `<div class="corner l"><button class="chip" data-act="account">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="teal">🔒 ${t('ac_privacy')}</h2><div class="panel t">${t('ac_privTxt')}</div><a class="btn ghost" href="privacy.html" target="_blank" rel="noopener">${t('ac_privFull')}</a></div>` };
 UI.act.privacy = () => UI.show('privacy');

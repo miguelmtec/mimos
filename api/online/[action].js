@@ -44,7 +44,7 @@ async function ticket(req) {
   let user = null, sql = null;
   if (readToken(req) || q.catId != null) {
     sql = await getSql();
-    if (sql) { await ensureSchema(sql); user = await getUser(sql, req); }
+    if (sql) { await ensureSchema(sql); user = await getUser(sql, req); if (user && user.needsAge) user = null; }   // no age given yet: treated as a guest
   }
 
   let look, catName = null;

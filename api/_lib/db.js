@@ -67,6 +67,29 @@ const tables = (sql) => [
     user_id uuid primary key references vp_users(id) on delete cascade,
     data jsonb not null,
     updated_at timestamptz not null default now())`,
+  // ---------- Google sign-in, age and guardian approval (ECA Digital / LGPD art. 14) ----------
+  // Idempotent (ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS). Existing rows stay 'active' and
+  // are asked for their birth month/year on the next login. No password and no document is kept.
+  () => sql`alter table vp_users
+    add column if not exists status text not null default 'active',
+    add column if not exists google_sub text,
+    add column if not exists birth_enc text,
+    add column if not exists age_band text`,
+  // guardian approval tokens (only the SHA-256 is stored; single use)
+  () => sql`create table if not exists vp_tokens (
+    token_hash text primary key,
+    user_id uuid not null references vp_users(id) on delete cascade,
+    purpose text not null,
+    expires_at timestamptz not null,
+    used_at timestamptz,
+    created_at timestamptz not null default now())`,
+  // guardian e-mail, encrypted (AES-256-GCM); ghash = keyed hash, only to rate-limit mails per guardian
+  () => sql`create table if not exists vp_guardians (
+    user_id uuid primary key references vp_users(id) on delete cascade,
+    enc text not null,
+    ghash text not null,
+    approved_at timestamptz,
+    created_at timestamptz not null default now())`,
 ];
 
 const indexes = (sql) => [
@@ -75,6 +98,9 @@ const indexes = (sql) => [
   () => sql`create index if not exists vp_sessions_user_idx on vp_sessions (user_id)`,
   () => sql`create index if not exists vp_sessions_expires_idx on vp_sessions (expires_at)`,
   () => sql`create index if not exists vp_cats_user_idx on vp_cats (user_id, created_at)`,
+  () => sql`create unique index if not exists vp_users_google_uq on vp_users (google_sub)`,
+  () => sql`create index if not exists vp_tokens_user_idx on vp_tokens (user_id, purpose, created_at desc)`,
+  () => sql`create index if not exists vp_guardians_ghash_idx on vp_guardians (ghash, created_at desc)`,
   () => sql`create index if not exists vp_cats_public_idx on vp_cats (created_at desc) where is_public`,
 ];
 

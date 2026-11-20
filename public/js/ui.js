@@ -261,6 +261,7 @@ function loadRank() {
 ACT.sendScore = () => {
   const inp = $('#nick'), name = (inp.value || '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 12);
   if (!name) { inp.focus(); return; }
+  if (VP.Acct && VP.Acct.minorBlock && VP.Acct.minorBlock()) { UI.toast(t('ac_guardBlock'), 3500); return; }
   VP.S.name = name; VP.persist();
   const level = Math.max(1, mainLevel()), missions = doneCount(); if (!missions) { UI.toast(t('rankEmpty')); return; }
   fetch('/api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, score: mainScore(), level, missions, stars: mainStars(), vip: VP.Shop.has('vip') }) })

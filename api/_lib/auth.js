@@ -56,18 +56,38 @@ export const publicUser = (u) => ({
   id: u.id, email: u.email, lang: u.lang, createdAt: new Date(u.created_at).toISOString(),
 });
 
-/** Returns the logged-in user ({id, email, lang, createdAt}) or null. */
+/** ADMIN_EMAILS (comma separated). */
+export const isAdminEmail = (email) =>
+  (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean).includes(String(email).toLowerCase());
+
+/** What the owner (and only the owner) gets to see of their own record. No birth date, no Google id, no guardian. */
+export const ownerView = (row) => ({
+  ...publicUser(row),
+  status: row.status || 'active',
+  needsAge: !row.birth_enc,        // legacy and brand-new accounts must give birth month/year once
+});
+
+/**
+ * Returns the logged-in, ACTIVE user (ownerView shape) or null. A session of an account that is
+ * "awaiting guardian" does not count: those players are guest/offline only.
+ */
 export async function getUser(sql, req) {
   const token = readToken(req);
   if (!token) return null;
-  const rows = await sql`select u.id, u.email, u.lang, u.created_at
+  const rows = await sql`select u.id, u.email, u.lang, u.created_at, u.status, u.birth_enc
     from vp_sessions s join vp_users u on u.id = s.user_id
     where s.token_hash = ${tokenHash(token)} and s.expires_at > now()`;
-  return rows[0] ? publicUser(rows[0]) : null;
+  const row = rows[0];
+  return row && row.status === 'active' ? ownerView(row) : null;
 }
 
-export async function requireUser(sql, req) {
+/**
+ * Game endpoints (cats, save, rewards, online) need an active account that already gave its age:
+ * otherwise 403 'age-required' and the client shows the age step.
+ */
+export async function requireUser(sql, req, { allowIncomplete = false } = {}) {
   const user = await getUser(sql, req);
   if (!user) throw fail(401, 'unauthorized');
+  if (user.needsAge && !allowIncomplete) throw fail(403, 'age-required');
   return user;
 }

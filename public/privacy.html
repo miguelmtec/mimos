@@ -1,13 +1,17 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacidade — Vice Paws</title><style>body{font-family:system-ui,sans-serif;background:#12041f;color:#fff;max-width:680px;margin:0 auto;padding:20px;line-height:1.55}a{color:#2de2e6}h1,h2{color:#ff4fb8}li{margin:6px 0}</style></head><body><h1>Privacidade no Vice Paws 🐾</h1>
 <p><b>Resumo:</b> a conta existe só para guardar <b>os seus gatos e o seu progresso</b> no jogo. Aqui quem tem perfil é o gato, não a pessoa.</p>
 <h2>O que guardamos</h2>
-<li><b>Seu e-mail</b> — o único dado pessoal. Serve para enviar o código de entrada e reconhecer a sua conta. <b>Ele nunca aparece para outros jogadores</b> e não é usado para propaganda.</li>
+<li><b>Seu e-mail</b>. Serve para enviar o código de entrada e reconhecer a sua conta. <b>Ele nunca aparece para outros jogadores</b> e não é usado para propaganda.</li>
+<li><b>Um identificador da conta Google</b>, só se você usar “Entrar com Google”: é um número opaco que o Google nos envia junto com o e-mail verificado. Não guardamos nome nem foto do Google.</li>
+<li><b>Mês e ano de nascimento</b> (sem o dia), <b>criptografados</b>, mais a faixa de idade (criança, adolescente ou adulto). Perguntamos uma única vez, por causa da Lei 15.211/2025 (ECA Digital) e da LGPD (art. 14), que protegem crianças e adolescentes.</li>
+<li><b>Para menores de 18 anos: o e-mail do responsável</b>, criptografado. Abaixo de 16 anos o responsável precisa aprovar a conta por um link enviado a esse e-mail (vale 7 dias, uso único); até lá a criança só joga como visitante, sem ranking, sem Cidade Online e sem compras. De 16 a 17 anos a conta funciona e o responsável só é avisado por e-mail.</li>
 <li><b>Os perfis dos seus gatos</b> (até 5): nome, raça, aparência do modelo 3D, uma bio curta e, se você quiser, o @ do Instagram do gato.</li>
 <li><b>O progresso do jogo</b> (missões, estrelas, vidas), para você continuar em outro aparelho.</li>
 <h2>O que não existe aqui</h2>
 <li><b>Não há avatar humano</b>, nem nome, foto ou idade de pessoas.</li>
 <li><b>Não há chat livre</b> nem mensagens digitadas entre jogadores (na Cidade Online só existem frases prontas; veja abaixo).</li>
-<li><b>Não há senha</b>: você entra com um código de 6 dígitos enviado por e-mail, válido por 10 minutos.</li>
+<li><b>Não há senha</b>: você entra com o Google ou com um código de 6 dígitos enviado por e-mail, válido por 10 minutos.</li>
+<li><b>Não guardamos documentos</b> (CPF, RG, passaporte) nem endereço ou telefone.</li>
 <li><b>Não guardamos fotos.</b> Se você usar uma foto para sugerir as cores do gato, ela é analisada na hora e descartada.</li>
 <h2>O que os outros jogadores veem</h2>
 <p>Na <b>Cidade dos Gatos</b> aparecem apenas os gatos marcados como públicos: nome, raça, aparência, bio e o @ do gato, se houver. Nada disso mostra quem é o dono. Você pode deixar um gato privado quando quiser. Nomes e bios passam por um filtro de palavrões.</p>
@@ -22,7 +26,10 @@
 <h2>Segurança e tempo de guarda</h2>
 <li>Usamos um único cookie essencial (<code>vp_session</code>) para manter você conectado por até 60 dias. Não há cookies de rastreamento.</li>
 <li>Códigos de entrada e sessões são guardados de forma embaralhada (hash). Para evitar abuso, guardamos por até 1 dia um identificador embaralhado do endereço IP de quem pediu um código.</li>
-<li>Os dados ficam em serviços contratados para o jogo funcionar: Vercel (hospedagem), Neon (banco de dados) e Resend (envio do e-mail com o código).</li>
+<li>Os dados ficam em serviços contratados para o jogo funcionar: Vercel (hospedagem), Neon (banco de dados) e Resend (envio dos e-mails). Se você usar “Entrar com Google”, o Google trata o seu login conforme a política dele; o botão do Google só é carregado na tela de Conta.</li>
+<li>O mês/ano de nascimento e o e-mail do responsável são criptografados (AES-256-GCM) e só o servidor consegue ler. O link de aprovação do responsável usa um código aleatório de 32 bytes: só guardamos o hash dele.</li>
+<li><b>Por quanto tempo:</b> enquanto a conta existir. Ao excluir a conta apagamos tudo isso na hora. Códigos de entrada e links vencidos são apagados em até 1 dia.</li>
 <h2>Seus direitos (LGPD)</h2>
-<p>Você pode <b>apagar a sua conta a qualquer momento</b> dentro do jogo, em <i>Conta → Apagar minha conta</i>. Isso remove na hora o e-mail, os gatos, o progresso salvo e as sessões. Sem conta, o jogo continua funcionando com o progresso salvo só no aparelho.</p>
-<p>Dúvidas ou pedidos sobre os seus dados: fale com a gente pelo Instagram <a href="https://www.instagram.com/mimo.mimosa.morticia/">@mimo.mimosa.morticia</a>.</p><p><a href="./">← Voltar ao jogo</a></p></body></html>
+<p>Você pode <b>apagar a sua conta a qualquer momento</b> dentro do jogo, em <i>Conta → Apagar minha conta</i>. Isso remove na hora o e-mail, o identificador do Google, a data de nascimento, o e-mail do responsável, os gatos, o progresso salvo e as sessões, e o seu nome no ranking (se for o nome de um dos seus gatos) vira anônimo. Sem conta, o jogo continua funcionando com o progresso salvo só no aparelho.</p>
+<p>Pela LGPD você também pode pedir <b>acesso</b> aos seus dados, <b>correção</b> (por exemplo, de uma data de nascimento informada errada) ou <b>exclusão</b> por e-mail: <a href="mailto:jogo@mtec.tec.br">jogo@mtec.tec.br</a>. Responsáveis também podem pedir a exclusão da conta de uma criança nesse endereço.</p>
+<p>Contato: <a href="mailto:jogo@mtec.tec.br">jogo@mtec.tec.br</a> ou Instagram <a href="https://www.instagram.com/mimo.mimosa.morticia/">@mimo.mimosa.morticia</a>.</p><p><a href="./">← Voltar ao jogo</a></p></body></html>

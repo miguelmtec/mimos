@@ -5,8 +5,9 @@
 -- api/scores.js creates vp_ranking. This file documents the schema and can be
 -- pasted into the Neon SQL editor if you prefer to create it up front.
 --
--- Personal data kept: the e-mail address, and nothing else. No names of people,
--- no passwords, no photos. IPs are only stored as a keyed hash, for rate limiting,
+-- Personal data kept: the e-mail address, the Google account id, the birth month/year
+-- (encrypted) and, for minors, the guardian's e-mail (encrypted). No names, no
+-- passwords, no documents, no photos. IPs are only stored as a keyed hash, for rate limiting,
 -- and those rows are purged after one day.
 
 -- One row per player. The e-mail is the only personal datum.
@@ -64,6 +65,40 @@ create index if not exists vp_sessions_user_idx on vp_sessions (user_id);
 create index if not exists vp_sessions_expires_idx on vp_sessions (expires_at);
 create index if not exists vp_cats_user_idx on vp_cats (user_id, created_at);
 create index if not exists vp_cats_public_idx on vp_cats (created_at desc) where is_public;
+
+-- ---------------------------------------------------------------------------
+-- Sign in with Google, age and guardian approval (ECA Digital / LGPD art. 14).
+-- Personal data kept, in total: the e-mail, the Google account identifier (`sub`,
+-- an opaque number: no name, no photo), the birth MONTH/YEAR (AES-256-GCM
+-- encrypted) with its age band, and, for minors, the guardian's e-mail
+-- (encrypted). No password and no document is stored.
+-- ---------------------------------------------------------------------------
+alter table vp_users
+    add column if not exists status text not null default 'active',   -- active | awaiting_guardian
+    add column if not exists google_sub text,
+    add column if not exists birth_enc text,                          -- encrypted "YYYY-MM"
+    add column if not exists age_band text;                           -- child (<16) | teen (16-17) | adult
+create unique index if not exists vp_users_google_uq on vp_users (google_sub);
+
+-- Guardian approval links: only the SHA-256 of the 32-byte token is stored; single use; 7 days.
+create table if not exists vp_tokens (
+    token_hash text primary key,
+    user_id uuid not null references vp_users(id) on delete cascade,
+    purpose text not null,
+    expires_at timestamptz not null,
+    used_at timestamptz,
+    created_at timestamptz not null default now());
+
+-- Guardian e-mail, encrypted; ghash = keyed hash used only to cap mails per guardian address.
+create table if not exists vp_guardians (
+    user_id uuid primary key references vp_users(id) on delete cascade,
+    enc text not null,
+    ghash text not null,
+    approved_at timestamptz,
+    created_at timestamptz not null default now());
+
+create index if not exists vp_tokens_user_idx on vp_tokens (user_id, purpose, created_at desc);
+create index if not exists vp_guardians_ghash_idx on vp_guardians (ghash, created_at desc);
 
 -- Deleting an account (DELETE /api/me) removes the vp_users row; sessions, cats
 -- and saves follow through `on delete cascade`, and the API also deletes the

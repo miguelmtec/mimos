@@ -51,6 +51,8 @@ Game.fx = { part, burst, poof, text, shake, say };
 const alive = () => G.cats.filter(c => !c.down);
 const active = () => G.cats[G.active];
 const tr = k => VP.t(k);
+// progression (js/prog.js): levels and upgrades change a handful of numbers; without it every value is the neutral default
+const pv = (k, d) => (VP.Prog ? VP.Prog.v(k) : d);
 
 // ---------- construction ----------
 Game.create = function (world, mission) {
@@ -59,10 +61,10 @@ Game.create = function (world, mission) {
     W: world, m: mission, n: Game.eff(mission.lv), id: mission.n, d: mission.d, time: 0, real: 0, over: false, paused: false,
     cats: [], active: 0, dogs: [], bullets: [], items: [], props: [], cars: [], parts: [], texts: [], teles: [], friends: [],
     cam: { x: 0, y: 0 }, mtimer: null, shake: 0, hitstop: 0, nap: 0, catnip: 0, feast: 0, banner: null,
-    heat: 0, wanted: 0, minWanted: 0, calm: 0, copT: 2, car: null, ctx: null, revive: 0, keys: 0,
+    heat: 0, wanted: 0, minWanted: 0, calm: 0, copT: 2, omega: 0, car: null, ctx: null, revive: 0, keys: 0,
     stat: { ko: 0, eaten: 0, freed: 0, cash: 0, downs: 0, stolen: 0, dmg: 0, kites: 0, coins: 0, woke: 0, pts: 0 }, flags: {}, solo: null, mini: null,
     steps: [], step: 0, stepT: 0, timer: null, fieldT: 0, field: null, fieldM: null, houseField: null, house: null,
-    hpMul: 1 + Game.eff(mission.lv) * 0.016, dmgMul: 1 + Game.eff(mission.lv) * 0.007, pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
+    hpMul: (1 + Game.eff(mission.lv) * 0.016) * (VP.Story ? VP.Story.diff(mission) : 1), dmgMul: (1 + Game.eff(mission.lv) * 0.007) * (VP.Story ? VP.Story.diff(mission) : 1), pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
   };
   return G;
 };
@@ -83,6 +85,7 @@ Game.addCats = function (x, y) {
     used.push({ x: c.x, y: c.y });
   }
   G.cam.x = x; G.cam.y = y;
+  if (VP.Prog) VP.Prog.applyStats(G);
   refreshFields(true);
 };
 Game.addDog = function (type, x, y, o) {
@@ -151,6 +154,7 @@ Game.populate = function (o) {
   const nT = Math.round((o.traffic === undefined ? 20 : o.traffic) * dens);
   for (let i = 0; i < (o.paws || 0); i++) { const p = W.randWalk(rng); Game.addItem('paw', p.x, p.y); }
   for (let i = 0; i < nT; i++) spawnTraffic(rng);
+  if (VP.Prog) VP.Prog.populate(G, o);
   if (W.real) for (let i = 0; i < (o.parked === undefined ? 14 : o.parked); i++) { const p = W.randWalk(rng); if (W.gnd[Math.floor(p.y / T) * W.W + Math.floor(p.x / T)] === 1 && !W.blocked(p.x, p.y, 40, 3)) Game.addCar(rng.pick(W.real.id === 'rioverde' ? ['pickup', 'pickup', 'sedan'] : ['sedan', 'sport', 'taxi', 'sedan']), p.x, p.y, rng() * 6.283); }
 };
 function spawnTraffic(rng) {
@@ -200,12 +204,13 @@ function hurtCat(c, dmg, fx, fy) {
   if (G.car) { if (c.idx === G.active) damageCar(G.car, dmg * 0.6); return true; }
   if (c.name === 'mimosa') dmg *= 0.72;
   if (c.idx !== G.active) dmg *= 0.55;
+  dmg *= pv('res_' + c.name, 1) * (G.omega > 0 ? 0.65 : 1);
   dmg = Math.max(1, Math.round(dmg));
   c.hp -= dmg; c.flash = 0.14; c.inv = 0.35; G.stat.dmg += dmg;
   const a = Math.atan2(c.y - fy, c.x - fx); c.kx += Math.cos(a) * 180; c.ky += Math.sin(a) * 180;
   text(c.x, c.y - 44, '-' + dmg, '#ff6b6b', 17); burst(c.x, c.y - 16, 5, '#ffd23f', 110, 'star', 6);
   if (c.idx === G.active) { shake(6); sfx('hurt'); }
-  if (c.hp <= 0) downCat(c);
+  if (c.hp <= 0 && !(VP.Prog && VP.Prog.lastStand(G, c))) downCat(c);
   return true;
 }
 function downCat(c) {
@@ -218,7 +223,7 @@ function downCat(c) {
 }
 function healCat(c, n) { if (c.down || c.hp >= c.max) return; c.hp = Math.min(c.max, c.hp + n); }
 function healTeam(n) { let any = false; for (const c of G.cats) if (!c.down && c.hp < c.max) { healCat(c, n); any = true; text(c.x, c.y - 46, '+' + n, '#7CFF6B', 14); part({ x: c.x, y: c.y - 20, k: 'ring', col: '#7CFF6B', size: 10, life: 0.4 }); } return any; }
-Game.healTeam = healTeam;
+Game.healTeam = healTeam; Game.hurtDogFx = (e, dmg, src, x, y, kb) => hurtDog(e, dmg, src, x, y, kb);
 // src: 'bolt' | 'bite' | 'snatch' | 'car' | 'hair' | 'roar'
 function hurtDog(e, dmg, src, fx, fy, kb) {
   if (e.dead) return;
@@ -244,6 +249,7 @@ function wakeDog(e) { e.sleep = false; e.state = 'chase'; e.hunt = true; e.aggro
 function alertPack(e) { for (const o of G.dogs) if (o !== e && !o.sleep && o.state === 'guard' && U.d2(o.x, o.y, e.x, e.y) < 300 * 300) o.state = 'chase'; }
 function koDog(e) {
   e.dead = true; G.stat.ko++;
+  if (VP.Prog) VP.Prog.onKo(G, e);
   poof(e.x, e.y - 14, e.isBoss ? 30 : 9); burst(e.x, e.y - 18, e.isBoss ? 24 : 6, ['#ffd23f', '#fff'], 190, 'star', 8, 0.7);
   sfx('ko'); shake(e.isBoss ? 18 : 4); hitstop(e.isBoss ? 0.25 : 0.03);
   const st = DOG[e.type];
@@ -291,10 +297,11 @@ function autoAim(c, range, kind) {
 }
 function shoot(c, ang, ai) {
   const sp = ang + U.rand(-0.045, 0.045), mx = c.x + Math.cos(ang) * 22, my = c.y - 12 + Math.sin(ang) * 22;
-  G.bullets.push({ k: 'bolt', x: mx, y: my, vx: Math.cos(sp) * 640, vy: Math.sin(sp) * 640, life: 0.8, dmg: (ai ? 9 : 13) * (c.exhausted ? 0.8 : 1), from: 'cat', r: 6, t: 0 });
+  G.bullets.push({ k: 'bolt', x: mx, y: my, vx: Math.cos(sp) * 640, vy: Math.sin(sp) * 640, life: 0.8, dmg: (ai ? 9 : 13) * (c.exhausted ? 0.8 : 1) * pv('boltDmg', 1), from: 'cat', r: 6, t: 0 });
+  if (VP.Prog) VP.Prog.shot(G, c, ang);
   c.recoil = 1; c.kx -= Math.cos(ang) * 26; c.ky -= Math.sin(ang) * 26;
   part({ x: mx, y: my, k: 'flash', col: '#bff4ff', size: 13, life: 0.07 });
-  if (!ai) { shake(1.6); c.energy = Math.max(0, c.energy - 1.7); }
+  if (!ai) { shake(1.6); c.energy = Math.max(0, c.energy - 1.7 * pv('energyCost', 1)); }
   sfx('shoot', 0.05);
 }
 function biteHit(c, ang, dmg, reach, rad, kb, src) {
@@ -394,44 +401,46 @@ function doAttack(c, ang, ai) {
     if (c.comboT <= 0) c.combo = 0;
     const third = c.combo === 2; c.hitSet = null;
     c.kx += Math.cos(ang) * (third ? 230 : 130); c.ky += Math.sin(ang) * (third ? 230 : 130);
-    const n = biteHit(c, ang, (third ? 34 : 21) * (ai ? 0.7 : 1), 30, third ? 34 : 28, third ? 330 : 120);
+    let n = biteHit(c, ang, (third ? 34 : 21) * (ai ? 0.7 : 1) * pv('biteDmg', 1), 30, third ? 34 : 28, third ? 330 : 120);
+    if (third && pv('spin', 0)) { c.hitSet = new Set(); for (let k = 0; k < 6; k++) n += biteHit(c, ang + k * 1.047, 20 * pv('biteDmg', 1), 34, 30, 260); c.hitSet = null; G.parts.push({ x: c.x, y: c.y - 14, k: 'ring', col: '#ff7ac0', size: 16, life: 0.3, grow: 300, t: 0, vx: 0, vy: 0 }); } // Mordida Giratória
     c.atk = 1; c.mouth = 1; sfx(third ? 'bite3' : 'bite');
     if (n) { hitstop(third ? 0.085 : 0.045); if (!ai) shake(third ? 7 : 3.5); }
     c.combo = (c.combo + 1) % 3; c.comboT = 0.75; c.cd = (third ? 0.42 : 0.23) * (ai ? 1.5 : 1);
-  } else { snatch(c, ang); c.cd = ai ? 0.5 : 0.3; }
+  } else { snatch(c, ang); c.cd = (ai ? 0.5 : 0.3) * pv('stealCd', 1); }
 }
 function doDash(c) {
   if (c.cd2 > 0 || c.down || c.root > 0) return;
   let ang = c.aim; if (Math.hypot(I.mx, I.my) > 0.3 && c.idx === G.active) ang = Math.atan2(I.my, I.mx);
   if (c.name === 'mimosa') {
-    c.dashT = 0.2; c.dx = Math.cos(ang); c.dy = Math.sin(ang); c.aim = ang; c.inv = Math.max(c.inv, 0.3); c.cd2 = 2.4; c.hitSet = new Set(); c.face = c.dx >= 0 ? 1 : -1; sfx('dash');
+    c.dashT = 0.2; c.dx = Math.cos(ang); c.dy = Math.sin(ang); c.aim = ang; c.inv = Math.max(c.inv, 0.3); c.cd2 = 2.4 * pv('dashCd', 1); c.hitSet = new Set(); c.face = c.dx >= 0 ? 1 : -1; sfx('dash');
   } else if (c.name === 'morticia') {
-    c.dashT = 0.16; c.dx = Math.cos(ang); c.dy = Math.sin(ang); c.invis = 2.2; c.inv = Math.max(c.inv, 0.4); c.cd2 = 4; sfx('dash'); poof(c.x, c.y - 12, 6, '#b9a6d9');
+    c.dashT = 0.16; c.dx = Math.cos(ang); c.dy = Math.sin(ang); c.invis = 2.2 + pv('invisT', 0); c.inv = Math.max(c.inv, 0.4); c.cd2 = 4; sfx('dash'); poof(c.x, c.y - 12, 6, '#b9a6d9');
     for (const e of G.dogs) if (e.target === c) e.target = null;
   } else { // Mimo: hairball lob (stuns)
     if (c.energy < 12) { text(c.x, c.y - 50, tr('tired'), '#bfe9ff', 13); return; }
     const tgt = autoAim(c, 300, 'bolt'); const a = I.aim !== null && c.idx === G.active ? I.aim : (tgt === null ? ang : tgt);
     let dist = 190; for (const e of G.dogs) if (!e.dead) { const d = Math.hypot(e.x - c.x, e.y - c.y); if (d < 320 && Math.abs(U.angDiff(a, Math.atan2(e.y - c.y, e.x - c.x))) < 0.3) { dist = d; break; } }
     G.bullets.push({ k: 'hair', x: c.x, y: c.y, sx: c.x, sy: c.y, tx: c.x + Math.cos(a) * dist, ty: c.y + Math.sin(a) * dist, t: 0, dur: 0.5, from: 'cat', life: 1, r: 8 });
-    c.energy -= 10; c.cd2 = 5; sfx('hairball');
+    c.energy -= 10; c.cd2 = 5 * pv('hairCd', 1); sfx('hairball');
   }
 }
 function doSpecial(c) {
   if (c.down) return;
   if (c.name === 'mimo') {
     if (c.cdS > 0) return;
-    G.nap = 4.5; c.cdS = 18; c.energy = Math.min(100, c.energy + 50); c.exhausted = false; sfx('nap'); say(tr('nap') + '!', '#bfe9ff', 1.6);
+    G.nap = 4.5 + pv('napT', 0); c.cdS = 18; c.energy = Math.min(100, c.energy + 50 + pv('napT', 0) * 16); c.exhausted = false; sfx('nap'); say(tr('nap') + '!', '#bfe9ff', 1.6);
     part({ x: c.x, y: c.y - 16, k: 'ring', col: '#bfe9ff', size: 30, life: 0.7, grow: 500 });
   } else if (c.name === 'mimosa') {
     if (c.cdS > 0) return;
     c.cdS = 12; sfx('roar'); shake(14); hitstop(0.08); say(tr('roar') + '!', '#ff7ac0', 1.4); c.mouth = 1; c.atk = 1;
     for (let i = 0; i < 3; i++) part({ x: c.x, y: c.y - 14, k: 'ring', col: '#ff4fb8', size: 20, life: 0.5 + i * 0.12, grow: 420 });
-    for (const e of G.dogs) if (!e.dead && U.d2(e.x, e.y, c.x, c.y) < 210 * 210) { hurtDog(e, 16, 'roar', c.x, c.y, 260); if (!e.dead) { if (e.armor > 0) e.armor = Math.max(0, e.armor - 55); e.stun = Math.max(e.stun, e.isBoss ? 1.2 : 3); e.wind = 0; if (e.state === 'wind') e.state = 'chase'; } }
+    const RR = 210 * pv('roarR', 1);
+    for (const e of G.dogs) if (!e.dead && U.d2(e.x, e.y, c.x, c.y) < RR * RR) { hurtDog(e, 16, 'roar', c.x, c.y, 260); if (!e.dead) { if (e.armor > 0) e.armor = Math.max(0, e.armor - 55); e.stun = Math.max(e.stun, e.isBoss ? 1.2 : 3 + pv('roarStun', 0)); e.wind = 0; if (e.state === 'wind') e.state = 'chase'; } }
     for (const b of G.bullets) if (b.from === 'dog' && U.d2(b.x, b.y, c.x, c.y) < 210 * 210) b.life = 0;
     for (const k of G.cats) k.root = 0;
   } else {
     if (!c.feastReady) { text(c.x, c.y - 50, tr('needFull'), '#ffb347', 13); return; }
-    G.feast = 5; c.belly = 55; c.feastReady = false; sfx('feast'); say(tr('feast') + '!', '#ffb347', 1.6); shake(6);
+    G.feast = 5 + pv('feastT', 0); c.belly = 55; c.feastReady = false; sfx('feast'); say(tr('feast') + '!', '#ffb347', 1.6); shake(6);
   }
 }
 Game.special = doSpecial;
@@ -516,7 +525,7 @@ function updCat(c, dt) {
     if (c.exhausted && Math.random() < dt * 1.5) part({ x: c.x + 8, y: c.y - 44, k: 'icon', icon: 'zzz', vy: -30, vx: 12, size: 9, life: 0.9 });
   }
   if (c.name === 'morticia') {
-    if (!G.car) c.belly = Math.max(0, c.belly - dt * 0.85 * G.hungerMul);
+    if (!G.car) c.belly = Math.max(0, c.belly - dt * 0.85 * G.hungerMul * pv('hunger', 1));
     if (c.belly <= 0) { c.hungerT = (c.hungerT || 0) + dt; if (c.hungerT > 1 && !G.car) { c.hungerT = 0; if (c.hp > 12) { c.hp = Math.max(12, c.hp - 3); c.flash = 0.1; } text(c.x, c.y - 46, tr('hungry'), '#ffb347', 13); if (!G.tut.hungry) { G.tut.hungry = 1; say(tr('tipHungry'), '#ffb347', 3); } } }
     if (c.belly >= 99.5 && !c.feastReady) { c.feastReady = true; text(c.x, c.y - 56, tr('feast') + '!', '#ffd23f', 15); sfx('paw', 0.5); }
     if (G.feast > 0) feastTick(c, dt);
@@ -528,7 +537,7 @@ function updCat(c, dt) {
     c.dashT -= dt; const sp = c.name === 'mimosa' ? 900 : 760;
     const hit = step(c, c.dx * sp * dt, c.dy * sp * dt, c.name === 'morticia' ? 1 : 0);
     part({ x: c.x, y: c.y - 14, k: 'ghost', name: c.name, face: c.face, life: 0.18 });
-    if (c.name === 'mimosa') { c.mouth = 1; biteHit(c, Math.atan2(c.dy, c.dx), 38, 16, 30, 380); }
+    if (c.name === 'mimosa') { c.mouth = 1; biteHit(c, Math.atan2(c.dy, c.dx), 38 * pv('biteDmg', 1), 16, 30, 380); }
     if (hit) c.dashT = 0;
     return;
   }
@@ -556,7 +565,7 @@ function updCat(c, dt) {
   } else updFollower(c, dt, spd);
 }
 function feastTick(c, dt) {
-  const R = 230;
+  const R = 230 * pv('feastR', 1);
   if (Math.random() < dt * 30) { const a = Math.random() * 6.283; part({ x: c.x + Math.cos(a) * R, y: c.y - 14 + Math.sin(a) * R, k: 'suck', tx: c, life: 0.4, col: '#ffb347', size: 5 }); }
   for (const it of G.items) { const d = U.d2(it.x, it.y, c.x, c.y); if (d < R * R) { const l = Math.sqrt(d) || 1; it.x += (c.x - it.x) / l * 520 * dt; it.y += (c.y - it.y) / l * 520 * dt; } }
   c.feastT = (c.feastT || 0) - dt;
@@ -867,6 +876,7 @@ function collect(c, it) {
   else if (k === 'gcoin') { G.stat.coins++; G.stat.cash += 10; sfx('cash', 0.05); burst(it.x, it.y - 10, 6, '#ffd23f', 130, 'star', 6, 0.5); }
   else if (k === 'bag') { G.flags.bag = (G.flags.bag || 0) + 1; G.stat.cash += 60; sfx('paw'); say(tr('gotBag'), '#ffd23f', 2); burst(it.x, it.y - 10, 12, '#ffd23f', 160, 'star', 7, 0.7); }
   else if (k === 'key') { G.keys++; G.flags.key = (G.flags.key || 0) + 1; sfx('paw'); say(tr('gotKey'), '#ffd23f'); }
+  else if (k[0] === 'c' && k[1] === '_') return VP.Prog ? VP.Prog.pick(G, c, it) : false; // consumables go to the inventory
   return true;
 }
 
@@ -1124,7 +1134,7 @@ Game.update = function (dt) {
   if (G.hitstop > 0) { G.hitstop -= dt; return; }
   const sdt = dt * (G.nap > 0 ? 0.32 : 1);
   G.time += dt;
-  for (const k of ['nap', 'catnip', 'feast']) if (G[k] > 0) G[k] -= dt;
+  for (const k of ['nap', 'catnip', 'feast', 'omega']) if (G[k] > 0) G[k] -= dt;
   if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 40);
   if (G.banner) { G.banner.t += dt; if (G.banner.t > G.banner.dur) G.banner = null; }
   // switching
@@ -1132,6 +1142,7 @@ Game.update = function (dt) {
   if (I.take('cycle') && G.solo === null) { for (let i = 1; i < 3; i++) { const n = (G.active + i) % 3; if (!G.cats[n].down) { switchTo(n); break; } } }
   refreshFields();
   updContext(dt);
+  if (VP.Prog) VP.Prog.tick(G, dt);
   if (I.take('special')) { if (G.car) { sfx(G.car.type === 'gold' ? 'viphorn' : 'honk', 0.6); } else doSpecial(active()); }
   if (I.take('dash')) { if (!G.car) doDash(active()); }
   { const em = I.take('emote'); if (em) Game.emote(em); }

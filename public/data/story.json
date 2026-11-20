@@ -1,0 +1,250 @@
+{
+ "version": 1,
+ "intro": [
+  {
+   "who": "all",
+   "pt": "O Abrigo dos Mimos era a casa de todo gato sem dono do bairro. Tinha potinho cheio, cama quente e muito carinho.",
+   "en": "Mimos' Shelter was home to every stray cat in the neighbourhood. Full bowls, warm beds and lots of love."
+  },
+  {
+   "who": "boss",
+   "pt": "Dr. Carrocinha: Gato solto dá trabalho! Fechei o abrigo e levei tudo. Agora a cidade é dos meus cachorros!",
+   "en": "Dr. Dogcatcher: Loose cats are trouble! I shut the shelter and took everything. The city belongs to my dogs now!"
+  },
+  {
+   "who": "mimosa",
+   "pt": "Fechou o NOSSO abrigo?! Ah, não. A gente vai pegar tudo de volta, bairro por bairro.",
+   "en": "He shut OUR shelter?! Oh no. We are taking it all back, district by district."
+  },
+  {
+   "who": "mimo",
+   "pt": "Tá bom… mas depois eu durmo. Siga o feixe de luz rosa: é sempre a próxima missão.",
+   "en": "Fine… but then I nap. Follow the pink light beam: it is always the next mission."
+  }
+ ],
+ "chapters": [
+  {
+   "n": 1,
+   "boss": 10,
+   "name": {
+    "pt": "Os Potinhos",
+    "en": "The Food Bowls"
+   },
+   "goal": {
+    "pt": "Recupere os potinhos de ração do abrigo em Sunset Beach",
+    "en": "Get the shelter's food bowls back in Sunset Beach"
+   },
+   "done": [
+    {
+     "who": "morticia",
+     "pt": "Os potinhos voltaram! E cheios. Eu confirmei pessoalmente. Várias vezes.",
+     "en": "The bowls are back! And full. I checked personally. Several times."
+    },
+    {
+     "who": "mimosa",
+     "pt": "Uma parte do abrigo já está de pé. O centro e o Parque da Lagoa abriram: as caminhas estão em Neon Downtown.",
+     "en": "One part of the shelter is standing again. Downtown and Lagoon Park are open: the beds are in Neon Downtown."
+    }
+   ]
+  },
+  {
+   "n": 2,
+   "boss": 20,
+   "name": {
+    "pt": "As Caminhas",
+    "en": "The Beds"
+   },
+   "goal": {
+    "pt": "Traga as caminhas de volta de Neon Downtown",
+    "en": "Bring the beds back from Neon Downtown"
+   },
+   "done": [
+    {
+     "who": "mimo",
+     "pt": "Caminhas recuperadas. Testei todas. Aprovadas. Zzz…",
+     "en": "Beds recovered. I tested them all. Approved. Zzz…"
+    },
+    {
+     "who": "mimosa",
+     "pt": "A Madame Poodle contou: os remédios do veterinário estão em Palm Harbor. O porto e o Morro do Mirante abriram!",
+     "en": "Madame Poodle talked: the vet's medicine is in Palm Harbor. The harbor and Lookout Hill are open!"
+    }
+   ]
+  },
+  {
+   "n": 3,
+   "boss": 30,
+   "name": {
+    "pt": "A Salinha do Veterinário",
+    "en": "The Vet Room"
+   },
+   "goal": {
+    "pt": "Recupere os remédios e monte a salinha do veterinário em Palm Harbor",
+    "en": "Recover the medicine and set up the vet room in Palm Harbor"
+   },
+   "done": [
+    {
+     "who": "mimosa",
+     "pt": "A salinha do veterinário está pronta. Ninguém mais fica doentinho na rua.",
+     "en": "The vet room is ready. Nobody stays sick on the street any more."
+    },
+    {
+     "who": "morticia",
+     "pt": "Falta o jardim! As mudas estão trancadas em Storm Docks. As docas e a Zona Industrial abriram.",
+     "en": "The garden is missing! The seedlings are locked up in Storm Docks. The docks and the Industrial Zone are open."
+    }
+   ]
+  },
+  {
+   "n": 4,
+   "boss": 40,
+   "name": {
+    "pt": "O Jardim",
+    "en": "The Garden"
+   },
+   "goal": {
+    "pt": "Resgate as mudas do jardim em Storm Docks",
+    "en": "Rescue the garden seedlings in Storm Docks"
+   },
+   "done": [
+    {
+     "who": "morticia",
+     "pt": "O jardim está florido. Tem até erva de gato. Principalmente erva de gato.",
+     "en": "The garden is in bloom. There is even catnip. Mostly catnip."
+    },
+    {
+     "who": "mimo",
+     "pt": "Só falta a chave do abrigo. Está com o Dr. Carrocinha, lá em Vice Heights. Vamos acordados… mais ou menos.",
+     "en": "Only the shelter key is missing. Dr. Dogcatcher has it, up in Vice Heights. Let's go wide awake… more or less."
+    }
+   ]
+  },
+  {
+   "n": 5,
+   "boss": 50,
+   "name": {
+    "pt": "A Reabertura",
+    "en": "The Reopening"
+   },
+   "goal": {
+    "pt": "Pegue a chave do abrigo com o Dr. Carrocinha em Vice Heights",
+    "en": "Take the shelter key from Dr. Dogcatcher in Vice Heights"
+   },
+   "done": [
+    {
+     "who": "boss",
+     "pt": "Dr. Carrocinha: Tá bom, tá bom! Eu devolvo a chave. Vocês cuidam deles melhor do que eu.",
+     "en": "Dr. Dogcatcher: All right, all right! Here is the key. You look after them better than I ever did."
+    },
+    {
+     "who": "all",
+     "pt": "O Abrigo dos Mimos reabriu com festa! Agora é com você: resgate gatinhos, cuide deles e encontre um lar para cada um.",
+     "en": "Mimos' Shelter reopened with a party! Now it is up to you: rescue kittens, care for them and find each one a home."
+    },
+    {
+     "who": "mimosa",
+     "pt": "E ninguém fica pra trás. Nunca.",
+     "en": "And no cat is left behind. Ever."
+    }
+   ]
+  }
+ ],
+ "hints": {
+  "boss": {
+   "pt": "Troque para a Mimosa e morda até quebrar a armadura. Com o chefão exposto, a Mortícia rouba o lanche dele e todo mundo bate.",
+   "en": "Switch to Mimosa and bite until the armor breaks. When the boss is exposed, Morticia steals his snack and everybody attacks."
+  },
+  "reach": {
+   "pt": "Siga a seta dourada. Não precisa lutar com todos: só com os guardas do final.",
+   "en": "Follow the golden arrow. You do not have to fight everyone: only the guards at the end."
+  },
+  "waves": {
+   "pt": "Fique em movimento e use o ROSNADO da Mimosa quando juntar muito cachorro. O sachê cura o time.",
+   "en": "Keep moving and use Mimosa's ROAR when dogs pile up. Wet food heals the team."
+  },
+  "eat": {
+   "pt": "Jogue com a Mortícia e passe pelas barraquinhas: cada mordida vale por vários petiscos.",
+   "en": "Play as Morticia and visit the food stands: each bite counts as several treats."
+  },
+  "steal": {
+   "pt": "Só a Mortícia rouba. Chegue perto de quem carrega um item (ícone em cima da cabeça) e toque em atacar.",
+   "en": "Only Morticia steals. Get close to a dog carrying an item (icon above its head) and tap attack."
+  },
+  "cash": {
+   "pt": "Caixotes dão moedas: a Mimosa quebra. Nocautes e roubos também contam.",
+   "en": "Crates give coins: Mimosa breaks them. Knockouts and steals count too."
+  },
+  "rescue": {
+   "pt": "Cada portão pede um gato: cerca = Mimosa morde, botão = Mimo atira, portinha = Mortícia passa.",
+   "en": "Each gate needs one cat: fence = Mimosa bites, button = Mimo shoots, cat flap = Morticia fits."
+  },
+  "truck": {
+   "pt": "Abra o cercado, entre no caminhão com o botão de ação e dirija até a casinha marcada.",
+   "en": "Open the yard, get in the truck with the action button and drive to the marked cottage."
+  },
+  "vault": {
+   "pt": "Três passos: abrir o portão, o Mimo acerta o botão do cofre, a Mortícia entra pela portinha.",
+   "en": "Three steps: open the gate, Mimo shoots the vault button, Morticia goes in through the cat flap."
+  },
+  "escape": {
+   "pt": "Não lute: corra! De carro é mais fácil. O objetivo é chegar ao esconderijo.",
+   "en": "Do not fight: run! A car makes it easier. The goal is to reach the hideout."
+  },
+  "chase": {
+   "pt": "No carro, encoste no alvo e segure atacar: o Mimo atira pela janela.",
+   "en": "In the car, get close to the target and hold attack: Mimo shoots from the window."
+  },
+  "race": {
+   "pt": "Siga a seta de checkpoint em checkpoint. Solte o acelerador antes das curvas.",
+   "en": "Follow the arrow from checkpoint to checkpoint. Ease off before the corners."
+  },
+  "defend": {
+   "pt": "Fique perto da casinha e derrube primeiro quem bate nela. A ração devolve a energia do Mimo.",
+   "en": "Stay near the cottage and take out whoever is hitting it first. Kibble restores Mimo's energy."
+  },
+  "escort": {
+   "pt": "Ande na frente do gato escoltado e limpe o caminho antes de ele chegar.",
+   "en": "Walk ahead of the escorted cat and clear the way before it arrives."
+  },
+  "stealth": {
+   "pt": "Fique fora dos círculos azuis. Se alguém acordar, use o sumiço da Mortícia (dash).",
+   "en": "Stay out of the blue rings. If someone wakes up, use Morticia's vanish (dash)."
+  },
+  "fish": {
+   "pt": "Não aperte antes da hora: espere o ❗ aparecer e só então toque em atacar.",
+   "en": "Do not press early: wait for the ❗ and only then tap attack."
+  },
+  "volley": {
+   "pt": "Olhe a sombra da bola no chão e fique em cima dela.",
+   "en": "Watch the ball's shadow on the ground and stand on it."
+  },
+  "kites": {
+   "pt": "As pipas descem devagar: vá para onde a sombra está indo, não onde ela está.",
+   "en": "Kites come down slowly: go where the shadow is heading, not where it is."
+  },
+  "parkour": {
+   "pt": "Ande em direção aos caixotes: o gato sobe e pula sozinho. Trampolins levam ao telhado.",
+   "en": "Walk into the crates: the cat climbs and hops on its own. Jump pads reach the roof."
+  },
+  "heist": {
+   "pt": "Bata no caminhão com o carro até ele parar, depois entre nele e leve para casa.",
+   "en": "Ram the truck with your car until it stops, then get in and drive it home."
+  },
+  "duel": {
+   "pt": "A Mimosa quebra a armadura; quando ele chamar reforço, o ROSNADO atordoa todos.",
+   "en": "Mimosa breaks the armor; when he calls for backup, the ROAR stuns them all."
+  },
+  "chain": {
+   "pt": "O tempo aumenta a cada entrega. Vá direto pela rua, sem lutar.",
+   "en": "Time is added at each delivery. Go straight down the street, no fighting."
+  },
+  "photo": {
+   "pt": "Chegue bem perto do ponto marcado e fique parado um instante.",
+   "en": "Get right up to the marked spot and stand still for a moment."
+  },
+  "kittens": {
+   "pt": "Solte um gatinho por vez e leve até a casinha antes de buscar o próximo.",
+   "en": "Free one kitten at a time and walk it home before fetching the next."
+  }
+ }
+}

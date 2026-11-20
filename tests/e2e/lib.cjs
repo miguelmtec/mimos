@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
-const PORT = 8765;
+const PORT = +process.env.VP_PORT || 8765; // VP_PORT: run two checkouts side by side without sharing a server
 let srv;
 exports.serve = () => new Promise(r => { srv = spawn('python3', ['-m', 'http.server', String(PORT), '--directory', '' + require('path').resolve(__dirname, '../../public') + ''], { stdio: 'ignore' }); setTimeout(r, 700); });
 exports.stop = () => srv && srv.kill();

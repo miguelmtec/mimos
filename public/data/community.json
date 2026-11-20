@@ -1,0 +1,24 @@
+{
+ "version": 1,
+ "_doc": "Community goals: `total` comes from GET /api/community (missions finished by all players). A goal with `opens` keeps that area closed for everyone until the total reaches `need`. No goal gates anything that exists today.",
+ "goals": [
+  {
+   "id": "ilha",
+   "need": 100000,
+   "opens": "hood:9",
+   "name": {
+    "pt": "abre a Ilha dos Gatos",
+    "en": "opens Cat Island"
+   }
+  },
+  {
+   "id": "farol",
+   "need": 500000,
+   "opens": "hood:10",
+   "name": {
+    "pt": "abre o Farol do Mimo",
+    "en": "opens Mimo's Lighthouse"
+   }
+  }
+ ]
+}

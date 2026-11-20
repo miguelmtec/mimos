@@ -325,6 +325,12 @@ export function itemGeo(k) {
     case 'bag': b.sph('#c98f4b', 0, -0.05, 0, 0.3, 0.34, 0.26); b.cyl('#a8743a', 0, 0.26, 0, 0.13, 0.14, 0.13); b.tor('#ff4f5e', 0, 0.2, 0, 0.15, 0.15, 0.2, Math.PI / 2); b.sph('#ffb347', 0, -0.05, 0.25, 0.1, 0.07, 0.03); b.cone('#ff9a3d', 0.12, -0.05, 0.25, 0.07, 0.09, 0.03, 0, 0, Math.PI / 2); break;
     case 'gcoin': b.cyl('#ffd23f', 0, 0, 0, 0.26, 0.06, 0.26, Math.PI / 2); b.cyl('#fff3a8', 0, 0, 0.01, 0.19, 0.07, 0.19, Math.PI / 2); b.sph('#ffb300', 0, -0.03, 0.05, 0.08, 0.07, 0.02); for (const [x, y] of [[-0.09, 0.05], [0, 0.1], [0.09, 0.05]]) b.sph('#ffb300', x, y, 0.05, 0.04, 0.045, 0.02); break;
     case 'bobber': b.sph('#ff3355', 0, 0.06, 0, 0.14, 0.12, 0.14); b.sph('#ffffff', 0, -0.05, 0, 0.14, 0.1, 0.14); b.cyl('#3a2140', 0, 0.24, 0, 0.015, 0.2, 0.015); break;
+    // consumables (js/prog.js): bowl of kibble, omega-3 capsule, wet-food tin, catnip pouch, milk bottle
+    case 'c_racao': b.cyl('#ff4fb8', 0, -0.06, 0, 0.3, 0.16, 0.22); b.cyl('#c98f4b', 0, 0.03, 0, 0.25, 0.04, 0.25); for (let i = 0; i < 5; i++) b.lo('#a8743a', Math.sin(i * 1.26) * 0.12, 0.08, Math.cos(i * 1.26) * 0.12, 0.07); break;
+    case 'c_omega': b.sph('#ffd23f', -0.1, 0, 0, 0.2, 0.15, 0.15); b.sph('#2de2e6', 0.1, 0, 0, 0.2, 0.15, 0.15); b.sph('#ffffff', -0.14, 0.07, 0.08, 0.05); break;
+    case 'c_sache': b.cyl('#c0c7d1', 0, 0, 0, 0.26, 0.2, 0.26); b.cyl('#ff7ac0', 0, 0, 0, 0.265, 0.12, 0.265); b.cyl('#e9e2f0', 0, 0.105, 0, 0.22, 0.01, 0.22); b.sph('#ffb347', 0, 0, 0.26, 0.09, 0.05, 0.02); break;
+    case 'c_catnip': b.sph('#3fae6a', 0, -0.04, 0, 0.24, 0.26, 0.2); b.cyl('#2e9e3f', 0, 0.2, 0, 0.1, 0.1, 0.1); b.tor('#ffd23f', 0, 0.16, 0, 0.11, 0.11, 0.16, Math.PI / 2); for (let i = 0; i < 3; i++) b.sph('#7CFF6B', (i - 1) * 0.1, 0.32, 0, 0.07, 0.12, 0.03); break;
+    case 'c_leite': b.cyl('#ffffff', 0, -0.04, 0, 0.17, 0.34, 0.17); b.cyl('#ffffff', 0, 0.2, 0, 0.09, 0.14, 0.09); b.cyl('#7CFF6B', 0, 0.29, 0, 0.1, 0.05, 0.1); b.cyl('#7fd6c2', 0, -0.06, 0, 0.175, 0.12, 0.175); break;
     default: b.sph('#ffffff', 0, 0, 0, 0.2);
   }
   return (itemCache[k] = b.geo());
@@ -391,6 +397,25 @@ export function buildProp(p, pal) {
     }
     case 'flap': b.box('#7c8799', 0, 1.0, 0, p.hor ? 0.3 : 2.0, 2.0, p.hor ? 2.0 : 0.3); b.box('#17101c', 0, 0.5, 0, p.hor ? 0.34 : 0.9, 1.0, p.hor ? 0.9 : 0.34); b.box('#ffd23f', 0, 1.4, 0, p.hor ? 0.36 : 0.4, 0.3, p.hor ? 0.4 : 0.36); break;
     case 'nook': b.box('#c0c7d1', -1, 1.0, -1, 0.1, 0.06, 2.0); b.box('#c0c7d1', -1, 0.5, -1, 0.1, 0.06, 2.0); b.box('#c0c7d1', 1, 1.0, 1, 2.0, 0.06, 0.1); b.box('#c0c7d1', 1, 0.5, 1, 2.0, 0.06, 0.1); for (const [x, z] of [[-1, -2], [-1, 0], [0, 1], [2, 1]]) b.box('#8a90ad', x, 0.65, z, 0.16, 1.3, 0.16); break;
+    case 'works': { // friendly "under construction" barrier across a street that has not opened yet
+      const L = (p.len || 96) / 24, hor = !!p.hor;
+      for (let i = 0; i < Math.round(L / 0.5); i++) { const o = -L / 2 + (i + 0.5) * 0.5; b.box(i % 2 ? '#ffb347' : '#ffffff', hor ? o : 0, 0.95, hor ? 0 : o, hor ? 0.5 : 0.14, 0.3, hor ? 0.14 : 0.5); b.box(i % 2 ? '#ffffff' : '#ffb347', hor ? o : 0, 0.5, hor ? 0 : o, hor ? 0.5 : 0.12, 0.2, hor ? 0.12 : 0.5); }
+      for (const s of [-1, 1]) { b.box('#59536b', hor ? s * L / 2 : 0, 0.6, hor ? 0 : s * L / 2, 0.16, 1.2, 0.16); b.cone('#ff7a2e', hor ? s * (L / 2 - 0.5) : 0.6, 0.35, hor ? 0.6 : s * (L / 2 - 0.5), 0.26, 0.7); }
+      b.sph('#ffd23f', 0, 1.3, 0, 0.16); break;
+    }
+    case 'shelter': { // Abrigo dos Mimos: boarded up at first, one part restored per finished chapter (p.stage 0-5)
+      const st = p.stage || 0, wall = st ? '#fff1d6' : '#8d8794', roof = st ? '#ff4fb8' : '#5a5462';
+      b.box(wall, 0, 1.5, 0, 6.4, 3, 4.4); b.add(PR.cone, roof, 0, 3.9, 0, 5.2, 1.9, 3.8, 0, Math.PI / 4, 0);
+      b.box(st ? '#2de2e6' : '#3a3440', 0, 1.0, 2.22, 1.2, 2.0, 0.08); for (const sx of [-1, 1]) b.box(st ? '#bff4ff' : '#3a3440', sx * 2.1, 1.7, 2.22, 1.1, 1.0, 0.08);
+      b.box(st ? '#ffd23f' : '#6a6470', 0, 3.25, 2.3, 3.6, 0.6, 0.1); b.sph(st ? '#ff4fb8' : '#59536b', -1.5, 3.25, 2.38, 0.2, 0.2, 0.05); b.sph(st ? '#ff4fb8' : '#59536b', 1.5, 3.25, 2.38, 0.2, 0.2, 0.05);
+      if (!st) { for (const sx of [-1, 1]) { b.box('#8a5a2b', sx * 2.1, 1.7, 2.3, 1.5, 0.16, 0.06, 0, 0, 0.5); b.box('#8a5a2b', sx * 2.1, 1.7, 2.3, 1.5, 0.16, 0.06, 0, 0, -0.5); } b.box('#8a5a2b', 0, 1.2, 2.3, 1.7, 0.18, 0.06, 0, 0, 0.3); b.box('#e2574c', 0, 0.5, 3.2, 1.6, 0.9, 0.08); }
+      if (st >= 1) for (let i = 0; i < 4; i++) { const x = -2.6 + i * 0.9; b.cyl(['#ff4fb8', '#2de2e6', '#ffd23f', '#7CFF6B'][i], x, 0.12, 3.2, 0.3, 0.2, 0.22); b.cyl('#c98f4b', x, 0.22, 3.2, 0.24, 0.04, 0.24); } // food bowls
+      if (st >= 2) for (let i = 0; i < 3; i++) { const x = 1.2 + i * 1.0; b.sph(['#b967ff', '#ff7ac0', '#8ff3ff'][i], x, 0.16, 3.3, 0.42, 0.16, 0.36); b.sph('#ffffff', x, 0.26, 3.3, 0.28, 0.1, 0.24); } // beds
+      if (st >= 3) { b.box('#ffffff', 4.4, 1.2, -0.4, 2.4, 2.4, 3.2); b.box('#bfe9ff', 4.4, 2.5, -0.4, 2.6, 0.2, 3.4); b.box('#3fcf55', 4.4, 1.7, 1.24, 0.9, 0.28, 0.06); b.box('#3fcf55', 4.4, 1.7, 1.24, 0.28, 0.9, 0.06); } // vet room
+      if (st >= 4) { for (let i = 0; i < 9; i++) { const a = i * 0.7, x = -4.6 + (i % 3) * 0.8, z = -1.4 + Math.floor(i / 3) * 1.1; b.lo('#3fae6a', x, 0.2, z, 0.3, 0.2, 0.3); b.lo(['#ff4fb8', '#ffd23f', '#ffffff'][i % 3], x, 0.45, z, 0.16); void a; } b.cyl('#7a5a3b', -4.6, 1.0, 2.2, 0.16, 2.0, 0.16); b.lo('#2f9a5a', -4.6, 2.5, 2.2, 1.2, 1.0, 1.2); } // garden
+      if (st >= 5) { for (let i = 0; i < 12; i++) { const f = i / 11, x = -4.4 + f * 8.8; b.add(PR.cone, ['#ff4fb8', '#2de2e6', '#ffd23f', '#7CFF6B'][i % 4], x, 3.9 - Math.sin(f * Math.PI) * 0.6, 2.6, 0.2, 0.36, 0.05, Math.PI); } for (const [x, c2] of [[-3.4, '#ff4fb8'], [3.4, '#2de2e6'], [0, '#ffd23f']]) { b.cyl('#ffffff', x, 4.6, 2.3, 0.01, 1.4, 0.01); b.sph(c2, x, 5.5, 2.3, 0.34, 0.42, 0.34); } } // reopening party
+      break;
+    }
     default: return null;
   }
   const m = b.mesh(mat);

@@ -33,6 +33,7 @@ H.resize = function () {
 };
 H.hit = function (x, y) {
   const G = VP.Game.G; if (!G) return null;
+  if (VP.Prog) { const ph = VP.Prog.hudHit(G, x, y); if (ph) return ph; }
   if (H.emoOn(G)) { if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; if (U.d2(x, y, b.x, b.y) < (b.r + 4) * (b.r + 4)) return 'em_' + e[0]; } const b = H.btn.emo; if (U.d2(x, y, b.x, b.y) < (b.r + 8) * (b.r + 8)) return 'emo'; }
   for (const id of ['c0', 'c1', 'c2', 'pause', 'special', 'dash', 'ctx']) {
     const b = H.btn[id]; if (id === 'ctx' && !G.ctx) continue; if (id === 'dash' && G.car) continue;
@@ -137,6 +138,7 @@ H.draw = function (G, dt) {
   }
   // ---- banner ----
   if (G.banner) { const b = G.banner, al = Math.min(1, b.t * 6, (b.dur - b.t) * 3); c.globalAlpha = Math.max(0, al); const bl = wrap(b.txt, w - 40, 20 * k); bl.forEach((l, i) => txt(l, w / 2, h * 0.3 + i * 26 * k, 20 * k, b.col)); c.globalAlpha = 1; }
+  if (VP.Prog) VP.Prog.hudDraw(c, G, dt, { txt, pill, bar });
   // ---- controls ----
   controls(G, k, t, touch, a);
   if (H.emoOn(G)) {
@@ -205,7 +207,7 @@ function radar(G, k, t, ob) {
   c.restore();
   // objective + markers pinned to the rim
   const pin = (x, y, col, r) => { const dx = x - a.x, dy = y - a.y, an = Math.atan2(dy, dx) - (yaw + Math.PI / 2), d = Math.min(m.r - 4, Math.hypot(dx, dy) * sc); c.beginPath(); c.arc(m.x + Math.cos(an) * d, m.y + Math.sin(an) * d, r, 0, 6.283); c.fillStyle = col; c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke(); };
-  if (G.markers) for (const mk of G.markers) pin(mk.x, mk.y, mk.col, 3.6 * k);
+  if (G.markers) for (const mk of G.markers) if (!mk.quiet) pin(mk.x, mk.y, mk.col, 3.6 * k);
   if (ob.at && !ob.free) pin(ob.at.x, ob.at.y, GOLD, (4.5 + Math.sin(t * 6)) * k);
   Art.poly(c, [m.x, m.y - 7 * k, m.x - 5 * k, m.y + 5 * k, m.x, m.y + 2 * k, m.x + 5 * k, m.y + 5 * k], '#fff', INK, 1.5);
   c.beginPath(); c.arc(m.x, m.y, m.r, 0, 6.283); c.lineWidth = 3; c.strokeStyle = G.wanted > 0 ? (Math.floor(t * 4) % 2 ? '#ff2040' : '#2a6bff') : PINK; c.stroke();
@@ -251,6 +253,7 @@ function worldLabels(G, R3, k, t) {
     if (mk.k === 'shop') lab('🛍 ' + VP.t('shop'), p.x, p.y, 13 * k, GOLD);
     else if (mk.k === 'npc') lab('💬 ' + mk.label, p.x, p.y, 12 * k, '#7CFF6B');
     else if (mk.k === 'race') lab('🏁 ' + mk.label, p.x, p.y, 12 * k, TEAL);
+    else if (mk.lbl) lab(mk.lbl, p.x, p.y, 12 * k, mk.col || '#fff');
     else { const m = VP.Missions.get(mk.n); if (!m) continue; if (lab(VP.mname(m), p.x, p.y + 8 * k, 12 * k, '#fff')) { const q = placed[placed.length - 1]; txt('▶ ' + (m.boss ? '👑 ' : '') + (m.side ? '★' : 'M' + (m.bonus ? '★' : m.n)), q.x, q.y - 17 * k, 15 * k, mk.col); q.y -= 9 * k; q.h += 10 * k; } }
   }
   if (G.W.landmarks) for (const l of G.W.landmarks) { const dl = Math.max(Math.abs(l.gx - a.x), Math.abs(l.gy - a.y)); if (dl > (l.beacon ? 3200 : 1000)) continue; const p = R3.project(l.gx, l.gy, 5); if (p.on) lab((VP.S.tour && VP.S.tour[G.tour] && VP.S.tour[G.tour].seen[l.name] ? '✓ ' : '📍 ') + l.name, p.x, p.y, 10.5 * k, GOLD); }

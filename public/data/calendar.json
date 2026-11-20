@@ -1,0 +1,5 @@
+{
+ "version": 1,
+ "_doc": "Release schedule. id: 'district:<id>' (a chapter of missions.json), 'hood:<n>' (a neighbourhood of the home city) or 'board:<kind>'. date: YYYY-MM-DD (local). Entries with a future date stay closed ('Em obras - abre em dd/mm'); remove the date or the entry to open at once. The game is complete without any entry.",
+ "releases": []
+}

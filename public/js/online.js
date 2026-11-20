@@ -94,9 +94,9 @@ function WebSocketTransport(url) {
 // with a read and no write; alone in a room the pace halves.
 function PollingTransport(tickMs) {
   const FAST = Math.max(1000, tickMs || 1500), ALONE = FAST * 2;
-  const T = { name: 'poll', delay: FAST / 1000 + 0.3, on: {} };
+  const T = { name: 'poll', delay: FAST / 1000 + 0.45, on: {} };
   let room = '', ticket = '', renew = null, cur = null, sent = null, timer = null, closed = false, fails = 0, known = new Map(), ready = false, pawSent = 0;
-  let em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0, ts0 = 0;
+  let tickAt = 0, em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0, ts0 = 0;
   const post = (path, body, keep) => json('/api/online/' + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), keepalive: !!keep });
   async function tick(first) {
     const s = cur, n = performance.now();
@@ -140,9 +140,11 @@ function PollingTransport(tickMs) {
   }
   function loop() {
     if (closed) return;
-    const wait = document.hidden ? 5000 : !others && performance.now() > busyUntil ? ALONE : FAST;
+    // the pace counts from the start of the last tick, so a slow answer does not stretch it
+    const every = document.hidden ? 5000 : !others && performance.now() > busyUntil ? ALONE : FAST, wait = Math.max(250, every - (performance.now() - tickAt));
     timer = setTimeout(async () => {
       if (closed) return;
+      tickAt = performance.now();
       if (document.hidden) return loop();                      // a hidden tab costs nothing (it drops out of the room after 10 s)
       try { await tick(false); } catch (e) { if (!closed) { closed = true; if (T.on.down) T.on.down(e.code || 'error'); } return; }
       loop();
@@ -150,6 +152,7 @@ function PollingTransport(tickMs) {
   }
   T.connect = async o => {
     room = o.room; ticket = o.ticket; renew = o.renew; cur = o.state;
+    tickAt = performance.now();
     const r = await tick(true);
     if (!r || r.status !== 200) throw { code: (r && r.error) || 'error' };
     ready = true; loop();
@@ -165,6 +168,7 @@ function PollingTransport(tickMs) {
   return T;
 }
 O.transports = { WebSocketTransport, PollingTransport };
+O._interp = (r, at, dt, ahead) => place(r, at, dt, ahead); O._push = (r, x, z, ry, a, car, atMs) => push(r, x, z, ry, a, car, atMs);
 
 // ---------- ticket: who you are in the shared city (GET /api/online/ticket) ----------
 O.looks = function () {
@@ -349,8 +353,10 @@ O.pawPicked = function (it) {
 };
 
 // ---------- per frame ----------
-O.update = function (dt) {
+O.update = function () {
   const G = O.G; if (!G) return;
+  // network things run on the wall clock: the game's own dt is capped (slow phones would stretch a 4 s bubble)
+  const tn = nowS(), dt = Math.min(0.5, Math.max(0, tn - (O.clock || tn))); O.clock = tn;
   if (Game.G !== G) { O.stop(); return; }
   const c = G.cats[G.active], car = G.car;
   // the local cat

@@ -24,11 +24,23 @@ async function enterByMenu(P, cat) {
 }
 // walks the local cat in a straight line for `ms` (the same thing the stick does, minus the collisions)
 const walk = (page, dx, dy, ms) => page.evaluate(([dx, dy, ms]) => new Promise(res => { const t0 = performance.now(); let last = t0; const step = now => { const G = __vp.G; if (!G) return res(); const dt = (now - last) / 1000; last = now; for (const c of G.cats) { c.x += dx * dt; c.y += dy * dt; } G.cats[G.active].walk = 1; if (now - t0 < ms) requestAnimationFrame(step); else res(); }; requestAnimationFrame(step); }), [dx, dy, ms]);
+// a walkable spot near the local cat that is on screen and clear of the HUD (so a visitor standing there can be tapped)
+const spotInView = () => { const G = __vp.G, c = G.cats[G.active], H = VP.HUD; let best = null, bs = -1; for (let i = 0; i < 16; i++) for (const d of [110, 160, 210]) { const x = c.x + Math.cos(i * Math.PI / 8) * d, y = c.y + Math.sin(i * Math.PI / 8) * d; if (G.W.blocked(x, y, 14, 0)) continue; const p = VP.R3.project(x, y, 1.75); if (!p.on || p.z > 1) continue; const sc = Math.min(p.x - 60, H.w - 60 - p.x, p.y - (H.top + 230), H.h * 0.62 - p.y); if (sc > bs) { bs = sc; best = { x, y }; } } return best || { x: c.x + 120, y: c.y }; };
 // samples where the first remote cat is drawn, every 80 ms
 const track = (page, ms) => page.evaluate(ms => new Promise(res => { const xs = []; const iv = setInterval(() => { const r = [...VP.Online.remotes.values()][0]; if (r && r.f) xs.push(Math.round(r.f.x * 10) / 10); }, 80); setTimeout(() => { clearInterval(iv); res(xs); }, ms); }), ms);
 
+// a second player without a browser: it talks to the same API (ticket + ticks), which is all a client is to the server
+async function robot(S, cat) {
+  const H = { origin: S.url.replace(/\/$/, ''), 'content-type': 'application/json' };
+  const tk = await (await fetch(S.url + 'api/online/ticket?cat=' + cat, { headers: H })).json();
+  const st = { room: 'city', x: 1200, z: 4100, ry: 0, anim: 'idle' };
+  const bot = { you: tk.you, last: null };
+  bot.tick = async over => { Object.assign(st, { emote: undefined, phrase: undefined, car: undefined, anim: 'idle' }, over); const r = await fetch(S.url + 'api/online/tick', { method: 'POST', headers: H, body: JSON.stringify({ ticket: tk.ticket, ...st }) }); bot.last = await r.json(); if (bot.last.room) st.room = bot.last.room; return bot.last; };
+  await bot.tick({});
+  return bot;
+}
 async function pair(S, label, wantTransport) {
-  const A = await client(true), B = await client(false);
+  const A = await client(true), B = await client(true);     // two phones (the desktop has its own section, with a scripted second player)
   const P = label + ' ';
   ok(P + 'A enters through the menu', await enterByMenu(A, 'mimosa'));
   ok(P + 'B enters through the menu', await enterByMenu(B, 'mimo'));
@@ -49,7 +61,7 @@ async function pair(S, label, wantTransport) {
   const moved = xs[xs.length - 1] - x0, distinct = new Set(xs).size, maxStep = Math.max(...xs.slice(1).map((v, i) => Math.abs(v - xs[i])));
   if (process.env.VP_DEBUG) console.log(label, 'track', xs.join(' '));
   ok(P + 'B sees A move', moved > 450 && moved < 760, { moved });
-  ok(P + 'movement is interpolated (many small steps)', distinct > 25 && maxStep < 75, { distinct, maxStep, samples: xs.length });
+  ok(P + 'the remote cat glides between updates (no big jumps)', distinct >= 6 && maxStep < 220, { distinct, maxStep, samples: xs.length });
   const ax = await A.page.evaluate(() => __vp.G.cats[__vp.G.active].x);
   await sleep(1800);
   b = await info(B.page);
@@ -70,7 +82,7 @@ async function pair(S, label, wantTransport) {
   await B.page.evaluate(() => VP.Online.say(0));
   await until(A.page, () => { const r = [...VP.Online.remotes.values()][0]; return r && r.say && r.say.i === 0; }, null, 6000);
   await sleep(350);
-  await L.shot(A.page, `online-m-${label}-bubble`); await L.shot(B.page, `online-d-${label}-bubble`);
+  await L.shot(A.page, `online-m-${label}-bubble`);
   const gone = await until(B.page, () => { const r = [...VP.Online.remotes.values()][0]; return r && !r.say; }, null, 7000);
   ok(P + 'bubble lasts about 4 s', gone);
 
@@ -85,13 +97,15 @@ async function pair(S, label, wantTransport) {
   ok(P + 'the single-player paw count is untouched', await A.page.evaluate(() => !Object.keys(VP.S.paws || {}).some(k => /online|city#/.test(k))));
 
   // --- mute: tap the cat's name tag
-  await A.page.evaluate(() => { const G = __vp.G, r = [...VP.Online.remotes.values()][0]; for (const c of G.cats) { c.x = r.f.x + 60; c.y = r.f.y + 90; } });
-  await sleep(2600);
+  const spot = await B.page.evaluate(spotInView);
+  await A.page.evaluate(q => { for (const c of __vp.G.cats) { c.x = q.x; c.y = q.y; } }, spot);
+  await until(B.page, q => { const r = [...VP.Online.remotes.values()][0]; return r && r.f && Math.hypot(r.f.x - q.x, r.f.y - q.y) < 40 && VP.Online.tags && VP.Online.tags.length; }, spot, 9000);
+  await sleep(700);
   const tag = await B.page.evaluate(() => VP.Online.tags && VP.Online.tags[0]);
   ok(P + 'the other cat has a name tag on screen', !!tag, tag);
   if (tag) await hudTap(B, tag.x, tag.y - 16);
   ok(P + 'tapping a cat opens its card (mute / report)', await B.page.evaluate(() => VP.Online.sheet === 'cat' && !!document.querySelector('#onl [data-o=mute]') && !!document.querySelector('#onl [data-o=rep]')));
-  await L.shot(B.page, `online-d-${label}-card`);
+  await L.shot(B.page, `online-m-${label}-card`);
   await tap(B.page, '#onl [data-o=mute]');
   ok(P + 'muted cat disappears locally', await B.page.evaluate(() => { const r = [...VP.Online.remotes.values()][0]; return !r.f && !__vp.G.friends.some(f => f.remote); }));
   await B.page.evaluate(() => VP.Online.closeSheet());
@@ -102,7 +116,6 @@ async function pair(S, label, wantTransport) {
   const pillRect = await B.page.evaluate(() => VP.HUD.obRect);
   await hudTap(B, pillRect.x + pillRect.w / 2, pillRect.y + pillRect.h / 2);
   ok(P + 'room pill opens the list', await B.page.evaluate(() => VP.Online.sheet === 'list' && document.querySelectorAll('#onl .orow').length === 2));
-  await L.shot(B.page, `online-d-${label}-list`);
   await tap(B.page, '#onl [data-o=mute]');
   await B.page.evaluate(() => VP.Online.closeSheet()); await sleep(300);
   ok(P + 'unmuted cat is back', (await info(B.page)).remotes[0].shown);
@@ -137,6 +150,17 @@ async function pair(S, label, wantTransport) {
   if (!only || only === 'poll' || only === 'shots') {
     const S = await startDevServer(); L.URL = S.url;
     const { A, B, b } = await pair(S, 'poll', 'poll');
+    // --- the interpolation itself, without the frame rate of this machine getting in the way
+    const curve = await A.page.evaluate(() => {
+      const O = VP.Online, r = { s: [], f: { x: 0, y: 0, ry: 0 } }, out = [];
+      for (let i = 0; i <= 4; i++) O._push(r, i * 150, 0, 0, 'walk', null, i * 1500);       // a cat walking 100 px/s, heard every 1.5 s
+      for (let t = 0; t <= 7.6; t += 0.1) { O._interp(r, t, 1, 0.7); out.push(+r.f.x.toFixed(1)); }
+      return out;
+    });
+    const steps = curve.slice(1).map((v, i) => v - curve[i]);
+    ok('interp moves evenly between updates', steps.slice(0, 60).every(d => d > 9 && d < 11), steps.slice(0, 8));
+    ok('interp keeps going for a moment when an update is late, then stops', curve[64] > 600 && curve[75] === curve[70] && curve[75] < 600 + 100 * 0.7, [curve[60], curve[64], curve[70], curve[75]]);
+    ok('interp never runs backwards', steps.every(d => d >= 0));
     // what went over the wire: whitelisted keys only, never a name or a text
     const keys = new Set(); for (const body of S.state.bodies) for (const k of Object.keys(body || {})) keys.add(k);
     const allowed = ['ticket', 'room', 'x', 'z', 'ry', 'anim', 'car', 'emote', 'es', 'phrase', 'ps', 'paws', 'need', 'idle'];
@@ -171,6 +195,50 @@ async function pair(S, label, wantTransport) {
     ok('poll starting a mission leaves the room', (await info(B.page)).state === 'off' && (await S.db.rows('vp_presence')).length === 0);
     ok('poll zero console errors', A.errors.length === 0 && B.errors.length === 0, [A.errors, B.errors]);
     await A.browser.close(); await B.browser.close(); await S.close();
+  }
+
+  // ================= desktop (mouse + keyboard), with a scripted second player talking to the same API =================
+  if (!only || only === 'desktop' || only === 'shots') {
+    const S = await startDevServer(); L.URL = S.url;
+    const D = await L.open(false, { routes }); D.mobile = false;
+    await D.page.evaluate(() => { VP.Audio.sfx = () => {}; });
+    await L.shot(D.page, 'online-d-title');
+    ok('desktop enters through the menu', await enterByMenu(D, 'mimo'));
+    const bot = await robot(S, 'morticia');
+    const spot = await D.page.evaluate(spotInView);
+    await bot.tick({ x: spot.x, z: spot.y, ry: 1.2 });
+    ok('desktop sees the scripted player', await until(D.page, () => [...VP.Online.remotes.values()].some(r => r.f) && VP.Online.tags && VP.Online.tags.length > 0, null, 12000));
+    await sleep(1600); await bot.tick({ phrase: 3, ps: 1, emote: 'wave', es: 1 });
+    ok('desktop shows the phrase bubble', await until(D.page, () => { const r = [...VP.Online.remotes.values()][0]; return r && r.say && r.say.i === 3; }, null, 7000));
+    await D.page.evaluate(() => VP.Online.say(0)); await sleep(500);
+    await L.shot(D.page, 'online-d-bubble');
+    await D.page.keyboard.press('t'); await sleep(450);
+    ok('desktop T opens the quick phrases', await D.page.evaluate(() => VP.Online.sheet === 'say' && document.querySelectorAll('#onl .ophrase').length === 12));
+    await L.shot(D.page, 'online-d-phrases');
+    await D.page.keyboard.press('Escape'); await sleep(200);
+    ok('desktop Esc closes them without pausing', await D.page.evaluate(() => !VP.Online.sheet));
+    await D.page.evaluate(() => { if (VP.UI.screen === 'pause') VP.UI.act.resume(); });
+    await sleep(1600); await bot.tick({});
+    const tag = await D.page.evaluate(() => VP.Online.tags[0]);
+    await hudTap(D, tag.x, tag.y - 16);
+    ok('desktop clicking a cat opens its card', await D.page.evaluate(() => VP.Online.sheet === 'cat'));
+    await L.shot(D.page, 'online-d-card');
+    await tap(D.page, '#onl [data-o=rep]'); await L.shot(D.page, 'online-d-report');
+    await tap(D.page, '#onl [data-o=repSend][data-r=name]'); await sleep(700);
+    const rep = await S.db.rows('vp_online_reports');
+    ok('desktop report is stored', rep.length === 1 && rep[0].target_id === bot.you.id && rep[0].reason === 'name', rep);
+    await D.page.evaluate(() => { const O = VP.Online; O.mute([...O.remotes.keys()][0], false); });
+    const pr = await D.page.evaluate(() => VP.HUD.obRect);
+    await hudTap(D, pr.x + pr.w / 2, pr.y + pr.h / 2);
+    ok('desktop room pill opens the list', await D.page.evaluate(() => VP.Online.sheet === 'list'));
+    await L.shot(D.page, 'online-d-list');
+    await D.page.evaluate(() => VP.Online.closeSheet());
+    await sleep(1600); await bot.tick({ anim: 'car', car: 'pink', x: spot.x + 30 });
+    await until(D.page, () => { const r = [...VP.Online.remotes.values()][0]; return r && r.f && r.f.car === 'pink'; }, null, 7000);
+    await sleep(500); await L.shot(D.page, 'online-d-car');
+    await D.page.evaluate(() => VP.UI.pause()); await sleep(300); await L.shot(D.page, 'online-d-pause');
+    ok('desktop zero console errors', D.errors.length === 0, D.errors);
+    await D.browser.close(); await S.close();
   }
 
   // ================= failures: 503, mid-session outage, kill switch, full city =================

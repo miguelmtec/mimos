@@ -21,6 +21,7 @@ export * from '../../server/lib/protocol.mjs';
 export const TICK_MIN_MS = 800;        // at most one tick per player in this window (server-enforced)
 export const VISIBLE_SECONDS = 10;     // others = states updated in the last 10 s
 export const EXPIRE_SECONDS = 30;      // presence rows are deleted after 30 s without a tick
+export const IDLE_TOUCH_SECONDS = 5;   // an idle player's row is only re-stamped this often (reads in between write nothing)
 export const SWEEP_EVERY_MS = 20_000;  // how often one warm function instance runs the cleanup
 export const MAX_BODY = 2048;          // bytes of JSON in a tick
 export const MAX_OTHERS = 40;          // rows returned by a tick, whatever happens
@@ -115,6 +116,8 @@ export function validateTick(b, now = Date.now()) {
     if (p.i.some((i) => int(i, 0, PAWS_PER_ROOM - 1) === null)) throw invalid('paws');
     if (Math.abs(p.s - slot) <= 1 && p.i.length) out.paws = `${p.s}:${[...new Set(p.i)].sort().join(',')}`;
   }
+
+  out.idle = b.idle === true;          // "nothing changed since my last tick": the server may skip the write
 
   // ids whose name and look the client does not have yet (sent only on request: they never change)
   out.need = '';

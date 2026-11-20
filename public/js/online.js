@@ -23,7 +23,7 @@ const VP = window.VP, U = VP.U, UI = VP.UI, Game = VP.Game, M = VP.Missions, t =
 const O = VP.Online = { cfg: null, G: null, tr: null, state: 'off', you: null, room: '', remotes: new Map(), muted: {}, sel: { room: 'city', cat: null }, paw: null, got: 0 };
 const PHRASES = O.PHRASES = 12, REASONS = O.REASONS = ['name', 'behavior', 'cheat', 'other'];
 const ANIMS = ['idle', 'walk', 'dash', 'car'], CARS = ['pink', 'gold', 'sedan', 'taxi', 'sport', 'pickup', 'cop', 'van', 'truck', 'limo'];
-const EMOTE_S = { miau: 1.3, dance: 3.2, sit: 5, wave: 1.9 }, BUBBLE_S = 4;
+const EMOTE_S = { miau: 1.3, dance: 3.2, sit: 5, wave: 1.9 }, BUBBLE_S = 4, AFK_S = 300;
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nowS = () => performance.now() / 1000;
 const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -35,10 +35,12 @@ O.loadCfg = function (force) {
   if (O.cfg && !force) return Promise.resolve(O.cfg);
   return fetch('data/online.json', { cache: 'no-store' }).then(r => (r.ok ? r.json() : {})).catch(() => ({})).then(j => {
     const ws = typeof j.wsUrl === 'string' && /^wss?:\/\/[a-z0-9.:\-[\]]+(\/[\w\-./]*)?$/i.test(j.wsUrl.trim()) ? j.wsUrl.trim().replace(/\/+$/, '') : '';
-    return (O.cfg = { wsUrl: ws, pollingEnabled: j.pollingEnabled === true });
+    const num = (v, lo, hi, d) => (typeof v === 'number' && v >= lo && v <= hi ? v : d);
+    // enabled: the owner's switch for the whole mode. tickMs: how often the polling transport asks (never under 1 s).
+    return (O.cfg = { enabled: j.enabled === true, wsUrl: ws, pollingEnabled: j.pollingEnabled !== false, tickMs: num(j.tickMs, 1000, 10000, 1500), maxPerRoom: num(j.maxPerRoom, 2, 30, 30), maxRooms: num(j.maxRooms, 1, 20, 20) });
   });
 };
-O.available = () => !!(O.cfg && (O.cfg.wsUrl || O.cfg.pollingEnabled));
+O.available = () => !!(O.cfg && O.cfg.enabled && (O.cfg.wsUrl || O.cfg.pollingEnabled));
 
 // ---------- transports ----------
 function WebSocketTransport(url) {
@@ -87,27 +89,33 @@ function WebSocketTransport(url) {
   return T;
 }
 
-function PollingTransport() {
-  const T = { name: 'poll', delay: 1.45, on: {} };
-  const FAST = 1200, ALONE = 3000, IDLE = 4000;      // ms between ticks: somebody to show it to / nobody around / standing still
-  let room = '', ticket = '', renew = null, cur = null, sent = null, timer = null, closed = false, fails = 0, known = new Map(), ready = false;
-  let em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0, movedAt = 0, ts0 = 0;
+// Cost rules (Neon bills compute while it is awake): every query happens inside a request the player's
+// own tab makes; a hidden tab makes none; standing still sends "idle" ticks, which the server answers
+// with a read and no write; alone in a room the pace halves.
+function PollingTransport(tickMs) {
+  const FAST = Math.max(1000, tickMs || 1500), ALONE = FAST * 2;
+  const T = { name: 'poll', delay: FAST / 1000 + 0.3, on: {} };
+  let room = '', ticket = '', renew = null, cur = null, sent = null, timer = null, closed = false, fails = 0, known = new Map(), ready = false, pawSent = 0;
+  let em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0, ts0 = 0;
   const post = (path, body, keep) => json('/api/online/' + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), keepalive: !!keep });
   async function tick(first) {
     const s = cur, n = performance.now();
     const body = { ticket, room, x: s.x, z: s.z, ry: +s.ry.toFixed(2), anim: s.a };
     if (s.a === 'car') body.car = s.car;
-    if (em && n < em.until) { body.emote = em.k; body.es = es; }
-    if (ph && n < ph.until) { body.phrase = ph.i; body.ps = ps; }
+    if (em && n < em.until) { body.emote = em.k; body.es = es; } else if (em) { em = null; sent = null; }   // one more write clears it
+    if (ph && n < ph.until) { body.phrase = ph.i; body.ps = ps; } else if (ph) { ph = null; sent = null; }
     if (pawMine.length) body.paws = { s: pawSlot, i: pawMine };
+    // nothing changed since the last tick that was written: ask the server to only read
+    const idle = !first && sent && sent.x === s.x && sent.z === s.z && sent.a === s.a && Math.abs(sent.ry - s.ry) < 0.05 && !body.emote && body.phrase == null && pawSent === pawMine.length;
+    if (idle) body.idle = true;
     const need = []; for (const [id, k] of known) if (!k.joined) need.push(id); if (need.length) body.need = need.slice(0, 40);
-    sent = { x: s.x, z: s.z };
     let r = await post('tick', body);
     if (r.status === 401 && renew) { const nt = await renew(); if (nt) { ticket = nt; body.ticket = nt; r = await post('tick', body); } }
     if (closed) return null;
     if (r.status === 429) return r;                              // too fast (clock skew, a retry): just wait for the next one
     if (r.status !== 200) { fails++; if (first || fails >= 3) throw { code: r.error || 'http-' + r.status }; return r; }
     fails = 0; room = r.room; others = r.others.length; ts0 = r.ts;
+    if (!idle) { sent = body.emote || body.phrase != null ? null : { x: s.x, z: s.z, ry: s.ry, a: s.a }; pawSent = pawMine.length; }
     const at = performance.now(), seen = new Set();
     for (const o of r.others) {
       seen.add(o.id);
@@ -132,8 +140,7 @@ function PollingTransport() {
   }
   function loop() {
     if (closed) return;
-    const n = performance.now(), busy = n < busyUntil || n - movedAt < 1500;
-    const wait = document.hidden ? 5000 : !others ? ALONE : busy ? FAST : IDLE;
+    const wait = document.hidden ? 5000 : !others && performance.now() > busyUntil ? ALONE : FAST;
     timer = setTimeout(async () => {
       if (closed) return;
       if (document.hidden) return loop();                      // a hidden tab costs nothing (it drops out of the room after 10 s)
@@ -142,13 +149,13 @@ function PollingTransport() {
     }, wait);
   }
   T.connect = async o => {
-    room = o.room; ticket = o.ticket; renew = o.renew; cur = o.state; movedAt = performance.now();
+    room = o.room; ticket = o.ticket; renew = o.renew; cur = o.state;
     const r = await tick(true);
     if (!r || r.status !== 200) throw { code: (r && r.error) || 'error' };
     ready = true; loop();
     return { you: r.you, room: r.room, paw: Object.assign({ taken: [] }, r.paw) };
   };
-  T.state = s => { if (!cur || s.x !== cur.x || s.z !== cur.z || s.a !== cur.a) movedAt = performance.now(); cur = s; void sent; };
+  T.state = s => { cur = s; };
   const soon = () => { busyUntil = performance.now() + 6000; if (ready && others && timer) { clearTimeout(timer); const w = Math.max(0, 850 - (Date.now() - ts0)); timer = setTimeout(async () => { try { await tick(false); } catch (e) { /* the loop reports it */ } loop(); }, w); } };
   T.emote = k => { em = { k, until: performance.now() + 5000 }; es = (es + 1) % 256; soon(); };
   T.phrase = i => { ph = { i, until: performance.now() + 5000 }; ps = (ps + 1) % 256; soon(); };
@@ -172,7 +179,7 @@ O.ticket = async function () {
   O.sel.cat = look.k;
   const prev = VP.ls.get('vp_online_ticket');
   const r = await json('/api/online/ticket?' + look.q, { headers: prev ? { 'x-vp-ticket': prev } : {}, cache: 'no-store' });
-  if (r.status !== 200 || !r.ticket) return null;
+  if (r.status !== 200 || !r.ticket) { O.lastError = r.error; return null; }
   VP.ls.set('vp_online_ticket', r.ticket);
   O.you = r.you; O.myLook = r.cat;
   return r.ticket;
@@ -188,6 +195,9 @@ function build(base) {
   G.friends = G.friends.filter(f => f.name === 'avatar');                // the strolling gallery cats would look like players
   const idx = ['mimo', 'mimosa', 'morticia'].indexOf(O.sel.cat); if (idx > 0) { const a = G.cats[0], b = G.cats[idx], x = a.x, y = a.y; a.x = b.x; a.y = b.y; b.x = x; b.y = y; G.active = idx; }
   const c = G.cats[G.active]; G.online.spawn = { x: c.x, y: c.y };
+  // everybody arrives at the same square, a few steps apart (so two cats never start inside each other)
+  const q = Game.nearFree(c.x, c.y, 60 + Math.random() * 150, 0);
+  if (q) { const dx = q.x - c.x, dy = q.y - c.y; for (const k of G.cats) { k.x += dx; k.y += dy; } for (const f of G.friends) { f.x += dx; f.y += dy; } }
   return G;
 }
 
@@ -199,36 +209,38 @@ O.enter = async function (base) {
     await O.loadCfg();
     if (!O.available()) return O.unavailable(base, true);
     if (base !== 'city') { let W = null; try { W = await VP.Tour.load(base); } catch (e) { W = null; } if (!W) { UI.toast(t('wt_fail'), 3000); return; } }
-    const ticket = await O.ticket();
-    if (!ticket) return O.unavailable(base, true);
     if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
+    const ticket = await O.ticket();
+    if (!ticket) return O.unavailable(base, false, O.lastError);     // 503 and friends: solo free roam in the same map
     const G = build(base);
     UI.begin(G);                                              // ends whatever was running (and any previous online session)
     if (base !== 'city') { if (VP.R3.arrive) VP.R3.arrive(); VP.Audio.music(UI.citySong(base)); UI.songD = -2; } else UI.songD = -1;
-    O.G = G; O.state = 'connecting'; O.remotes = new Map(); O.got = 0; O.paw = null; O.bubble = null; O.heading = 0; O.lastEmote = null;
+    O.G = G; O.state = 'connecting'; O.remotes = new Map(); O.got = 0; O.paw = null; O.bubble = null; O.heading = 0; O.lastEmote = null; O.activeAt = nowS(); O.lx = undefined;
     await connect(G, base, ticket);
   } finally { O.busy = false; }
 };
 async function connect(G, base, ticket) {
   const c = G.cats[G.active], state = { x: Math.round(c.x), z: Math.round(c.y), ry: 0, a: 'idle', car: null };
-  const tries = []; if (O.cfg.wsUrl) tries.push(() => WebSocketTransport(O.cfg.wsUrl)); if (O.cfg.pollingEnabled) tries.push(PollingTransport);
+  // polling on Vercel + Neon is the transport in use; a real-time server is tried first only when one is configured
+  const tries = []; if (O.cfg.wsUrl) tries.push(() => WebSocketTransport(O.cfg.wsUrl)); if (O.cfg.pollingEnabled) tries.push(() => PollingTransport(O.cfg.tickMs));
   for (const make of tries) {
     const tr = make(); wire(tr, G);
     try {
       const w = await tr.connect({ room: G.online.room || base, ticket, renew: O.ticket, state });
       if (O.G !== G) { tr.close(); return; }                 // the player left while we were connecting
-      O.tr = tr; O.state = 'on'; O.room = w.room; G.online.room = w.room; if (w.you && w.you.name) O.you = Object.assign({}, O.you, w.you);
+      O.tr = tr; O.state = 'on'; O.activeAt = nowS(); O.room = w.room; G.online.room = w.room; if (w.you && w.you.name) O.you = Object.assign({}, O.you, w.you);
       setPaws(G, w.paw);
       Game.fx.say('🌐 ' + t('on_hello', O.roomLabel(), O.you.name), '#2de2e6', 4);
       return;
     } catch (e) { tr.close(); if (O.G !== G) return; O.lastError = e && e.code; }
   }
-  O.unavailable(base);
+  O.unavailable(base, false, O.lastError);
 }
 // "Cidade Online indisponível agora": back to the same place, alone
-O.unavailable = function (base, fromMenu) {
+O.unavailable = function (base, fromMenu, why) {
   const G = O.G; O.stop();
-  UI.toast('🌐 ' + t('on_unavail'), 3600);
+  O.why = why === 'busy' || why === 'too-many' ? 'full' : why === 'afk' ? 'afk' : 'off';
+  UI.toast('🌐 ' + t(O.why === 'full' ? 'on_full' : O.why === 'afk' ? 'on_afk' : 'on_unavail'), 3800);
   if (fromMenu && !G) { if (UI.screen === 'online') UI.show('online'); return; }
   if (base && base !== 'city' && VP.CityCache[base]) UI.tour(base); else UI.free();
 };
@@ -343,15 +355,15 @@ O.update = function (dt) {
   const c = G.cats[G.active], car = G.car;
   // the local cat
   const px = car ? car.x : c.x, py = car ? car.y : c.y;
-  if (O.lx !== undefined && Math.hypot(px - O.lx, py - O.ly) > 0.4) O.heading = Math.atan2(py - O.ly, px - O.lx);
+  if (O.lx !== undefined && Math.hypot(px - O.lx, py - O.ly) > 0.4) { O.heading = Math.atan2(py - O.ly, px - O.lx); O.activeAt = nowS(); }
+  // five minutes without moving, talking or gesturing: the cat goes home (an open tab must not keep the database awake)
+  if (O.state === 'on' && nowS() - O.activeAt > AFK_S) return O.unavailable(G.online.base, false, 'afk');
   if (car) O.heading = car.a;
   O.lx = px; O.ly = py;
   if (O.tr && O.state === 'on') {
     O.tr.state({ x: Math.round(px), z: Math.round(py), ry: O.heading, a: car ? 'car' : c.dashT > 0 ? 'dash' : c.walk ? 'walk' : 'idle', car: car ? (CARS.includes(car.type) ? car.type : 'sedan') : null });
-    if (c.emote && c.emote !== O.lastEmote) O.tr.emote(c.emote.k);
+    if (c.emote && c.emote !== O.lastEmote) { O.tr.emote(c.emote.k); O.activeAt = nowS(); }
     O.lastEmote = c.emote || null;
-    // a new slot: the paws come back somewhere else (the server also says so; this covers a quiet room)
-    if (O.paw && Date.now() / O.paw.ms - O.paw.slot > 1.02 && O.tr.name === 'poll' && !O.pawRoll) { O.pawRoll = 1; setTimeout(() => { O.pawRoll = 0; }, 5000); }
   }
   // everybody else
   const at = nowS() - (O.tr ? O.tr.delay : 0.2), ahead = O.tr && O.tr.name === 'poll' ? 0.7 : 0.25;
@@ -380,7 +392,7 @@ O.objective = function (G) {
 O.say = function (i) {
   if (!O.tr || O.state !== 'on' || !(i >= 0 && i < PHRASES)) return;
   const n = performance.now(); if (n - (O.saidAt || 0) < 1300) return;
-  O.saidAt = n; O.tr.phrase(i); O.bubble = { i, t: BUBBLE_S }; VP.Audio.sfx('paw', 0.1);
+  O.saidAt = n; O.activeAt = nowS(); O.tr.phrase(i); O.bubble = { i, t: BUBBLE_S }; VP.Audio.sfx('paw', 0.1);
 };
 O.mute = function (id, on) { if (on) O.muted[id] = 1; else delete O.muted[id]; try { sessionStorage.setItem('vp_online_muted', JSON.stringify(O.muted)); } catch (e) { /* ignore */ } const r = O.remotes.get(id); if (r && on) { r.say = null; if (O.G) gone(O.G, r); } };
 O.report = function (id, reason) {

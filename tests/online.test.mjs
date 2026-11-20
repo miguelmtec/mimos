@@ -10,7 +10,7 @@ import onlineHandler, { __resetOnlineForTests } from '../api/online/[action].js'
 import authHandler from '../api/auth/[action].js';
 import catsHandler from '../api/cats/index.js';
 import {
-  NICK_RE, ID_RE, ROOM_RE, PHRASES, ROOM_CAP, MAX_PER_IP, MAX_SHARDS, MAX_ROOMS, MAX_REPORTS_HOUR, PAW_SLOT_MS,
+  NICK_RE, ID_RE, ROOM_RE, PHRASES, ROOM_CAP, MAX_PER_IP, MAX_SHARDS, MAX_ROOMS, MAX_REPORTS_HOUR, PAW_SLOT_MS, MAX_PLAYERS,
   nickname, signTicket, verifyTicket, chooseShard, pickShard, validateTick,
 } from '../api/_lib/online.js';
 import { createFakeBackend } from './helpers/fake-sql.mjs';
@@ -18,7 +18,7 @@ import { call } from './helpers/http.mjs';
 
 let db, mails = [];
 const realFetch = globalThis.fetch, realError = console.error;
-const envKeys = ['DATABASE_URL', 'POSTGRES_URL', 'RESEND_API_KEY', 'AUTH_SECRET', 'ONLINE_TICKET_SECRET', 'ONLINE_DISABLED', 'ALLOWED_ORIGINS'];
+const envKeys = ['DATABASE_URL', 'POSTGRES_URL', 'RESEND_API_KEY', 'AUTH_SECRET', 'ONLINE_TICKET_SECRET', 'ONLINE_ENABLED', 'ALLOWED_ORIGINS'];
 const savedEnv = Object.fromEntries(envKeys.map((k) => [k, process.env[k]]));
 
 before(async () => {
@@ -147,7 +147,7 @@ test('ticket: guests work without a database when the VM secret is set; nothing 
   assert.equal((await ticketReq()).status, 200);
   delete process.env.ONLINE_TICKET_SECRET;
   assert.deepEqual((await ticketReq()).body, { error: 'offline' });
-  process.env.ONLINE_TICKET_SECRET = 'x'; process.env.ONLINE_DISABLED = '1';
+  process.env.ONLINE_TICKET_SECRET = 'x'; process.env.ONLINE_ENABLED = 'false';
   assert.equal((await ticketReq()).status, 503);
   __setSqlForTests(db.sql);
   assert.equal((await post('tick', { ...STATE, ticket: 'x' })).status, 503);
@@ -325,7 +325,7 @@ test('tick: caps on rooms, players and presences per address', async () => {
   for (let i = 0; i < MAX_ROOMS; i++) many.set(`c${i}#1`, 1);
   assert.equal(chooseShard('paris', many), null, 'no more rooms than the cap');
   assert.equal(chooseShard('c5', many), 'c5#1', 'but existing rooms still take players');
-  assert.throws(() => pickShard('rio', [{ room: 'a#1', n: 600 }]), (e) => e.status === 503 && e.body.error === 'busy');
+  assert.throws(() => pickShard('rio', [{ room: 'a#1', n: MAX_PLAYERS }]), (e) => e.status === 503 && e.body.error === 'busy');
 
   const same = { ip: '203.0.113.99' };
   for (let i = 0; i < MAX_PER_IP; i++) assert.equal((await tick(await guest(), {}, same)).status, 200);
@@ -334,6 +334,35 @@ test('tick: caps on rooms, players and presences per address', async () => {
   assert.equal(r.body.error, 'too-many');
   assert.equal((await tick(await guest())).status, 200, 'another address is fine');
   assert.ok(!JSON.stringify(await db.rows('vp_presence')).includes('203.0.113.99'), 'addresses are only stored hashed');
+});
+
+test('tick: an idle player reads the room without writing; the row is only re-stamped every 5 s', async () => {
+  const a = await guest(), b = await guest();
+  const room = (await tick(a)).body.room;
+  await tick(b, { room });
+  const stampOf = async (id) => new Date((await db.rows('vp_presence')).find((r) => r.id === id).updated_at).getTime();
+  await settle(2000);
+  const s0 = await stampOf(a.you.id);
+  const r1 = await tick(a, { room, idle: true, x: 99999 });
+  assert.equal(r1.status, 200, JSON.stringify(r1.body));
+  assert.equal(r1.body.others.length, 1, 'still sees the others');
+  assert.equal(r1.body.room, room);
+  assert.equal(await stampOf(a.you.id), s0, 'no write');
+  assert.equal((await db.rows('vp_presence')).find((r) => r.id === a.you.id).x, 1200, 'an idle tick never moves the cat');
+  await settle(4000);                                   // the row is now 6 s old
+  assert.equal((await tick(a, { room, idle: true })).status, 200);
+  assert.ok(await stampOf(a.you.id) > s0, 're-stamped, so the cat stays visible');
+  await settle(1000);
+  assert.equal((await tick(b, { room, x: 1 })).body.others.length, 1, 'b still sees the idle a');
+  // the in-memory limit also covers idle ticks
+  assert.equal((await tick(a, { room, idle: true })).status, 200);
+  assert.equal((await tick(a, { room, idle: true })).status, 429);
+  // no row any more (expired and swept): the idle tick becomes a normal one
+  await settle(40000);
+  await tick(b, { room });
+  const back = await tick(a, { room, idle: true, x: 4321 });
+  assert.equal(back.status, 200);
+  assert.equal((await db.rows('vp_presence')).find((r) => r.id === a.you.id).x, 4321);
 });
 
 // ---------- report / leave ----------
@@ -381,13 +410,13 @@ test('leave: removes the presence at once', async () => {
 // ---------- content ----------
 test('content: phrases, rooms and the feature flags', async () => {
   const i18n = await readFile(new URL('../public/js/i18n.js', import.meta.url), 'utf8');
-  for (let i = 0; i < PHRASES; i++) assert.equal((i18n.match(new RegExp(`\\bon_p${i}:`, 'g')) || []).length, 2, `on_p${i} in pt and en`);
+  for (let i = 0; i < PHRASES; i++) assert.match(i18n, new RegExp(`\\bon_p${i}: \\['[^']+', '[^']+'\\]`), `on_p${i} in pt and en`);
   assert.ok(!new RegExp(`\\bon_p${PHRASES}:`).test(i18n), 'no phrase beyond the server list');
   const idx = JSON.parse(await readFile(new URL('../public/data/cities/index.json', import.meta.url), 'utf8'));
   for (const c of [...idx.cities, ...(idx.soon || [])]) if (c.id) assert.match(c.id, ROOM_RE, c.id);
   assert.match('city', ROOM_RE);
   const cfg = JSON.parse(await readFile(new URL('../public/data/online.json', import.meta.url), 'utf8'));
-  assert.equal(cfg.pollingEnabled, false, 'Neon polling stays off until the owner turns it on');
-  assert.equal(cfg.wsUrl, '', 'no real-time server is configured in the repository');
+  assert.deepEqual(cfg, { enabled: true, maxPerRoom: ROOM_CAP, maxRooms: MAX_ROOMS, tickMs: 1500, pollingEnabled: true, wsUrl: '' },
+    'the numbers shown by the client are the ones the server enforces; no real-time server is configured in the repository');
   assert.match('g' + '0'.repeat(20), ID_RE);
 });

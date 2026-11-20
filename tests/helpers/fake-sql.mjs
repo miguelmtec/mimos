@@ -145,6 +145,21 @@ export function createFakeBackend() {
           phrase: o.phrase, ps: o.ps, paws: o.paws, age: Math.round(at - o.updated_at), cat: wanted.includes(o.id) ? structuredClone(o.cat) : null }));
       return others.length ? others : [{ self: id, id: null }];
     }],
+    [/^with touch as \( update vp_presence set updated_at = now\(\) where id = \?::text and room = \?::text and updated_at <= now\(\) - interval '5 seconds' returning id \) select s\.id as self, o\.id, .* from vp_presence s left join vp_presence o on o\.room = s\.room and o\.id <> s\.id and o\.updated_at > now\(\) - interval '10 seconds' where s\.id = \?::text and s\.room = \?::text and s\.updated_at > now\(\) - interval '30 seconds' order by o\.updated_at desc nulls last limit \?::int$/, (p) => {
+      const [id, room, need, , , limit] = p;
+      const at = Date.now();
+      const self = t.presence.find((r) => r.id === id && r.room === room && r.updated_at > at - 30e3);
+      if (!self) return [];
+      // like Postgres, the main query still sees the row as it was before the CTE touched it
+      const touched = self.updated_at <= at - 5e3 ? 1 : 0;
+      const wanted = String(need || '').split(',');
+      const others = t.presence.filter((o) => o.room === room && o.id !== id && o.updated_at > at - 10e3)
+        .sort((a, b) => b.updated_at - a.updated_at).slice(0, limit)
+        .map((o) => ({ self: id, id: o.id, name: o.name, x: o.x, z: o.z, ry: o.ry, anim: o.anim, car: o.car, cv: o.cv, emote: o.emote, es: o.es,
+          phrase: o.phrase, ps: o.ps, paws: o.paws, age: Math.round(at - o.updated_at), cat: wanted.includes(o.id) ? structuredClone(o.cat) : null, touched }));
+      if (touched) self.updated_at = at;
+      return others.length ? others : [{ self: id, id: null, touched }];
+    }],
     [/^insert into vp_online_reports \(reporter_id, target_id, target_name, target_cat, target_user_id, room, reason, source\) select /, (p) => {
       const [reporter_id, target_id, room, reason, tid2, rid2, max] = p;
       const recent = t.reports.filter((r) => r.reporter_id === rid2 && r.created_at > Date.now() - HOUR);

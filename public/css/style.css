@@ -222,3 +222,24 @@ h3.ctry small{font-size:11.5px;color:var(--gold);font-weight:800;margin-left:6px
 .catcard.mine{box-shadow:inset 0 0 0 3px var(--gold)}.catcard.star{box-shadow:inset 0 0 0 2px #ff4fb880}
 @media (min-width:760px){.catgrid{grid-template-columns:repeat(4,1fr)}}
 .grid2 .wide{grid-column:span 2}
+/* ---- Cidade Online: sheets over the game (quick phrases, who is here, mute / report) ---- */
+.onl{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(120px + var(--sab));pointer-events:auto;background:#0a021840}
+.onl.say{background:transparent;pointer-events:none}
+.onl .obox{pointer-events:auto;width:100%;max-width:400px;max-height:70vh;overflow:auto;background:#12041ff2;box-shadow:inset 0 0 0 2px var(--teal),0 10px 40px #000a;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px;color:#fff;animation:onlin .16s ease-out}
+@keyframes onlin{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.onl .ohead{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px}
+.onl .ohead .chip{height:32px;min-width:32px;border-radius:10px;font-size:13px}
+.onl .ogrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.onl .ogrid.one{grid-template-columns:1fr}
+.onl .ophrase{appearance:none;border:0;border-radius:14px;padding:11px 8px;min-height:44px;font:inherit;font-weight:800;font-size:14.5px;color:#12041f;background:#fff;box-shadow:inset 0 0 0 2px var(--teal);cursor:pointer}
+.onl .ophrase:active{transform:scale(.97);background:#d8fbfc}
+.onl .orow{display:flex;align-items:center;gap:6px;padding:7px 2px;border-bottom:1px solid #ffffff18;font-size:14px}
+.onl .orow b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.onl .orow .chip{height:34px;font-size:12px;padding:0 9px;white-space:nowrap}
+.onl .orow .chip.warn{box-shadow:inset 0 0 0 2px #ff6b6b90;color:#ffb3b3}
+.onl .small{margin:0;font-size:12px;opacity:.85}
+.onl .btn{margin-top:2px}
+@media (min-width:701px){.onl{align-items:center;padding:12px}.onl.say{align-items:flex-end;justify-content:flex-start;padding:0 0 132px 64px}.onl.say .obox{max-width:360px}}
+select.txt.osel{font:inherit;font-size:15px;font-weight:800;padding:9px 10px;border-radius:12px;border:0;box-shadow:inset 0 0 0 2px var(--teal);background:#12041f;color:#fff;max-width:62%;min-width:0}
+.sw.col{flex-direction:column;align-items:flex-start}.sw.col .row{justify-content:flex-start}
+.newtag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;background:var(--gold);color:#3a2a00;font-size:10px;font-style:normal;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle}

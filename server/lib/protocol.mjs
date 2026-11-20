@@ -4,8 +4,8 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 export const ROOM_CAP = 30;            // players per room instance ("rio#1")
 export const MAX_SHARDS = 8;           // instances per map
-export const MAX_ROOMS = 80;           // room instances alive at the same time, all maps together
-export const MAX_PLAYERS = 600;        // everybody online, all rooms
+export const MAX_ROOMS = 20;           // room instances alive at the same time, all maps together
+export const MAX_PLAYERS = 300;        // hard cap on everybody online, all rooms ("Cidade cheia, tente já já")
 export const MAX_PER_IP = 8;           // connections / presences behind one address (households and CGNAT share IPs)
 
 export const STARS = ['mimo', 'mimosa', 'morticia'];

@@ -12,7 +12,7 @@ H.EMO = [['miau', '😺', 'Z'], ['dance', '💃', 'X'], ['sit', '🪑', 'C'], ['
 // emote buttons live in the calm moments: free roam and city visits, on foot, outside the tutorial
 H.emoOn = G => !!G && G.free && !G.car && !G.tutorial && !G.over && !G.trial;
 // phones: above the stick area; mouse and keyboard: tucked in the bottom-left corner
-H.layoutEmo = function () { const k = H.k, b = H.btn, by = H.h - H.bot, t = I.touch; b.emo = { x: 30 * k, y: by - (t ? 250 : 34) * k, r: 20 * k }; H.EMO.forEach((e, i) => { b['em_' + e[0]] = t ? { x: (34 + i * 60) * k, y: by - 310 * k, r: 25 * k } : { x: (88 + i * 58) * k, y: by - 38 * k, r: 25 * k }; }); H.emoTouch = t; };
+H.layoutEmo = function () { const k = H.k, b = H.btn, by = H.h - H.bot, t = I.touch; b.emo = { x: 30 * k, y: by - (t ? 250 : 34) * k, r: 20 * k }; H.EMO.forEach((e, i) => { b['em_' + e[0]] = t ? { x: (34 + i * 60) * k, y: by - 310 * k, r: 25 * k } : { x: (88 + i * 58) * k, y: by - 38 * k, r: 25 * k }; }); b.say = t ? { x: 80 * k, y: by - 250 * k, r: 20 * k } : { x: 30 * k, y: by - 84 * k, r: 20 * k }; H.emoTouch = t; };
 H.init = function (canvas) { cv = canvas; c = cv.getContext('2d'); H.resize(); addEventListener('resize', H.resize); };
 H.resize = function () {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -34,6 +34,7 @@ H.resize = function () {
 H.hit = function (x, y) {
   const G = VP.Game.G; if (!G) return null;
   if (H.emoOn(G)) { if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; if (U.d2(x, y, b.x, b.y) < (b.r + 4) * (b.r + 4)) return 'em_' + e[0]; } const b = H.btn.emo; if (U.d2(x, y, b.x, b.y) < (b.r + 8) * (b.r + 8)) return 'emo'; }
+  if (G.online && VP.Online) { const o = VP.Online.hudHit(x, y); if (o) return o; }
   for (const id of ['c0', 'c1', 'c2', 'pause', 'special', 'dash', 'ctx']) {
     const b = H.btn[id]; if (id === 'ctx' && !G.ctx) continue; if (id === 'dash' && G.car) continue;
     if (U.d2(x, y, b.x, b.y) < (b.r + 7) * (b.r + 7)) return id;
@@ -99,7 +100,8 @@ H.draw = function (G, dt) {
   const ly = H.top + 92 * k;
   Art.icon(c, 'heart', 16 * k, ly, 9 * k); txt('×' + VP.S.lives, 28 * k, ly + 1, 14 * k, VP.S.lives ? '#fff' : '#ff6b6b', 'left');
   Art.icon(c, 'cash', 74 * k, ly, 8 * k); txt('' + ((G.free ? VP.S.cash : 0) + G.stat.cash - (G.free ? (G.bank || 0) : 0)), 86 * k, ly + 1, 14 * k, '#7CFF6B', 'left');
-  if (G.free && VP.S.paws) { Art.icon(c, 'paw', 148 * k, ly, 8 * k); txt(Object.keys(VP.S.paws).length + '/' + ((VP.Missions.act.pawsPerDistrict || 5) * 5), 160 * k, ly + 1, 13 * k, GOLD, 'left'); }
+  if (G.online && VP.Online) { Art.icon(c, 'paw', 148 * k, ly, 8 * k); txt('' + VP.Online.got, 160 * k, ly + 1, 13 * k, GOLD, 'left'); }
+  else if (G.free && VP.S.paws) { Art.icon(c, 'paw', 148 * k, ly, 8 * k); txt(Object.keys(VP.S.paws).length + '/' + ((VP.Missions.act.pawsPerDistrict || 5) * 5), 160 * k, ly + 1, 13 * k, GOLD, 'left'); }
   if (G.keys > 0) { Art.icon(c, 'key', 148 * k, ly, 8 * k); txt('×' + G.keys, 162 * k, ly + 1, 13 * k, GOLD, 'left'); }
   // ---- objective ----
   const ob = H.ob = VP.Missions.objective(G);
@@ -107,7 +109,8 @@ H.draw = function (G, dt) {
   const ofs = (w > 700 ? 13.5 : 14.5) * k, lh = w > 700 ? 17 : 18.5; // a touch larger on phones: the goal is the one line everybody must read
   const lines = wrap(ob.txt, ow - 26 * k - (ob.cat ? 30 * k : 0), ofs), oh = (lines.length * lh + 12 + (ob.prog ? 9 : 0)) * k;
   if (G.objFlash > 0) G.objFlash -= dt * 1.2;
-  pill(ox, oy, ow, oh, 'rgba(18,4,31,.72)', G.objFlash > 0 ? GOLD : (ob.cat ? CATCOL[ob.cat] : 'rgba(255,79,184,.8)'));
+  pill(ox, oy, ow, oh, 'rgba(18,4,31,.72)', G.objFlash > 0 ? GOLD : G.online ? TEAL : (ob.cat ? CATCOL[ob.cat] : 'rgba(255,79,184,.8)'));
+  H.obRect = { x: ox, y: oy, w: ow, h: oh }; if (G.online) txt('›', ox + ow - 12 * k, oy + oh / 2 - 1, 17 * k, TEAL, 'center', false);
   let tx = ox + 13 * k;
   if (ob.cat) { portrait(ob.cat, ox + 20 * k, oy + oh / 2, 13 * k); c.beginPath(); c.arc(ox + 20 * k, oy + oh / 2, 13 * k, 0, 6.283); c.strokeStyle = CATCOL[ob.cat]; c.lineWidth = 2; c.stroke(); tx += 30 * k; }
   lines.forEach((l, i) => txt(l, tx, oy + (15 + i * lh) * k, ofs, '#fff', 'left', false, '800'));
@@ -146,6 +149,11 @@ H.draw = function (G, dt) {
     c.font = 20 * k + 'px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText('😺', eb.x, eb.y + 1);
     if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.78)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = TEAL; c.stroke(); c.font = 22 * k + 'px ' + FONT; c.fillStyle = '#fff'; c.fillText(e[1], b.x, b.y - 3 * k); txt(VP.t('em_' + e[0]), b.x, b.y + b.r * 0.62, 9 * k, '#fff', 'center', INK); if (!touch) txt(e[2], b.x - b.r * 0.8, b.y - b.r * 0.8, 11 * k, GOLD); }
     else if (!touch) txt('Z X C V', eb.x + eb.r + 30 * k, eb.y, 10 * k, 'rgba(255,255,255,.8)');
+  }
+  if (G.online && VP.Online && VP.Online.state === 'on') { // quick phrases (fixed list): the only way to talk
+    const sb = H.btn.say, open = VP.Online.sheet === 'say'; c.save(); c.globalAlpha = 0.92; c.beginPath(); c.arc(sb.x, sb.y, sb.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = open ? GOLD : TEAL; c.stroke(); c.restore();
+    c.font = 19 * k + 'px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText('💬', sb.x, sb.y + 1);
+    if (!touch) txt('T', sb.x + sb.r + 9 * k, sb.y, 10 * k, 'rgba(255,255,255,.8)');
   }
   if (G.tutorial) tutorial(G, k, t, touch, ob);
   if (G.real < 0.5) { c.fillStyle = 'rgba(18,4,31,' + (1 - G.real * 2) + ')'; c.fillRect(0, 0, w, h); }
@@ -202,6 +210,7 @@ function radar(G, k, t, ob) {
   for (const car of G.cars) if (car.ai === 'cop' || car.ai === 'target') dot(car.x, car.y, car.ai === 'cop' ? '#4c9bff' : GOLD, 3);
   for (const it of G.items) if (it.k === 'paw') dot(it.x, it.y, GOLD, 2);
   for (const cat of G.cats) if (cat.idx !== G.active && !G.car) dot(cat.x, cat.y, cat.down ? '#ff4f5e' : CATCOL[cat.name], 2.4);
+  if (G.online && VP.Online) VP.Online.radar(dot);
   c.restore();
   // objective + markers pinned to the rim
   const pin = (x, y, col, r) => { const dx = x - a.x, dy = y - a.y, an = Math.atan2(dy, dx) - (yaw + Math.PI / 2), d = Math.min(m.r - 4, Math.hypot(dx, dy) * sc); c.beginPath(); c.arc(m.x + Math.cos(an) * d, m.y + Math.sin(an) * d, r, 0, 6.283); c.fillStyle = col; c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke(); };
@@ -243,6 +252,7 @@ function worldLabels(G, R3, k, t) {
   for (const car of G.cars) if (car.ai === 'target' && !car.dead) { const p = R3.project(car.x, car.y, 2.6); if (p.on) bar(p.x - 26 * k, p.y, 52 * k, 7 * k, car.hp / car.max, GOLD); }
   if (G.car && G.car.hp < G.car.max) { const p = R3.project(G.car.x, G.car.y, 2.2); if (p.on) bar(p.x - 24 * k, p.y, 48 * k, 6 * k, G.car.hp / G.car.max, G.car.hp / G.car.max < 0.35 ? '#ff4f5e' : '#7CFF6B'); }
   if (G.ctx && G.ctx.k === 'car' && !I.touch) { const p = R3.project(G.ctx.car.x, G.ctx.car.y, 2.2); if (p.on) txt('[E] ' + VP.t('enter'), p.x, p.y, 13 * k, TEAL); }
+  if (G.online && VP.Online) VP.Online.drawHud(c, G, R3, k, { txt, pill });
   for (const f of G.friends) if (f.label && Math.abs(f.x - a.x) < 700 && Math.abs(f.y - a.y) < 700) { const p = R3.project(f.x, f.y, 1.7); if (p.on) txt(f.label, p.x, p.y, 11 * k, f.name === 'avatar' ? GOLD : '#fff'); }
   // mission beams
   if (G.markers) for (const mk of G.markers.slice().sort((p, q) => U.d2(p.x, p.y, a.x, a.y) - U.d2(q.x, q.y, a.x, a.y))) {

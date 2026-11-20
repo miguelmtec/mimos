@@ -110,6 +110,7 @@ I.bind = function (cv) {
       else if (hit === 'pause') I.pressed.pause = true;
       else if (hit === 'emo') { VP.HUD.emoOpen = VP.HUD.emoOpen > 0 ? 0 : 4.5; }
       else if (hit.slice(0, 3) === 'em_') { I.pressed.emote = hit.slice(3); VP.HUD.emoOpen = 0; }
+      else if (hit.slice(0, 3) === 'on_') { if (VP.Online) VP.Online.hudTap(hit); }
       else if (hit.length === 2 && hit[0] === 'c') I.pressed.sw = +hit[1];
       else { I.pressed[hit] = true; I.held[hit] = e.pointerId; }
       return;

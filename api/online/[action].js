@@ -30,8 +30,9 @@ const lastTick = new Map();
 let lastSweep = 0;
 export function __resetOnlineForTests() { lastTick.clear(); lastSweep = 0; }
 
-// Kill switch: ONLINE_DISABLED=1 answers 503 everywhere and the game goes back to solo free roam.
-const disabled = () => ['1', 'true', 'on'].includes(String(process.env.ONLINE_DISABLED || '').toLowerCase());
+// Kill switch: ONLINE_ENABLED=false in the Vercel project answers 503 everywhere, at once, and the game
+// goes back to solo free roam (no database query is made).
+const disabled = () => String(process.env.ONLINE_ENABLED ?? '').trim().toLowerCase() === 'false';
 
 // ---------- GET /api/online/ticket ----------
 async function ticket(req) {
@@ -111,6 +112,29 @@ async function tick({ req, sql, body }) {
     room = pickShard(where.base, live);
   }
 
+  const read = (r) => ({
+    you: { id: me.id }, room, others: r.filter((o) => o.id).map((o) => ({ ...otherJson(o), cv: o.cv })), n: r.filter((o) => o.id).length + 1,
+    cap: ROOM_CAP, ts: now, paw: { slot: Math.floor(now / PAW_SLOT_MS), ms: PAW_SLOT_MS, n: PAWS_PER_ROOM },
+  });
+
+  // Idle player (nothing changed since the last tick): read the room and write nothing, except a
+  // re-stamp of the own row every 5 s so the cat stays visible. No row (it expired) -> a full tick.
+  if (t.idle && where.shard) {
+    const rows = await sql`with touch as (
+        update vp_presence set updated_at = now()
+        where id = ${me.id}::text and room = ${room}::text and updated_at <= now() - interval '5 seconds' returning id
+      )
+      select s.id as self, o.id, o.name, o.x, o.z, o.ry, o.anim, o.car, o.cv, o.emote, o.es, o.phrase, o.ps, o.paws,
+             (extract(epoch from (now() - o.updated_at)) * 1000)::int as age,
+             case when o.id = any(string_to_array(${t.need}::text, ',')) then o.cat end as cat,
+             (select count(*) from touch)::int as touched
+      from vp_presence s left join vp_presence o
+        on o.room = s.room and o.id <> s.id and o.updated_at > now() - interval '10 seconds'
+      where s.id = ${me.id}::text and s.room = ${room}::text and s.updated_at > now() - interval '30 seconds'
+      order by o.updated_at desc nulls last limit ${MAX_OTHERS}::int`;
+    if (rows.length) return read(rows);
+  }
+
   // Upsert + read in one statement. The upsert refuses to touch a row younger than 0.8 s, so the
   // rate limit holds even when two function instances serve the same player.
   const rows = await sql`with me as (
@@ -133,11 +157,7 @@ async function tick({ req, sql, body }) {
     order by o.updated_at desc nulls last limit ${MAX_OTHERS}::int`;
   if (!rows.length) throw fail(429, 'rate-limit', { retryAfterMs: TICK_MIN_MS });
 
-  const others = rows.filter((r) => r.id).map((r) => ({ ...otherJson(r), cv: r.cv }));
-  return {
-    you: { id: me.id }, room, others, n: others.length + 1, cap: ROOM_CAP, ts: now,
-    paw: { slot: Math.floor(now / PAW_SLOT_MS), ms: PAW_SLOT_MS, n: PAWS_PER_ROOM },
-  };
+  return read(rows);
 }
 
 // ---------- POST /api/online/report ----------

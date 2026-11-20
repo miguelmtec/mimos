@@ -27,7 +27,7 @@ const DOG = Game.DOG = {
   pug: { hp: 1250, spd: 92, dmg: 28, r: 30, armor: 170, boss: { moves: ['suck', 'spray', 'charge', 'barrels', 'summon'], minion: ['chi', 'shooter', 'heavy'], snack: 'donut' } },
   dogcatcher: { hp: 1500, spd: 96, dmg: 30, r: 31, armor: 190, boss: { moves: ['nets', 'charge', 'barrels', 'summon', 'slam', 'spray', 'suck'], minion: ['catcher', 'cop', 'heavy', 'shooter'], snack: 'steak' } },
 };
-const CARSTAT = { pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
+const CARSTAT = { gold: [100, 345], pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
 
 // ---------- helpers ----------
 function step(e, dx, dy, mode) {
@@ -54,13 +54,13 @@ const tr = k => VP.t(k);
 Game.create = function (world, mission) {
   W = world;
   G = Game.G = {
-    W: world, m: mission, n: mission.n, d: mission.d, time: 0, real: 0, over: false, paused: false,
+    W: world, m: mission, n: mission.lv || 1, id: mission.n, d: mission.d, time: 0, real: 0, over: false, paused: false,
     cats: [], active: 0, dogs: [], bullets: [], items: [], props: [], cars: [], parts: [], texts: [], teles: [], friends: [],
     cam: { x: 0, y: 0 }, shake: 0, hitstop: 0, nap: 0, catnip: 0, feast: 0, banner: null,
     heat: 0, wanted: 0, minWanted: 0, calm: 0, copT: 2, car: null, ctx: null, revive: 0, keys: 0,
     stat: { ko: 0, eaten: 0, freed: 0, cash: 0, downs: 0, stolen: 0, dmg: 0 }, flags: {},
     steps: [], step: 0, stepT: 0, timer: null, fieldT: 0, field: null, fieldM: null, houseField: null, house: null,
-    hpMul: 1 + mission.n * 0.022, dmgMul: 1 + mission.n * 0.016, pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
+    hpMul: 1 + (mission.lv || 1) * 0.022, dmgMul: 1 + (mission.lv || 1) * 0.016, pawT: 0, hungerMul: mission.hunger || 1, noPolice: false, tut: {},
   };
   return G;
 };
@@ -125,16 +125,17 @@ Game.populate = function (o) {
   for (const t of sp.trash) Game.addProp({ k: 'trash', x: t.x, y: t.y });
   for (const t of sp.treats) Game.addItem('treat', t.x, t.y);
   for (const p of sp.parked) Game.addCar(U.pick(['sedan', 'sport', 'taxi', 'sedan']), p.x, p.y, p.a);
-  for (const p of sp.props) Game.addProp(p);
+  for (const l of W.comps) for (const p of l.props) Game.addProp(p);
   // coffee + extras scattered on sidewalks
-  const rng = U.rng(G.n * 31 + 5);
-  const nCoffee = o.coffee === undefined ? 3 + W.cols : o.coffee;
+  const rng = U.rng(G.id * 31 + 5);
+  const nCoffee = o.coffee === undefined ? 16 : o.coffee;
   for (let i = 0; i < nCoffee; i++) { const p = W.randWalk(rng); Game.addItem('coffee', p.x, p.y); }
   for (let i = 0; i < W.cols * W.rows * 2; i++) { const p = W.randWalk(rng); Game.addItem(rng() < 0.25 ? 'cash' : 'treat', p.x, p.y); }
   if (rng() < 0.7) { const p = W.randWalk(rng); Game.addItem('catnip', p.x, p.y); }
   if (rng() < 0.5) { const p = W.randWalk(rng); Game.addItem('milk', p.x, p.y); }
   // traffic
-  const nT = o.traffic === undefined ? (W.merge ? 0 : W.pal.traffic + W.cols) : o.traffic;
+  const nT = o.traffic === undefined ? 20 : o.traffic;
+  for (let i = 0; i < (o.paws || 0); i++) { const p = W.randWalk(rng); Game.addItem('paw', p.x, p.y); }
   for (let i = 0; i < nT; i++) spawnTraffic(rng);
 };
 function spawnTraffic(rng) {
@@ -446,7 +447,7 @@ function updCat(c, dt) {
     const range = c.name === 'mimo' ? 520 : 120, kind = c.name === 'mimo' ? 'bolt' : c.name === 'mimosa' ? 'bite' : 'snatch';
     let ang = null;
     if (I.aim !== null) ang = I.aim;
-    else if (I.useMouse && !I.touch && G.view) ang = Math.atan2((I.mouse.y - G.view.oy) / G.view.s - (c.y - 14), (I.mouse.x - G.view.ox) / G.view.s - c.x);
+    else if (I.useMouse && !I.touch && I.mw) ang = Math.atan2(I.mw.y - c.y, I.mw.x - c.x);
     else { ang = autoAim(c, range, kind); if (ang === null && m > 0.12) ang = Math.atan2(I.my, I.mx); }
     if (ang !== null) c.aim = ang;
     if (I.attack && !(G.ctx && G.ctx.k === 'revive' && I.ctxHeld)) doAttack(c, c.aim, false);
@@ -584,7 +585,7 @@ function updDog(e, dt) {
     return;
   }
   if (!tg) {
-    if (e.police || e.raid) { const c = active(); if (!c.down && c.invis <= 0) moveToward(e, c.x, c.y, e.spd * 0.8, dt, G.field); }
+    if (e.police || e.raid || e.hunt) { const c = active(); if (!c.down && c.invis <= 0) moveToward(e, c.x, c.y, e.spd * 0.8, dt, G.field); }
     else if (U.d2(e.x, e.y, e.home.x, e.home.y) > 40 * 40) moveToward(e, e.home.x, e.home.y, e.spd * 0.6, dt, null); else e.state = e.tag ? 'guard' : 'chase';
     return;
   }
@@ -735,7 +736,7 @@ function collect(c, it) {
     const m = G.cats[0]; if (m.down) return false;
     if (m.energy > 92 && c.name !== 'mimo') return false;
     m.energy = Math.min(100, m.energy + 60); m.exhausted = false; sfx('coffee'); text(m.x, m.y - 50, tr('coffee'), '#c9a27e', 15); part({ x: m.x, y: m.y - 16, k: 'ring', col: '#c9a27e', size: 10, life: 0.4 });
-  } else if (k === 'paw') { VP.S.lives = Math.min(9, VP.S.lives + 1); VP.persist(); sfx('paw'); text(it.x, it.y - 24, tr('life1'), '#ffd23f', 17); burst(it.x, it.y, 12, '#ffd23f', 160, 'star', 7, 0.7); }
+  } else if (k === 'paw') { VP.S.lives = Math.max(VP.S.lives, Math.min(9, VP.S.lives + 1)); VP.persist(); sfx('paw'); text(it.x, it.y - 24, tr('life1'), '#ffd23f', 17); burst(it.x, it.y, 12, '#ffd23f', 160, 'star', 7, 0.7); }
   else if (k === 'cash') { G.stat.cash += 25; sfx('cash', 0.05); text(it.x, it.y - 20, '+$25', '#7CFF6B', 13); }
   else if (k === 'catnip') { G.catnip = 7; sfx('paw'); say(tr('catnip'), '#7CFF6B', 2); for (const k2 of G.cats) k2.root = 0; }
   else if (k === 'milk') { let need = false; for (const k2 of G.cats) if (!k2.down && k2.hp < k2.max) need = true; if (!need) return false; healTeam(35); sfx('coffee'); }
@@ -925,10 +926,10 @@ function updWanted(dt) {
 }
 function spawnPoint(dmin, dmax, road) {
   const a = active();
-  for (let i = 0; i < 30; i++) {
-    const p = W.randWalk();
-    const d = Math.hypot(p.x - a.x, p.y - a.y);
-    if (d < dmin || d > dmax || onScreen(p.x, p.y, 40)) continue;
+  for (let i = 0; i < 40; i++) {
+    const ang = Math.random() * 6.283, d = U.rand(dmin, dmax);
+    const p = { x: (Math.floor((a.x + Math.cos(ang) * d) / T) + 0.5) * T, y: (Math.floor((a.y + Math.sin(ang) * d) / T) + 0.5) * T };
+    if (!W.clear(p.x, p.y)) continue;
     if (W.distAt(G.field, p.x, p.y) < 0) continue;
     if (road && W.blocked(p.x, p.y, 40, 3)) continue;
     return p;
@@ -981,7 +982,7 @@ Game.update = function (dt) {
   if (I.take('cycle')) { for (let i = 1; i < 3; i++) { const n = (G.active + i) % 3; if (!G.cats[n].down) { switchTo(n); break; } } }
   refreshFields();
   updContext(dt);
-  if (I.take('special')) { if (G.car) { /* honk */ sfx('honk'); } else doSpecial(active()); }
+  if (I.take('special')) { if (G.car) { sfx(G.car.type === 'gold' ? 'viphorn' : 'honk', 0.6); } else doSpecial(active()); }
   if (I.take('dash')) { if (!G.car) doDash(active()); }
   for (const c of G.cats) updCat(c, dt);
   // friends follow
@@ -1015,7 +1016,7 @@ Game.update = function (dt) {
   updWanted(sdt);
   // mercy: a golden paw appears if someone is down and there are no lives left
   if (VP.S.lives <= 0 && G.cats.some(c => c.down) && !G.items.some(i => i.k === 'paw')) {
-    G.pawT += dt; if (G.pawT > 2) { G.pawT = 0; const a = active(); let p = null; for (let i = 0; i < 40 && !p; i++) { const q = W.randWalk(); const d = Math.hypot(q.x - a.x, q.y - a.y); if (d > 260 && d < 700 && W.distAt(G.field, q.x, q.y) > 0) p = q; } if (p) { Game.addItem('paw', p.x, p.y); say(tr('pawHint'), '#ffd23f', 3.5); } }
+    G.pawT += dt; if (G.pawT > 2) { G.pawT = 0; const a = active(); const p = spawnPoint(260, 700); void a; if (p) { Game.addItem('paw', p.x, p.y); say(tr('pawHint'), '#ffd23f', 3.5); } }
   }
   if (G.car && G.car.dead) G.car = null;
   VP.Missions.update(G, dt);
@@ -1032,4 +1033,11 @@ Game.win = function () {
   setTimeout(() => VP.UI.result(true), 1100);
 };
 Game.end = function () { VP.Audio.engine(0, false); G = Game.G = null; };
+// small serializable snapshot of the player's party (entity-state layer; ready for future online sync)
+Game.snapshot = function () {
+  if (!G) return null;
+  const r = v => Math.round(v);
+  return { t: +G.real.toFixed(2), a: G.active, car: G.car ? { k: G.car.type, x: r(G.car.x), y: r(G.car.y), a: +G.car.a.toFixed(2), v: r(G.car.spd) } : null,
+    cats: G.cats.map(c => ({ n: c.name, x: r(c.x), y: r(c.y), h: +(c.aim || 0).toFixed(2), w: c.walk ? 1 : 0, s: c.down ? 'down' : c.atk > 0.1 ? 'atk' : c.dashT > 0 ? 'dash' : 'idle', hp: r(c.hp) })) };
+};
 })();

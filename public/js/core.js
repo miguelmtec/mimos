@@ -27,8 +27,8 @@ const ls = VP.ls = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } },
 };
-const SKEY = 'vp_save_v3';
-const fresh = () => ({ unlocked: 1, stars: {}, best: {}, lives: 3, cash: 0, bonus: {} });
+const SKEY = 'vp_save_v4';
+const fresh = () => ({ unlocked: 1, stars: {}, best: {}, lives: 3, cash: 0, bonus: {}, name: '', pos: null, avatar: null });
 let S = null;
 try { S = JSON.parse(ls.get(SKEY)); } catch (e) { S = null; }
 if (!S || typeof S !== 'object' || !S.stars) S = fresh();
@@ -42,13 +42,7 @@ VP.maxLevel = () => Object.keys(VP.S.stars).reduce((a, b) => Math.max(a, +b), 0)
 // ---------- optional art slots (public/assets/manifest.json) ----------
 // Every key has a built-in fallback, so missing files never break the game.
 const A = VP.Assets = {
-  defaults: {
-    title_bg: 'img/scene4.jpg', share: 'img/scene4.jpg',
-    portrait_mimo: 'img/mimo.jpg', portrait_mimosa: 'img/mimosa.jpg', portrait_morticia: 'img/morticia.jpg',
-    district_1: 'img/scene1.jpg', district_2: 'img/scene2.jpg', district_3: 'img/scene3.jpg',
-    district_4: 'img/scene5.jpg', district_5: 'img/scene6.jpg',
-    boss_1: null, boss_2: null, boss_3: null, boss_4: null, boss_5: null,
-  },
+  defaults: { title_bg: null, share: null, portrait_mimo: null, portrait_mimosa: null, portrait_morticia: null, boss_1: null, boss_5: null, shop_vip: null, shop_season: null, shop_apoio: null },
   url: {}, img: {},
   get(k) { return A.url[k] || null; },
   image(k) { const i = A.img[k]; return i && i.complete && i.naturalWidth ? i : null; },
@@ -72,7 +66,7 @@ const A = VP.Assets = {
 // ---------- input ----------
 const I = VP.I = {
   keys: {}, touch: false, useMouse: false,
-  mx: 0, my: 0, attack: false, aim: null,
+  mx: 0, my: 0, attack: false, aim: null, yaw: -Math.PI / 2, mw: null, look: 0, bot: null,
   pressed: { special: false, dash: false, ctx: false, pause: false, sw: -1, cycle: false },
   ctxHeld: false,
   mouse: { x: 0, y: 0, down: false },
@@ -117,7 +111,7 @@ I.bind = function (cv) {
       return;
     }
     if (!isTouch) {
-      if (e.button === 2) I.pressed.dash = true; else I.mouse.down = true;
+      if (e.button === 2) { I.rmb = true; I.lastX = p.x; } else I.mouse.down = true;
       I.mouse.x = p.x; I.mouse.y = p.y; return;
     }
     if (p.x < cv.clientWidth * 0.55 && I.stick.id < 0) { I.stick.id = e.pointerId; I.stick.ox = I.stick.x = p.x; I.stick.oy = I.stick.y = p.y; }
@@ -125,7 +119,7 @@ I.bind = function (cv) {
   });
   cv.addEventListener('pointermove', e => {
     const p = pos(e);
-    if (e.pointerType === 'mouse') { I.mouse.x = p.x; I.mouse.y = p.y; I.useMouse = true; }
+    if (e.pointerType === 'mouse') { I.mouse.x = p.x; I.mouse.y = p.y; I.useMouse = true; if (I.rmb) { I.look += (p.x - I.lastX) * 0.008; I.lastX = p.x; } }
     if (e.pointerId === I.stick.id) { I.stick.x = p.x; I.stick.y = p.y; }
     if (e.pointerId === I.atk.id) { I.atk.x = p.x; I.atk.y = p.y; }
   });
@@ -133,7 +127,7 @@ I.bind = function (cv) {
     if (e.pointerId === I.stick.id) I.stick.id = -1;
     if (e.pointerId === I.atk.id) I.atk.id = -1;
     for (const k in I.held) if (I.held[k] === e.pointerId) delete I.held[k];
-    if (e.pointerType === 'mouse') I.mouse.down = false;
+    if (e.pointerType === 'mouse') { I.mouse.down = false; I.rmb = false; }
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 };
@@ -143,6 +137,7 @@ I.reset = function () {
 };
 // Called once per frame: resolves all devices into one state.
 I.poll = function () {
+  if (I.bot) return I.bot();
   const k = I.keys;
   let mx = (k.d || k.arrowright ? 1 : 0) - (k.a || k.arrowleft ? 1 : 0);
   let my = (k.s || k.arrowdown ? 1 : 0) - (k.w || k.arrowup ? 1 : 0);
@@ -152,12 +147,15 @@ I.poll = function () {
     if (d > R) { I.stick.ox = I.stick.x - dx / d * R; I.stick.oy = I.stick.y - dy / d * R; }
   }
   const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
-  I.mx = mx; I.my = my;
+  I.rawx = mx; I.rawy = my;
+  // camera-relative -> world (yaw = angle the camera looks along, in world x/y)
+  const yaw = I.yaw, fx = Math.cos(yaw), fy = Math.sin(yaw);
+  I.mx = fx * -my - fy * mx; I.my = fy * -my + fx * mx;
   I.attack = I.atk.id >= 0 || I.mouse.down || !!k.j || !!k.k;
   I.aim = null;
   if (I.atk.id >= 0) {
     const dx = I.atk.x - I.atk.ox, dy = I.atk.y - I.atk.oy;
-    if (Math.hypot(dx, dy) > 16) I.aim = Math.atan2(dy, dx);
+    if (Math.hypot(dx, dy) > 16) I.aim = Math.atan2(fy * -dy + fx * dx, fx * -dy - fy * dx);
   }
   I.ctxHeld = !!(k.e || k.r || k.f || I.held.ctx !== undefined);
 };

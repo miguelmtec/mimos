@@ -205,6 +205,5 @@ ACT.profile = () => { if (UI.state === 'play' && Game.G) UI.paused = true; UI.sh
 { const go0 = ACT.actGo; ACT.actGo = el => { const list = P.lastActs || []; const a = list[+el.dataset.i]; if (a && a.open === 'board') { ACT.board(); return; } go0(el); }; }
 // title + pause: ways in
 const wrapScreen = (id, fn) => { const s = SC[id]; if (!s) return; const h0 = s.html; s.html = arg => fn(h0(arg), arg); };
-wrapScreen('title', html => html.replace(/<button class="btn ghost sm wide" data-act="catcity">/, `<button class="btn ghost sm" data-act="board">📌 ${t('bd_title')}</button><button class="btn ghost sm" data-act="shelter">🏠 ${t('lg_shelter')}</button><button class="btn ghost sm" data-act="profile">🪪 ${t('pf_title')}</button><button class="btn ghost sm" data-act="ach">🏅 ${t('ah_title')}</button>$&`));
 wrapScreen('pause', html => html.replace('<div class="grid2">', `<div class="grid2"><button class="btn ghost sm" data-act="board">📌 ${t('bd_title')}</button><button class="btn ghost sm" data-act="profile">🪪 ${t('pf_title')}</button>`));
 })();

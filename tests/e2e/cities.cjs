@@ -4,7 +4,7 @@ const mob = process.argv[2] !== 'd', P = mob ? 'm-' : 'd-', ids = (process.argv[
   await L.serve();
   const { browser, page, errors } = await L.open(mob);
   await page.evaluate(() => { __vp.unlockAll(); });
-  await page.locator('[data-act=world]').first().click({ force: true }); await page.waitForTimeout(400); await L.shot(page, P + 'world');
+  await page.evaluate(() => VP.UI.act.sheetMore()); await page.locator('[data-act=world]').first().click({ force: true }); await page.waitForTimeout(400); await L.shot(page, P + 'world');
   for (const id of ids) {
     await page.evaluate(async id => { await VP.Tour.load(id); VP.UI.tour(id); }, id);
     await page.waitForTimeout(3000); await L.shot(page, P + 'city-' + id);

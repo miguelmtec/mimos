@@ -251,7 +251,7 @@ async function pair(S, label, wantTransport) {
       const P = await client(mobile), tag = mobile ? 'm' : 'd';
       await sleep(1200);
       if (mobile) await L.shot(P.page, 'online-m-title');
-      ok(`extras ${tag} the menu has the Cidade Online button`, await P.page.evaluate(() => { const b = document.querySelector('#s-title [data-act=online]'); if (!b) return false; const r = b.getBoundingClientRect(); return r.width > 120 && r.bottom <= innerHeight; }));
+      ok(`extras ${tag} the menu has the Cidade Online button`, await P.page.evaluate(() => { const b = document.querySelector('#s-title [data-act=online]'); if (!b) return false; const r = b.getBoundingClientRect(); return r.width > 40 && r.bottom <= innerHeight; }));
       await P.page.evaluate(() => { VP.S.stars = { 1: 3 }; VP.S.unlocked = 2; VP.Tour.open(); });
       await sleep(400); await L.shot(P.page, `online-${tag}-world`);
       ok(`extras ${tag} the world map has the Cidade Online button`, await P.page.evaluate(() => !!document.querySelector('#s-world [data-act=online]')));

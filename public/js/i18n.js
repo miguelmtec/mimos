@@ -63,6 +63,9 @@ const L = {
   honk: ['BUZINA', 'HORN'], dashLbl: ['BOTE', 'DASH'], hairLbl: ['BOLA', 'LOB'], smokeLbl: ['SUMIR', 'VANISH'], atkShoot: ['ATIRAR', 'SHOOT'], atkBite: ['MORDER', 'BITE'], atkSteal: ['ROUBAR', 'STEAL'],
   ctxLost: ['Gráficos reiniciando…', 'Graphics restarting…'],
   // menus
+  tl_enter: ['Entrar', 'Sign in'], tl_missions: ['Missões', 'Missions'], tl_shop: ['Loja', 'Shop'], tl_mycat: ['Meu Gato', 'My Cat'], tl_online: ['Online', 'Online'], tl_more: ['Mais', 'More'],
+  tl_loginT: ['Entrar na sua conta?', 'Sign in to your account?'], tl_loginSub: ['Guarde seu progresso na nuvem, jogue em outro aparelho e entre no ranking e no online.', 'Keep your progress in the cloud, play on another device and join the ranking and online play.'],
+  tl_guest: ['Jogar como visitante', 'Play as guest'], tl_guestNote: ['Visitante: o progresso fica só neste aparelho, sem itens raros, ranking nem online.', 'Guest: progress stays on this device only, with no rare items, ranking or online.'],
   tagline: ['Três gatos. Uma cidade neon. Ninguém fica pra trás.', 'Three cats. One neon city. No cat left behind.'],
   play: ['JOGAR', 'PLAY'], cont: ['CONTINUAR', 'CONTINUE'], city: ['CIDADE LIVRE', 'FREE ROAM'], map: ['MISSÕES', 'MISSIONS'], shop: ['LOJA DOS MIMOS', 'MIMOS SHOP'], ranking: ['RANKING', 'RANKING'], how: ['COMO JOGAR', 'HOW TO PLAY'], wardrobe: ['GUARDA-ROUPA', 'WARDROBE'],
   follow: ['Siga os gatos', 'Follow the cats'], fan: ['Jogo de fã, sem vínculo com nenhum estúdio de games', 'Fan game, not affiliated with any game studio'],

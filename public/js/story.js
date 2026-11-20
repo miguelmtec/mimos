@@ -145,5 +145,5 @@ St.pullCommunity = function () { return fetch('/api/community', { cache: 'no-sto
 St.communityRow = function () { const g = (St.com.goals || []).find(x => St.com.total < x.need) || null; return g ? { icon: '🌍', title: t('co_title'), sub: t('co_row', St.com.total, g.need, g.name[L()]) } : null; };
 
 // ---------- title: where the story stands ----------
-{ const s = SC.title, h0 = s.html; s.html = a => { let html = h0(a); const d = St.data, ch = d.chapters[St.chapter() - 1]; if (ch && (VP.S.unlocked > 1 || S().seen.intro)) html = html.replace('<div class="grid2">', `<div class="sy-ch"><span class="em">🏠</span><div><b>${t('sy_shelter')} · ${t('sy_stage', St.stage())}</b>${St.stage() >= 5 ? esc(t('sy_all')) : t('sy_ch', ch.n) + ': ' + esc(ch.goal[L()])}</div></div><div class="grid2">`); return html; }; }
+{ const s = SC.title, h0 = s.html; s.html = a => { let html = h0(a); const d = St.data, ch = d.chapters[St.chapter() - 1]; if (ch && (VP.S.unlocked > 1 || S().seen.intro)) html = html.replace('<!--vp:story-->', `<div class="sy-ch"><span class="em">🏠</span><div><b>${t('sy_shelter')} · ${t('sy_stage', St.stage())}</b>${St.stage() >= 5 ? esc(t('sy_all')) : t('sy_ch', ch.n) + ': ' + esc(ch.goal[L()])}</div></div>`); return html; }; }
 })();

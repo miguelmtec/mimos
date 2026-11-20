@@ -79,12 +79,11 @@ ACT.paOn = () => { Pa.set(true); UI.show('party'); };
 ACT.paOff = () => { Pa.set(false); UI.show('party'); };
 ACT.paRole = el => { Pa.set(true, el.dataset.n); UI.show('party'); };
 ACT.paComp = el => { Pa.setComp(el.dataset.s, el.dataset.id); UI.show('party'); };
-// title: one clear way in, and a first-launch card
+// title: first-launch card, now a small dismissible pill above the play button (the cat buttons live in the "Meu Gato" sheet)
 { const s = SC.title, h0 = s.html; s.html = a => {
     let html = h0(a); const has = !!VP.S.avatar, seen = VP.S.prog && VP.S.prog.seen && VP.S.prog.seen.creator;
-    const btn = `<div class="grid2"><button class="btn sm" style="background:linear-gradient(120deg,#ff4fb8,#b967ff)" data-act="${has ? 'party' : 'myCat'}">🐱 ${has ? (Pa.active() ? t('pa_on', esc(VP.S.avatar.label || '')) : t('pa_title')) : t('ac_create')}</button><button class="btn teal sm" data-act="upg">⬆ ${t('pg_up')}</button></div>`;
-    const card = !has && !seen ? `<div class="pg-card"><span class="em">🐱</span><div><b>${t('cr_card')}</b><span>${t('cr_cardSub')}</span></div><button class="btn sm" data-act="myCat">${t('cr_cardGo')}</button><button class="chip" data-act="cardNo" aria-label="x">✕</button></div>` : '';
-    return html.replace('<div class="grid2">', card + btn + '<div class="grid2">');
+    const card = !has && !seen ? `<div class="pg-card tl-pill"><button class="pl-go" data-act="myCat"><span class="em">🐱</span><span class="tx"><b>${t('cr_card')}</b></span><span class="go">${t('cr_cardGo')}</span></button><button class="pl-x" data-act="cardNo" aria-label="x">✕</button></div>` : '';
+    return html.replace('<!--vp:toast-->', card);
   }; }
 ACT.myCat = () => { if (VP.Prog) { VP.Prog.S().seen.creator = 1; VP.persist(); } ACT.creator({ dataset: { i: VP.Acct && VP.Acct.status === 'in' ? (VP.Acct.cats.length ? '0' : 'new') : 'local' } }); };
 ACT.cardNo = () => { if (VP.Prog) { VP.Prog.S().seen.creator = 1; VP.persist(); } UI.relabel(); };

@@ -192,7 +192,7 @@ function syncCar(c, G) {
   if (driven) { const fxp = Math.cos(c.a), fyp = Math.sin(c.a); glow(o.position.x + fxp * 3.2, o.position.y + 0.5, o.position.z + fyp * 3.2, '#fff6b0', 5); }
 }
 function syncItem(it) {
-  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k === 'kite' && it.col ? 'kite' + it.col : it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : it.k === 'kite' ? 2.3 : it.k === 'ball' ? 1.6 : it.k === 'bag' ? 1.8 : 1.35); return m; });
+  const o = obj(it, () => { const m = new THREE.Mesh(itemGeo(it.k === 'kite' && it.col ? 'kite' + it.col : it.k), MAT.lit); m.scale.setScalar(it.k === 'paw' || it.k === 'gpaw' ? 1.7 : it.k === 'kite' ? 1.5 : it.k === 'ball' ? 1.6 : it.k === 'bag' ? 1.8 : 1.35); return m; });
   o.position.set(it.x * S, hAt(it.x, it.y) + 0.65 + Math.sin(it.t * 3) * 0.12 + (it.z || 0) * S, it.y * S); o.rotation.y = it.k === 'kite' ? Math.sin(it.t * 1.3) * 0.6 : it.t * 2.2;
   if (it.k === 'kite') { o.rotation.x = -0.5 + Math.sin(it.t * 2) * 0.12; shadow(o.position.x, o.position.z, hAt(it.x, it.y), 0.5, 0.5); } else if (it.k === 'ball') { o.rotation.x = it.t * 3; shadow(o.position.x, o.position.z, hAt(it.x, it.y), 0.34, 0.34); }
   if (it.k === 'bag' || it.k === 'gcoin') glow(o.position.x, o.position.y, o.position.z, '#ffd23f', it.k === 'bag' ? 6 : 3);

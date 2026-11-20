@@ -23,7 +23,7 @@ const SHOTS = [
   for (const mobile of [true, false]) {
     for (const [name, fn] of SHOTS) {
       const { browser, page, errors } = await L.open(mobile);
-      try { await fn(page); await page.waitForTimeout(1300); await L.shot(page, name + (mobile ? '-m' : '-d')); } catch (e) { errors.push('SHOT ' + e.message.split('\n')[0]); }
+      try { await page.waitForFunction(() => VP.Assets.get('portrait_morticia') && VP.Assets.get('title_bg'), null, { timeout: 8000 }).catch(() => {}); await fn(page); await page.waitForTimeout(1300); await L.shot(page, name + (mobile ? '-m' : '-d')); } catch (e) { errors.push('SHOT ' + e.message.split('\n')[0]); }
       if (errors.length) bad.push(name + (mobile ? '-m' : '-d') + ': ' + errors.slice(0, 2).join(' | '));
       await browser.close();
     }

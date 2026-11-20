@@ -411,6 +411,8 @@ M.startTour = function (id) {
     // keep everything on the street network connected to the start (courtyards and islands are skipped)
     const fm = W.fieldMax; W.fieldMax = 0; const conn = W.field(best.x, best.y, 0); W.fieldMax = fm; W.conn = conn;
     W.walkList = W.walkList.filter(i => conn[i] >= 0);
+    // comunidade: arrive in the middle of the houses (the densest reachable spot), not on the avenue below
+    if (comu && W.walkList.length) { const rs = U.rng(77); let bi = -1, bs = -1; for (let k = 0; k < 260; k++) { const i = W.walkList[Math.floor(rs() * W.walkList.length)], x = i % W.W, y = Math.floor(i / W.W); if (x < 12 || y < 12 || x > W.W - 12 || y > W.H - 12) continue; let s = 0; for (let dy = -8; dy <= 8; dy += 2) for (let dx = -8; dx <= 8; dx += 2) if (W.gnd[(y + dy) * W.W + x + dx] === 9) s++; if (s > bs) { bs = s; bi = i; } } if (bi >= 0) { best = { x: (bi % W.W + 0.5) * T, y: (Math.floor(bi / W.W) + 0.5) * T }; W.tourStart = best; } }
     const snapC = (x, y) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < 30; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W.W - 2 && Y < W.H - 2 && conn[Y * W.W + X] >= 0 && W.gnd[Y * W.W + X] <= 2) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };
     W.landmarks = W.landmarks.filter(l => { const q = snapC(l.x, l.y); if (!q) return false; l.gx = q.x; l.gy = q.y; return true; });
     // extra named places of the city pack (lat/lon -> map), used as mission waypoints

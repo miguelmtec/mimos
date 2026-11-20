@@ -5,7 +5,7 @@ const VP = window.VP;
 const L = {
   // cats
   mimo: ['Mimo', 'Mimo'], mimosa: ['Mimosa', 'Mimosa'], morticia: ['Mortícia', 'Morticia'],
-  role_mimo: ['O CANSADO', 'THE TIRED ONE'], role_mimosa: ['A BRAVA', 'THE FIERCE ONE'], role_morticia: ['A COMILONA', 'THE GLUTTON'],
+  role_mimo: ['O CANSADO', 'THE TIRED ONE'], role_mimosa: ['A CHEFONA', 'THE BOSS LADY'], role_morticia: ['A COMILONA', 'THE GLUTTON'],
   desc_mimo: ['Atira bolhas de espinha de peixe. Cansa rápido: café ☕ recarrega. Especial: SONECA (câmera lenta).', 'Shoots fish-bone bubbles. Gets tired fast: coffee ☕ refills him. Special: NAP (slow motion).'],
   desc_mimosa: ['Morde em combo, dá o bote e ROSNA para atordoar. Quebra cercas e aguenta pancada.', 'Bite combo, lunge-bite and a ROAR that stuns. Breaks fences and tanks hits.'],
   desc_morticia: ['Rouba e come as coisas dos outros. Passa por portinhas. Barriga cheia libera o LANCHÃO.', "Steals and eats other people's things. Fits through cat flaps. A full belly unlocks the FEAST."],
@@ -109,7 +109,7 @@ const L = {
   gc_empty: ['Os primeiros moradores estão chegando. Crie o seu gato e ele aparece aqui e na cidade.', 'The first residents are moving in. Create your cat and it shows up here and in the city.'],
   gc_walk: ['Ver passeando', 'See them strolling'], gc_note: ['Só nome, raça, recado e @ do Instagram aparecem. Nada de e-mail, nada de localização.', 'Only name, breed, note and Instagram handle are shown. No e-mail, no location.'],
   gc_mine: ['Meu gato', 'My cat'], gc_mine_bio: ['Este é o seu gato. Ele anda com você pela cidade.', 'This is your cat. It walks with you around the city.'],
-  gc_star_mimo: ['O cansado. Atira bolhas e tira sonecas heroicas.', 'The tired one. Shoots bubbles and takes heroic naps.'], gc_star_mimosa: ['A brava. Morde primeiro, pergunta depois.', 'The fierce one. Bites first, asks later.'], gc_star_morticia: ['A comilona. Se é comida, é dela.', 'The foodie. If it is food, it is hers.'],
+  gc_star_mimo: ['O cansado. Atira bolhas e tira sonecas heroicas.', 'The tired one. Shoots bubbles and takes heroic naps.'], gc_star_mimosa: ['A elegante. Dona da casa, protege o trio com estilo.', 'The elegant one. Queen of the house, guards the trio in style.'], gc_star_morticia: ['A comilona. Se é comida, é dela.', 'The foodie. If it is food, it is hers.'],
   o_pkStart: ['Parkour! Vá até os caixotes', 'Parkour! Head to the crates'], o_pkUp: ['Suba pelos caixotes até o toldo (é só andar)', 'Climb the crates onto the awning (just walk)'], o_pkGap: ['Corra reto e o gato salta o vão sozinho', 'Run straight on and the cat hops the gap by itself'], o_pkPad: ['Pise no trampolim para voar até o telhado alto', 'Step on the jump pad to fly to the high roof'], o_pkDown: ['Pule para a rua e siga em frente', 'Drop to the street and carry on'],
   wt_homeHello: ['{0}, terra querida! Sejam bem-vindos de volta.', '{0}, sweet home! Welcome back.'],
   rk_all: ['O ranking soma todas as missões: história, capítulos e Volta ao Mundo.', 'The ranking adds up every mission: story, chapters and World Tour.'],

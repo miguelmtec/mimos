@@ -9,7 +9,7 @@ Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**,
 | Gato | Personalidade | Como joga |
 |---|---|---|
 | **Mimo** | o cansado 😴 | **Atira** bolhas de espinha de peixe. A energia acaba (café ☕ recarrega); exausto fica lento. Especial **SONECA**: câmera lenta. |
-| **Mimosa** | a brava 😾 | **Morde** em combo, dá o bote e **ROSNA** para atordoar. É o tanque: quebra cercas, caixotes e armaduras. |
+| **Mimosa** | a chefona elegante 🎀 | **Morde** em combo, dá o bote e **ROSNA** para atordoar. É o tanque: quebra cercas, caixotes e armaduras. |
 | **Mortícia** | a comilona 😋 | **Come as coisas dos outros**: rouba o que os cachorros carregam, passa por portinhas, pega chaves. Barriga cheia libera o **LANCHÃO**. |
 
 **Ninguém fica pra trás:** gato caído é reanimado ficando ao lado e segurando o botão de ação (gasta 1 vida). A missão só termina com os três de pé.

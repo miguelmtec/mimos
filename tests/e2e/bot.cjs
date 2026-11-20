@@ -89,7 +89,10 @@
       if (dS < 430 && G.W.los(c.x, c.y - 4, at.x, at.y - 8, 2)) { I.attack = true; I.aim = Math.atan2(at.y - 8 - (c.y - 12), at.x - c.x); if (dS > 330) go(G, c, from.x, from.y, mode); return; }
       go(G, c, from.x, from.y, mode); if (dog && U.d2(dog.x, dog.y, c.x, c.y) < 150 * 150) I.attack = true; return;
     }
-    const threat = dog && U.d2(dog.x, dog.y, c.x, c.y) < 210 * 210 && dog.state !== 'guard' && (G.W.los(c.x, c.y, dog.x, dog.y, 0) || G.W.distAt(G.field, dog.x, dog.y) >= 0);
+    // patience: after 45 s on a non-combat step, stop picking fights and just walk to the objective
+    if (B.stepIdx !== G.step) { B.stepIdx = G.step; B.stepTick = B.tick; }
+    const impatient = !st.fight && B.tick - B.stepTick > 30 * 45;
+    const threat = !impatient && dog && U.d2(dog.x, dog.y, c.x, c.y) < 210 * 210 && dog.state !== 'guard' && (G.W.los(c.x, c.y, dog.x, dog.y, 0) || G.W.distAt(G.field, dog.x, dog.y) >= 0);
     if ((st.fight || threat) && dog && !(st.act === 'ctx' && at && U.d2(at.x, at.y, c.x, c.y) < 90 * 90)) {
       // fight: mimo kites, others close in
       const d = Math.hypot(dog.x - c.x, dog.y - c.y);
@@ -112,7 +115,7 @@
     VP.S.lives = 5;
     try {
       UI.startMission(n);
-      const G = VP.Game.G; I.bot = B.poll; B.fields = {}; B.tick = 0; B.stuck = 0; B.rev = 0; B.nudge = 0; B.still = 0; B.lastP = null; B.force = 0; B.pg = null;
+      const G = VP.Game.G; I.bot = B.poll; B.fields = {}; B.tick = 0; B.stuck = 0; B.rev = 0; B.nudge = 0; B.still = 0; B.lastP = null; B.force = 0; B.pg = null; B.stepIdx = -1; B.stepTick = 0;
       const dt = 1 / 30; let t = 0, lastStep = -1, stepT = 0; const steps = [];
       while (!res && t < maxSec) {
         I.poll(); VP.Game.update(dt); t += dt;

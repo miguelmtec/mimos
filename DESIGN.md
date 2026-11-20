@@ -16,19 +16,24 @@ public/
   js/audio.js     música synthwave + SFX em WebAudio (sem arquivos)
   js/world.js     gerador da cidade (grade de tiles), colisão, flow-fields; World.fromCity() rasteriza cidades reais
   js/game.js      SIMULAÇÃO (camada de estado): gatos, cachorros, chefões, projéteis, itens, carros, procurado
-  js/missions.js  tipos de missão + passos de objetivo, mundo livre, Volta ao Mundo
+  js/missions.js  tipos de missão + passos de objetivo, mundo livre, Volta ao Mundo, desafios diários e eventos semanais
+  js/minigames.js modelos novos (escolta, furtivo, fotos, entregas, duelo, parkour, pipas, vôlei, pesca, golpe, gatinhos, treino) e as missões de cidade real
   js/hud.js       HUD 2D por cima do WebGL (retratos, radar, controles de toque, rótulos projetados)
   js/ui.js        telas HTML, loop principal, ranking, compartilhar, ganchos de teste (window.__vp)
   js/shop.js      Loja dos Mimos (Pix), provador, restaurar, mural
   js/wardrobe.js  Guarda-roupa por slots
   js/accounts.js  login por código, Meus gatos (criador), save na nuvem, galeria
   js/tour.js      Volta ao Mundo (mapas reais)
+  js/share.js     cartão PNG 1080×1350 para compartilhar e links "Desafie um amigo"
   js/gfx/models.js   modelos low-poly paramétricos (buildCat(spec), cachorros, carros, props) em geometria mesclada
   js/gfx/city.js     cidade 3D estática (chão, prédios, neon, palmeiras, céu, água)
   js/gfx/realcity.js cidade real 3D (terreno com elevação, vias, prédios extrudados, marcos)
+  js/gfx/lod.js      blocos espaciais com frustum culling, corte por distância e LOD de instâncias
   js/gfx/render.js   renderizador: sincroniza a simulação com a cena, câmera, partículas, qualidade automática
 api/              funções Vercel: scores, pix/*, auth, me, cats, save (ver docs/ACCOUNTS.md)
 tools/build-cities.mjs  copia os extratos OSM e gera data/cities/index.json
+tools/gen-missions.mjs  tabelas dos 15 capítulos -> data/missions.json (calibra o tempo-alvo com os resultados do bot)
+tools/gen-packs.mjs     pacotes de missões por cidade e eventos semanais -> data/citypacks.json, data/events.json
 ```
 
 **Separação estado × render.** `game.js` não conhece Three.js: é uma simulação 2D vista de cima (x, y em px; 48 px = 1 tile = 2 unidades 3D). `render.js` só lê o estado e desenha. `Game.snapshot()` devolve um JSON pequeno (posição, direção, animação, gato ativo, carro) pronto para sincronizar jogadores remotos por interpolação no futuro.
@@ -51,7 +56,7 @@ Dependência real: Mimo acerta **botões** à distância (lasers/cofres); Mimosa
 
 Um mapa contínuo de 12×8 quarteirões (352×240 m): **Sunset Beach**, **Neon Downtown**, **Palm Harbor**, **Storm Docks** (chuva e raios) e **Vice Heights**. Cada bairro tem papéis fixos usados pelas missões: `arena`, `house`, `plaza1-3`, `park`, `compA-D` (cercados configuráveis por missão: portão `fence|switch|gap|key|open`, cofre opcional). Céu, neblina e luzes mudam por bairro. No mundo livre: feixes de missão, loja, contra-relógios, NPCs com missões de bairro, 25 patinhas douradas, tráfego, carros para dirigir, nível de procurado com bulldogs e viaturas.
 
-**Volta ao Mundo.** `World.fromCity(json)` rasteriza um extrato do OpenStreetMap (3 m por tile) na mesma grade da simulação; `realcity.js` constrói o 3D (terreno com `elev`, vias em fitas, prédios extrudados, marcos como faróis). Mapas com tag `comunidade` não têm polícia, procurado nem cachorros hostis: só missões positivas (entregas, petiscos nas escadarias, gatinho no telhado, festival de pipas). Atribuição "© OpenStreetMap contributors" aparece na tela de viagem e no HUD dos mapas reais.
+**Volta ao Mundo.** `World.fromCity(json)` rasteriza um extrato do OpenStreetMap (3 m por tile) na mesma grade da simulação; `realcity.js` constrói o 3D (terreno com `elev`, vias em fitas, prédios extrudados, marcos como faróis). Mapas com tag `comunidade` não têm polícia, procurado, trânsito nem cachorros hostis: só missões positivas (ver §6, regra aplicada no código, não só nos dados). Atribuição "© OpenStreetMap contributors" aparece na tela de viagem e no HUD dos mapas reais.
 
 ## 4. Controles
 
@@ -60,7 +65,7 @@ Um mapa contínuo de 12×8 quarteirões (352×240 m): **Sunset Beach**, **Neon D
 
 ## 5. Loja (honesta)
 
-Jogo grátis e 100% zerável sem pagar. Sem sorteio, sem caixas, sem pressão. `vip` R$4,90 (roupas, rastro, conversível dourado com neon e buzina, dança, coroa no ranking, bairro bônus Marina Dourada), `season` R$2,90 (Natal Neon: 4 missões + neve e decoração), `lives10` R$1,99, `apoio5/10/20` (selo, nome dourado, mural). Provador com pedestal 3D e volta de teste de 20 s. Checkout Pix com QR, copia-e-cola, consulta a cada 4 s por até 30 min, confete, código de compra; restaurar por código; 503 → "Loja abre em breve 🐾". Grants aplicados uma única vez por id de pagamento (`vp_purchases`). No máximo um cartão dispensável do VIP por sessão, só em tela de bairro concluído.
+Jogo grátis e 100% zerável sem pagar. Sem sorteio, sem caixas, sem pressão. `vip` R$4,90 (roupas, rastro, conversível dourado com neon e buzina, dança, coroa no ranking, bairro bônus Marina Dourada), `season` R$2,90 (Natal Neon: 4 missões + neve e decoração), `lives10` R$1,99, `supporter_small` R$0,99 e `apoio5/10/20` (selo, nome dourado, mural), e os pacotes de visual `skin_praia` R$0,99, `skin_agro` R$0,99, `skin_festa` R$1,99, `skin_natal` R$1,99 (só roupas e acessórios; dá para provar no guarda-roupa antes). O preço vale sempre de `api/pix/_products.js`; não existe dobrador de moedas nem item que mude a dificuldade. Provador com pedestal 3D e volta de teste de 20 s. Checkout Pix com QR, copia-e-cola, consulta a cada 4 s por até 30 min, confete, código de compra; restaurar por código; 503 → "Loja abre em breve 🐾". Grants aplicados uma única vez por id de pagamento (`vp_purchases`). No máximo um cartão dispensável do VIP por sessão, só em tela de bairro concluído.
 
 ## 6. Conteúdo orientado a dados (para expandir sem tocar no motor)
 
@@ -69,22 +74,35 @@ Jogo grátis e 100% zerável sem pagar. Sem sorteio, sem caixas, sem pressão. `
 { "districts": [{ "id": 0, "geo": 0, "song": 0, "from": 1, "to": 10, "grant": null, "name": {"pt": "…", "en": "…"} }],
   "missions":  [{ "n": 1, "type": "reach", "name": {"pt": "…", "en": "…"}, "lv": 1, "par": 65, "boss": "chief", "params": { } }] }
 ```
-- `geo` = bairro físico (0 Beach, 1 Downtown, 2 Harbor, 3 Docks, 4 Heights); `grant` = `vip`/`season` para bairros bônus; `song` 0-6.
-- `lv` escala vida/dano/tamanho dos grupos; `par` = tempo da 3ª estrela; missões com `n` entre `from` e `to` de um distrito pertencem a ele. Para um novo capítulo: adicione um distrito com nova faixa de `n` e as missões.
+- `geo` = bairro físico (0 Beach, 1 Downtown, 2 Harbor, 3 Docks, 4 Heights); `grant` = `vip`/`season` para bairros bônus; `song` 0-7. O `id` do distrito é o índice na lista.
+- **Capítulos** (`"arc": true`): `req: {stars: N, after?: n}` abre o capítulo com N estrelas no total (e/ou depois da missão n); dentro dele as missões abrem em sequência. `col` = duas cores do cartão, `intro` = texto do capítulo. Cada capítulo aberto ganha um feixe azul no bairro (`geo`) dele.
+- Missão: `talk: [[gato, pt, en]]` = fala mostrada no briefing e no começo da missão; `geo` opcional troca o bairro só daquela missão.
+- `lv` escala vida/dano/tamanho dos grupos pela curva `Game.eff(lv)` (acima de 20 o nível efetivo cresce na metade do ritmo: 50 → 35), o que deixou o fim de Vice Heights mais justo; `par` = tempo da 3ª estrela; missões com `n` entre `from` e `to` de um distrito pertencem a ele. Para um novo capítulo: adicione um distrito com nova faixa de `n` e as missões.
 - `type` e `params`: `reach {groups, time?, tut?}` · `waves {waves: N | [[tipos]], arena?}` · `eat {n, time, hunger?}` · `steal {n, time}` · `cash {cash, time}` · `rescue {cages: [[portão, tranca]]}` (portão `fence|switch|gap|key|open`, tranca `bite|key|link`) · `truck {gate, wanted, heavy?}` · `vault {gate, wanted}` · `escape {wanted, car?, survive?}` · `chase {targets: [van|limo|…], time, drop?}` · `race {cps, time}` · `defend {waves, gen?}` · `boss {}` (+ `"boss": chief|poodle|rott|pug|dogcatcher`).
+- Modelos novos: `escort {stops, from?, to?, vip?, last?}` (acompanhar um gato lento; os cachorros miram nele) · `stealth {dogs, wake?, bags?, time?}` (Mortícia solo entre cachorros dormindo; o anel azul é o raio que acorda; o sumiço atravessa) · `photo {n, groups?, time?}` · `chain {stops, car? (1 conversível, 2 caminhonete), bonus?, thieves?}` · `duel {elite: tipo, hp}` (valentão com vida multiplicada que chama reforço a 66% e 33%) · `parkour {cps, time?}` (a pé, sem carro) · `kites {n, time, max?}` · `volley {points, speed?}` (3 bolas no chão = falha) · `fish {n, time, groups?}` (esperar o ❗ e tocar em atacar) · `heist {time, wanted, drop?}` (bater no caminhão em movimento, subir nele e levar para casa) · `kittens {kinds: [free|guard|cage…]}`.
 - Tipos de cachorro: `mutt, chi, cop, shooter, catcher, heavy`.
+- Para criar um tipo novo: registre `TYPES.nome = { setup(B) {…} }` em `minigames.js` usando os passos (`B.goto`, `B.wave`, `B.step({txt, at, done, tick, exit, fail, prog})`). O bot de teste lê os mesmos passos (`cat`, `act`, `fight`, `car`, `sneak`, `tap`+`ready`, `mini`).
+
+### Desafios do dia e evento da semana
+`Missions.daily(data)` sorteia 3 desafios com uma semente feita da data (vencer / vencer sem desmaiar / vencer abaixo do tempo) entre as missões já abertas: a mesma data e o mesmo progresso dão sempre os mesmos três. Recompensa em moedas e, completando os três, +1 vida e sequência de dias. `data/events.json`: `{epoch, events: [{id, icon, name, desc, types: [tipos ou kinds], tour?, mult}]}`; um evento por semana em rodízio, que só multiplica moedas das missões daquele tipo (`Missions.weeklyHooks` fica reservado para ganchos futuros). Nada disso vende nada.
 
 ### `public/data/activities.json`
 `pawsPerDistrict`, `trials: [{id, d, lv, name, start: [i, j], cps: [[i, j]…], time, reward}]` (cruzamentos da grade, i 0-12, j 0-8) e `quests: [{id, d, npc: f0-f3, spot: papel do bairro, name, text, type: eat|ko|steal|cash, n, reward}]`.
 
 ### `public/data/outfits.json`
-`slots: [head, eyes, neck, body, back, trail]`, `defaults` por gato, `sets` (vip/season) e `items: [{id, slot, name, acc: {…chaves de acc do buildCat…} | trail: {shape: star|heart|dot, col}, free | price (moedas) | grant (vip|season)}]`.
+`slots: [head, eyes, neck, body, back, trail]`, `defaults` por gato, `sets` (vip/season), `packs: {grant: {product, icon}}` e `items: [{id, slot, name, acc: {…chaves de acc do buildCat…} | trail: {shape: star|heart|dot, col}, free | price (moedas) | grant (vip|season|pack_praia|pack_agro|pack_festa|pack_natal)}]`. São 80 itens (cabeça 21, olhos 9, pescoço 13, roupa 19, costas 10, rastro 8). Chaves novas de `acc`: `cowboy`+`band`, `antlers`, `party`, `halo`, `phones`, `flowers: [cores]`, `beanie`+`trim2`, `star`, `bells`, `lei: [cores]`, `board`, `guitar`, `balloon`, `gift`.
 
 ### `public/data/items.json`
 Valores de comida (`belly`, `heal`, `coins`) e coletáveis.
 
 ### `public/data/cities/index.json` + `<id>.json`
-Gerados por `node tools/build-cities.mjs <pasta com os JSON do OSM>`. Cada cidade: `{id, name, country, half, buildings: [[altura, x1, z1, …]], roads: [[largura, éCalçada, x1, z1, …]], water, beach, green, coast, waterways, landmarks: [[nome, x, z, altura]], elev: {n, size, min, data}, tags}`. O visual (céu `mood`, paleta `pal`, palmeiras, estrelas para desbloquear, cidade natal) fica na tabela `META` do script. As missões de viagem são geradas a partir dos marcos (`tk_*` em i18n).
+Gerados por `node tools/build-cities.mjs <pasta com os JSON do OSM>`. Cada cidade: `{id, name, country, lat, lon, half, buildings: [[altura, x1, z1, …]], roads: [[largura, éCalçada, x1, z1, …]], water, beach, green, coast, waterways, landmarks: [[nome, x, z, altura]], elev: {n, size, min, data}, tags}`. O visual (céu `mood`, paleta `pal`, palmeiras, estrelas para desbloquear, cidade natal) fica na tabela `META` do script.
+- **Relevo (`elev`)**: grade n×n em ordem de linha, `j` para o sul (+z) e `i` para o leste (+x), metros acima de `min`, cobrindo `[-size/2, size/2]`. `World.fromCity` expõe `W.hM(x, z)` / `W.hpx(px, py)` (bilinear). A simulação usa isso para a velocidade (subida até 45% mais lenta, descida até 15% mais rápida, carros também) e o renderizador assenta terreno, vias, prédios, objetos e câmera na mesma função. Calçadas íngremes viram escadarias; prédios que cobririam vias ou becos são encolhidos para manter a passagem livre.
+- **Tags**: `comunidade` (regras abaixo), `morro` (câmera mais alta, tempos-alvo maiores), `beach` (vôlei e altinha na areia; se houver costa e nenhum polígono de praia, uma faixa de ~60 m de areia é gerada ao longo do mar), `hometown` (primeira da lista, sem exigir estrelas), `landmark`, `neon`.
+- **Comunidade**: casas coloridas empilhadas, escadarias com degraus pintados, murais, caixas-d'água, pipas, campinho e lajes com futebol, gatos vizinhos passeando. `G.noPolice`/`G.noHeat`, sem trânsito e sem cachorros. As missões vêm do modelo `comunidade` e passam pelo filtro `Missions.COMU_SAFE` (compras da vovó, patinhas na escadaria, concurso de pipas, gatinho no telhado, altinha na laje, rota dos murais, entregas morro acima, subida do mirante, lanche da tarde, bolo de aniversário): mesmo que um pacote peça outra coisa, o código troca por uma missão positiva.
+- **`data/citypacks.json`**: `{templates: [10], comunidade: [10], packs: {id: {places: [[nome, lat, lon]], missions: [{kind, name, story, params?, at?: [nomes de marcos/lugares], needs?: [tags], par?}]}}}`. Cidade com pacote usa o pacote; sem pacote usa `templates` (ou `comunidade`), então toda cidade nova já chega com 10 missões. `kind`: `race, photo, deliver, feast, chain, kites, parkour, brawl, rescue, escape, groceries, paws, football, volley, treats, fish, kiterun`. Os `places` (aproximados) são encaixados na rua mais próxima e servem de destino das missões. O número da missão é `1000 + ordem da cidade em META × 10 + k`.
+- **Rio Verde (`rioverde`)**: cidade natal do dono, com pacote próprio de 10 missões amistosas, caminhonetes (trânsito, estacionadas e nas missões de carro), feira agropecuária ao lado da chegada (barracas, fardos de feno, gado, bandeirinhas), gatos fazendeiros e a faixa sertaneja (`song` 7). Basta o arquivo chegar em `vp_art/cities/` e rodar `node tools/build-cities.mjs`.
+- Nomes de lugares passam por um filtro de classificação livre antes de aparecer na tela.
 
 ### Slots de arte (`public/assets/manifest.json`)
 `title_bg` (640×960), `portrait_mimo|mimosa|morticia` (512²), `boss_1` … `boss_5` (512², chefões das missões 10-50), `share`/`og_share` (1200×630), `shop_vip`, `shop_season`, `shop_apoio` (512²). Chave ausente = arte procedural.
@@ -153,12 +171,41 @@ Gerados por `node tools/build-cities.mjs <pasta com os JSON do OSM>`. Cada cidad
 | 63 | Natal Neon | Gatinhos de Natal / Christmas Kittens | `rescue` | Abrir cercados/jaulas, soltar gatinhos e escoltar | jaulas=fence/bite+switch/link+gap/link | 165s |
 | 64 | Natal Neon | A Árvore de Natal / The Christmas Tree | `defend` | Defender a casinha/gerador/árvore de ondas | ondas=5 | 220s |
 
+
+### Capítulos (missões 201-350)
+
+Cada capítulo tem 10 missões com uma fala de um dos gatos e termina num duelo. Abrem pelo total de estrelas.
+
+| # | Capítulo (PT / EN) | Bairro | Abre com | Níveis | Tipos |
+|---|---|---|---|---|---|
+| 201-210 | Verão na Orla / Boardwalk Summer | Sunset Beach | 6⭐ | 3-11 | `volley`, `kites`, `fish`, `photo`, `chain`, `parkour`, `escort`, `eat`, `kittens`, `duel` |
+| 211-220 | Becos de Neon / Neon Alleys | Neon Downtown | 15⭐ | 9-18 | `stealth`, `photo`, `chain`, `parkour`, `steal`, `kittens`, `waves`, `heist`, `escort`, `duel` |
+| 221-230 | Maré Alta / High Tide | Palm Harbor | 27⭐ | 14-23 | `fish`, `volley`, `kites`, `chain`, `escort`, `cash`, `heist`, `rescue`, `chase`, `duel` |
+| 231-240 | Noite de Tempestade / Stormy Night | Storm Docks | 40⭐ | 19-28 | `stealth`, `kittens`, `parkour`, `defend`, `fish`, `truck`, `photo`, `escape`, `heist`, `duel` |
+| 241-250 | Luxo nas Colinas / Hillside Luxury | Vice Heights | 55⭐ | 24-33 | `photo`, `stealth`, `volley`, `chain`, `vault`, `escort`, `kites`, `cash`, `parkour`, `duel` |
+| 251-260 | Festival das Pipas / Kite Festival | Sunset Beach | 70⭐ | 12-19 | `kites`, `chain`, `photo`, `kites`, `escort`, `parkour`, `waves`, `eat`, `kites`, `duel` |
+| 261-270 | Os Gatinhos Perdidos / The Lost Kittens | Neon Downtown | 88⭐ | 22-30 | `kittens`, `photo`, `rescue`, `stealth`, `kittens`, `escort`, `chase`, `defend`, `kittens`, `duel` |
+| 271-280 | Rota dos Petiscos / Treat Route | Palm Harbor | 105⭐ | 26-34 | `chain`, `heist`, `eat`, `truck`, `steal`, `chain`, `cash`, `heist`, `vault`, `duel` |
+| 281-290 | Operação Soneca / Operation Nap | Storm Docks | 125⭐ | 30-38 | `stealth`, `steal`, `stealth`, `photo`, `rescue`, `vault`, `stealth`, `escape`, `heist`, `duel` |
+| 291-300 | Liga dos Vira-Latas / The Mutt League | Vice Heights | 145⭐ | 34-42 | `duel`, `waves`, `duel`, `steal`, `duel`, `defend`, `duel`, `cash`, `waves`, `duel` |
+| 301-310 | Copa das Patas / The Paw Cup | Sunset Beach | 165⭐ | 30-36 | `volley`, `race`, `fish`, `volley`, `parkour`, `kites`, `volley`, `chase`, `volley`, `duel` |
+| 311-320 | Paparazzi Felino / Feline Paparazzi | Neon Downtown | 190⭐ | 34-40 | `photo`, `escape`, `chain`, `chase`, `stealth`, `escort`, `photo`, `waves`, `heist`, `duel` |
+| 321-330 | Pescaria Lendária / Legendary Fishing | Palm Harbor | 215⭐ | 38-44 | `fish`, `chain`, `steal`, `fish`, `defend`, `escort`, `chase`, `kittens`, `fish`, `duel` |
+| 331-340 | Blecaute nas Docas / Docks Blackout | Storm Docks | 240⭐ | 42-48 | `defend`, `stealth`, `rescue`, `chain`, `truck`, `kittens`, `escape`, `waves`, `vault`, `duel` |
+| 341-350 | A Grande Festa / The Grand Party | Vice Heights | 270⭐ | 46-52 | `chain`, `heist`, `escort`, `kites`, `photo`, `defend`, `volley`, `kittens`, `waves`, `duel` |
+
+Total: **209 missões** — `duel` 19, `waves` 12, `rescue` 11, `defend` 11, `chain` 11, `chase` 10, `photo` 10, `escape` 9, `vault` 9, `escort` 9, `kittens` 9, `stealth` 9, `eat` 8, `truck` 8, `volley` 8, `kites` 8, `heist` 8, `steal` 7, `fish` 7, `race` 6, `cash` 6, `parkour` 6, `boss` 5, `reach` 3.
+
 Chefões: 10 **Delegado Bulldogão** (investida, pancada, redes, reforços) · 20 **Madame Poodle** (perfume em anel, barris) · 30 **Capitão Rottweiler** (âncora) · 40 **Don Pug** (robô aspirador que suga) · 50 **O Rei da Carrocinha** (tudo junto). Ciclo: Mimosa quebra a armadura → chefão exposto → Mortícia rouba o lanche (senão ele come e se cura) → todos batem.
 
 ## 8. Desempenho
 
-Geometria mesclada com cores por vértice, InstancedMesh para palmeiras/postes/sombras, ~60-80 draw calls, sem sombras reais (blobs), brilho falso com sprites aditivos, pixel ratio limitado (1.5 no celular), qualidade automática por FPS medido (ou manual em Ajustes), tratamento de perda de contexto WebGL e tela amigável sem WebGL.
+- Geometria mesclada com cores por vértice, **dividida em blocos espaciais** (`gfx/lod.js`, 56-80 unidades) com esfera envolvente: o Three.js só desenha os blocos dentro da câmera (frustum culling) e os que passam da neblina são escondidos. Blocos de detalhe (neon, enfeites, murais, postes) somem antes, conforme a qualidade.
+- Palmeiras/árvores e postes são `InstancedMesh` por bloco com **dois níveis de detalhe** (palmeira de ~300 triângulos perto, ~56 longe).
+- Qualidade **leve / médio / alto / auto** em Ajustes (com contador de FPS opcional). Auto mede o FPS e desce de nível quando fica abaixo de 27. No nível leve os personagens são montados com esferas mais simples (~40% dos triângulos), o pixel ratio fica em 1 e a neblina fecha 25% antes.
+- Sem sombras reais (blobs), brilho falso com sprites aditivos, pixel ratio limitado (1 / 1,25 / 1,5 no celular), tratamento de perda de contexto WebGL e tela amigável sem WebGL.
+- Medido com `node tests/e2e/perf.cjs 4` (Chromium com WebGL por software e CPU 4x mais lenta; serve para comparar versões, não como FPS de celular): cidade livre no nível leve caiu de 214 mil para ~66 mil triângulos visíveis.
 
 ## 9. Testes
 
-Scripts Playwright em `tests/e2e/` (ver README): bot que joga todas as missões de forma acelerada, testes de controles (teclado/mouse/toque), loja e contas com API simulada, capturas de tela.
+Scripts Playwright em `tests/e2e/` (ver README): bot que joga todas as missões de forma acelerada (`missions.cjs`), testes de controles (teclado/mouse/toque), loja e contas com API simulada, `expansion.cjs` (modelos novos, diário/semanal, treino no toque, relevo e regras de comunidade com um mapa sintético de `tests/helpers/elev-fixture.cjs` servido por rota sem tocar no arquivo real, Rio Verde com mapa substituto, cartão de compartilhar, pacotes, orçamento de triângulos), `perf.cjs` e `shots.cjs`. `npm test` também valida o conteúdo (`tests/data.test.mjs`): 200+ missões, capítulos, catálogo da loja x preços do cliente, guarda-roupa, pacotes de cidade e eventos.

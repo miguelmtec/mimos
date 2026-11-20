@@ -13,6 +13,14 @@ exports.build = function () {
   return C;
 };
 exports.meta = C => ({ id: C.id, name: C.name, country: 'Teste', file: C.id + '.json', kb: 100, landmarks: C.landmarks.length, tags: C.tags, order: 950, flag: '🧪', mood: 2, pal: 2, palms: 1, stars: 0 });
+// Stand-in for the Rio Verde extract (not delivered yet): the Miami map served under the id "rioverde", tagged hometown.
+exports.buildAgro = function () { const C = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../public/data/cities/miami.json'), 'utf8')); C.id = 'rioverde'; C.name = 'Rio Verde (fixture)'; C.country = 'Brasil'; C.tags = ['hometown']; return C; };
+exports.agroRoutes = async function (page) {
+  const C = exports.buildAgro();
+  await page.route('**/api/**', r => r.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"offline"}' }));
+  await page.route('**/data/cities/index.json', async r => { const idx = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../public/data/cities/index.json'), 'utf8')); idx.cities = idx.cities.filter(c => c.id !== 'rioverde'); idx.cities.unshift(Object.assign(exports.meta(C), { order: 9, flag: '🏡', mood: 5, hometown: 1 })); await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(idx) }); });
+  await page.route('**/data/cities/rioverde.json', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(C) }));
+};
 // Playwright routes: adds the fixture to the catalogue and serves its JSON
 exports.routes = async function (page) {
   const C = exports.build();

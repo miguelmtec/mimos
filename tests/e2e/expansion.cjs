@@ -107,6 +107,20 @@ const run = (page, n) => page.evaluate(n => { try { return __bot.run(n, 400); } 
     ok('place names are family friendly', !/erotic/i.test(real.miami ? real.miami.names : ''));
     ok('terrain: zero console errors', errors.length === 0, errors.slice(0, 3)); await browser.close();
   }
+  // ---------- 4b. Rio Verde bonus city (stand-in map until the real extract arrives) ----------
+  if (want('agro')) {
+    const { browser, page, errors } = await L.open(false, { routes: FX.agroRoutes }); await bot(page);
+    const a = await page.evaluate(async () => { await VP.Tour.load('rioverde'); VP.UI.tour('rioverde'); const G = __vp.G, ms = VP.Missions.tourList.filter(m => m.tourCity === 'rioverde'); return { first: VP.Missions.cities[0].id, home: VP.Missions.cities[0].hometown, n: ms.length, names: ms.map(m => m.name[0]), ns: ms.map(m => m.n), song: VP.UI.citySong('rioverde'), farmers: G.friends.filter(f => f.name === 'farmer').length, pickups: G.cars.filter(c => c.type === 'pickup').length, kinds: ms.map(m => m.p.kind) }; });
+    ok('Rio Verde is the hometown bonus city, listed first', a.first === 'rioverde' && a.home === 1, a);
+    ok('Rio Verde has its own 10 agro missions, all friendly', a.n === 10 && a.names.includes('Rali das Caminhonetes') && !a.kinds.some(k => ['brawl', 'escape'].includes(k)), a.names);
+    ok('agro flavour: sertanejo track, farmers at the fair, pickup trucks', a.song === 7 && a.farmers >= 3 && a.pickups >= 1, a);
+    await page.waitForTimeout(1200); await L.shot(page, 'x-rioverde');
+    const race = await page.evaluate(n => { __vp.start(n); return __vp.G.car && __vp.G.car.type; }, a.ns[0]);
+    ok('the rally is driven in a pickup truck', race === 'pickup', race);
+    let won = 0; const lost = []; for (const n of a.ns) { const r = await run(page, n); if (r.win) won++; else lost.push(n + ':' + r.why); }
+    ok('bot completes all 10 Rio Verde missions', won === 10, lost);
+    ok('agro: zero console errors', errors.length === 0, errors.slice(0, 3)); await browser.close();
+  }
   // ---------- 5. share card + challenge link ----------
   if (want('share')) {
     const { browser, page, errors } = await L.open(true);

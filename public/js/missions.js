@@ -494,7 +494,9 @@ M.daily = function (date) {
   });
   return { key, list: out };
 };
-M.dailyState = function (date) { const S = VP.S, key = M.dayKey(date); if (!S.daily || S.daily.k !== key) S.daily = { k: key, done: [0, 0, 0], all: 0, list: M.daily(date).list }; return S.daily; };
+// The day's list is kept in the save; while nothing has been completed yet it follows newly unlocked missions
+// (a brand-new player starts with three goals on the first mission and gets variety as soon as more open up).
+M.dailyState = function (date) { const S = VP.S, key = M.dayKey(date), pool = M.list.filter(m => !m.boss && M.unlocked(m)).length; if (!S.daily || S.daily.k !== key || (S.daily.pool !== pool && !S.daily.done.some(Boolean))) S.daily = { k: key, done: [0, 0, 0], all: 0, pool, list: M.daily(date).list }; return S.daily; };
 // called with the result of a won mission; returns the reward lines to show
 M.dailyCheck = function (r, date) {
   const st = M.dailyState(date), S = VP.S, out = [];

@@ -325,14 +325,16 @@ TYPES.tour = {
     const want = (p.at || []).map(named).filter(Boolean);
     const way = (i, from) => want[i] || far(from, i * 3 + 1 + (p.seed || 0), 450);
     const kind = comu && !COMU_SAFE.includes(p.kind) ? 'photo' : p.kind;
+    // car checkpoints must be drivable: move them onto the nearest real road (wide enough for any vehicle)
+    const onRoad = pt => { let b = null, bd = 520 * 520; for (const rd of W.roads) if (rd.w >= 6) for (const q of rd.pts) { const d = U.d2(q.x, q.y, pt.x, pt.y); if (d < bd && !W.blocked(q.x, q.y, 44, 3)) { bd = d; b = q; } } return b ? { x: b.x, y: b.y, name: pt.name } : pt; };
     B.begin(start, { traffic: comu ? 0 : 8, coffee: 8, parked: comu ? 0 : 10 });
     G.tourM = true;
     if (comu) { G.noPolice = true; G.noHeat = true; for (const e of G.dogs) e.dead = true; }
     const vehicle = agro || p.car === 2 ? 'pickup' : B.getaway();
     if (kind === 'race') {
       const car = Game.addCar(vehicle, start.x, start.y, 0); car.hp = car.max = 260; Game.enterCar(car); G.noHeat = true;
-      let cur = start; const cps = []; for (let k = 0; k < (p.n || 5); k++) { const c = way(k, cur); cps.push(c); cur = c; }
-      G.mtimer = Math.round(pathLen(start, cps) / 24 / 7 + 40);
+      let cur = start; const cps = []; for (let k = 0; k < (p.n || 5); k++) { const c = onRoad(way(k, cur)); cps.push(c); cur = c; }
+      G.mtimer = Math.round(pathLen(start, cps) / 24 / (vehicle === 'pickup' ? 5 : 7) + 45);
       cps.forEach((pt, k) => B.step({ txt: 'o_tourCp', args: [k + 1, cps.length, pt.name], car: true, at: () => pt, done: () => !!G.car && U.d2(G.car.x, G.car.y, pt.x, pt.y) < 130 * 130 }));
     } else if (kind === 'deliver') {
       const dest = way(0, start); G.mtimer = Math.round(Math.hypot(dest.x - start.x, dest.y - start.y) / 24 / 3.2 + 50);
@@ -366,9 +368,9 @@ TYPES.tour = {
       let cur = start; const n = p.n || 4, spots = []; for (let k = 0; k < n; k++) { const c = way(k, cur); if (spots.some(s => U.d2(s.x, s.y, c.x, c.y) < 150 * 150)) { const r = route(B, cur, 1, 400, 900)[0]; c.x = r.x; c.y = r.y; if (!want[k]) c.name = tr('tp_view'); } spots.push(c); cur = c; }
       spots.forEach((s, i) => B.step({ txt: 'o_photo', args: [i + 1, spots.length, s.name], at: () => s, done: () => near(G, s, 85) && !G.car, exit() { flash(G, s, '📸 ' + s.name); G.stat.cash += 35; } }));
     } else if (kind === 'chain') {
-      let cur = start; const pts = []; for (let k = 0; k < (p.n || 4); k++) { const c = want[k] || Object.assign({ name: '' }, route(B, cur, 1, 400, 900)[0]); pts.push(c); cur = c; }
+      let cur = start; const pts = []; for (let k = 0; k < (p.n || 4); k++) { let c = want[k] || Object.assign({ name: '' }, route(B, cur, 1, 400, 900)[0]); if (p.car) c = onRoad(c); pts.push(c); cur = c; }
       let car = null; if (p.car) { car = Game.addCar(vehicle, start.x, start.y, 0); Game.enterCar(car); G.noHeat = true; }
-      G.mtimer = Math.round(pathLen(start, pts) / (p.car ? 150 : 95) + 30);
+      G.mtimer = Math.round(pathLen(start, pts) / (p.car ? (vehicle === 'pickup' ? 115 : 150) : 95) + 30);
       pts.forEach((pt, i) => B.step({ txt: i % 2 ? 'o_dropoff' : 'o_pickup', args: [Math.floor(i / 2) + 1, Math.ceil(pts.length / 2)], car: !!p.car, at: () => pt, done: () => near(G, pt, p.car ? 120 : 85) && (!p.car || !!G.car), exit() { G.mtimer += 5; G.stat.cash += i % 2 ? 60 : 10; VP.Audio.sfx('cash', 0.05); Game.fx.text(pt.x, pt.y - 50, i % 2 ? '📦 ✔' : '📦', '#ffd23f', 18); } }));
       void car;
     } else if (kind === 'parkour') { // comunidade: up the stairways, always climbing when the map has hills

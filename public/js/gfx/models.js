@@ -77,6 +77,7 @@ export function buildCat(spec) {
   b.sph(fur, 0, 0.5, -0.04, 0.4, 0.38, 0.47);
   if (spec.pattern === 'tuxedo' || spec.pattern === 'points') b.sph(fur2, 0, 0.47, 0.2, 0.26, 0.28, 0.3);
   if (spec.pattern === 'calico' && !coat) { b.sph(pA, -0.22, 0.62, -0.2, 0.24, 0.2, 0.26); b.sph(pB, 0.24, 0.55, -0.05, 0.2, 0.22, 0.24); }
+  if (spec.pattern === 'spotted' && !coat) for (let i = 0; i < 12; i++) { const a = i * 2.4, yy = 0.4 + (i % 4) * 0.09; b.lo(pA, Math.sin(a) * 0.37, yy, Math.cos(a) * 0.42 - 0.04, 0.075, 0.06, 0.075); }
   if (spec.pattern === 'tabby') for (let i = 0; i < 3; i++) b.tor(pA, 0, 0.52, -0.3 + i * 0.2, 0.39 - Math.abs(i - 1) * 0.04, 0.4, 0.3, 0, 0, 0);
   if (A.shirt) { b.sph(A.shirt, 0, 0.5, 0.0, 0.42, 0.36, 0.44); if (A.shirt2) for (let i = 0; i < 9; i++) { const a = i * 2.4, yy = 0.36 + (i % 3) * 0.12; b.lo(A.shirt2, Math.sin(a) * 0.38, yy, Math.cos(a) * 0.36 + 0.02, 0.07, 0.07, 0.07); } }
   if (A.jacket) { // open jacket: two side shells + collar, chest stays visible
@@ -115,7 +116,8 @@ export function buildCat(spec) {
   const legsA = leg([[-0.22, 0.2], [0.22, -0.26]]), legsB = leg([[0.22, 0.2], [-0.22, -0.26]]);
   // ---- tail (pivot at its base) ----
   const t = new GB(), tailCol = spec.pattern === 'calico' ? pA : spec.pattern === 'points' ? pA : fur;
-  for (let i = 0; i < 6; i++) { const f = i / 5; t.sph(i === 5 && spec.pattern === 'calico' ? pB : i > 3 && spec.pattern === 'tuxedo' ? fur2 : tailCol, 0, f * 0.55 + Math.sin(f * 2.4) * 0.05, -f * 0.3 - Math.sin(f * 3) * 0.12, 0.13 + (fl ? 0.05 : 0) * Math.sin(f * 3.1) + 0.02); }
+  const TL = { short: [4, 0.55, 1], bob: [2, 0.4, 1.25], fluffy: [6, 1, 1.75], curl: [6, 1, 1] }[spec.tail] || [6, 1, 1]; // tail: long (default) | fluffy | short | bob | curl
+  for (let i = 0; i < TL[0]; i++) { const f = i / 5 * TL[1] / (TL[0] === 6 ? 1 : 0.9), cu = spec.tail === 'curl' ? Math.sin(f * 3.4) * 0.3 : 0; t.sph(i === TL[0] - 1 && spec.pattern === 'calico' ? pB : i > 3 && spec.pattern === 'tuxedo' ? fur2 : spec.pattern === 'tabby' && i % 2 ? pA : tailCol, 0, f * 0.55 + Math.sin(f * 2.4) * 0.05 - cu * 0.3, -f * 0.3 - Math.sin(f * 3) * 0.12 + cu, (0.13 + (fl ? 0.05 : 0) * Math.sin(f * 3.1) + 0.02) * TL[2]); }
   const tail = t.mesh(); tail.position.set(0, 0.5, -0.44); inner.add(tail);
   // ---- head ----
   const h = new GB(), flat = spec.face !== 'round';
@@ -125,18 +127,22 @@ export function buildCat(spec) {
     h.lo(fur, 0, -0.36, 0.14, 0.26, 0.16, 0.22);
   }
   if (spec.pattern === 'calico') { h.sph(pA, -0.26, 0.2, 0.12, 0.3, 0.27, 0.3); h.sph(pB, 0.3, 0.24, 0.06, 0.27, 0.24, 0.3); h.sph(pA, 0.36, -0.2, 0.2, 0.16, 0.14, 0.14); }
+  if (spec.pattern === 'spotted') for (let i = 0; i < 5; i++) h.lo(pA, (i - 2) * 0.15, 0.32 + (i % 2) * 0.08, 0.26 - Math.abs(i - 2) * 0.05, 0.05, 0.05, 0.04);
   if (spec.pattern === 'tabby') for (let i = -1; i <= 1; i++) h.box(pA, i * 0.13, 0.36, 0.22, 0.05, 0.12, 0.2, -0.6);
   if (spec.pattern === 'tuxedo') h.sph(fur2, 0, -0.14, 0.26, 0.26, 0.26, 0.24);
   if (spec.pattern === 'points') h.sph(pA, 0, -0.3, 0.08, 0.36, 0.2, 0.34);
   // ears
   for (const sx of [-1, 1]) {
     const ec = spec.pattern === 'calico' ? (sx < 0 ? pA : pB) : spec.pattern === 'points' ? pA : fur;
-    h.cone(ec, sx * 0.36, 0.44, -0.02, 0.19, 0.34, 0.12, 0, 0, -sx * 0.32); h.cone(spec.earIn || '#f4a9b8', sx * 0.35, 0.42, 0.04, 0.11, 0.24, 0.07, 0, 0, -sx * 0.32);
+    const EK = spec.ears; // ears: pointy (default) | big | round | fold | tuft
+    if (EK === 'fold') { h.sph(ec, sx * 0.38, 0.36, 0.08, 0.17, 0.1, 0.14, 0.5, 0, -sx * 0.5); h.sph(spec.earIn || '#f4a9b8', sx * 0.38, 0.33, 0.16, 0.1, 0.05, 0.06, 0.5, 0, -sx * 0.5); }
+    else if (EK === 'round') { h.sph(ec, sx * 0.38, 0.4, -0.02, 0.19, 0.2, 0.1); h.sph(spec.earIn || '#f4a9b8', sx * 0.38, 0.4, 0.04, 0.11, 0.13, 0.06); }
+    else { const eb = EK === 'big' ? 1.35 : 1; h.cone(ec, sx * 0.36, 0.44 + (eb - 1) * 0.12, -0.02, 0.19 * eb, 0.34 * eb, 0.12, 0, 0, -sx * 0.32); h.cone(spec.earIn || '#f4a9b8', sx * 0.35, 0.42 + (eb - 1) * 0.1, 0.04, 0.11 * eb, 0.24 * eb, 0.07, 0, 0, -sx * 0.32); if (EK === 'tuft') h.cone(ec, sx * 0.45, 0.68, -0.02, 0.04, 0.2, 0.03, 0, 0, -sx * 0.5); }
   }
   // face (flat persian: eyes wide apart, tiny nose between them)
   const ez = flat ? 0.4 : 0.43, ey = 0.03, ex = 0.23, er = spec.size < 0.9 ? 0.15 : 0.135;
   for (const sx of [-1, 1]) {
-    h.sph('#ffffff', sx * ex, ey, ez, er, er, 0.07); h.sph(spec.eye, sx * ex, ey, ez + 0.035, er * 0.74, er * 0.74, 0.05); h.sph('#0b0610', sx * ex, ey, ez + 0.06, er * 0.36, er * 0.46, 0.035); h.sph('#ffffff', sx * ex - 0.04, ey + 0.05, ez + 0.085, 0.03);
+    h.sph('#ffffff', sx * ex, ey, ez, er, er, 0.07); h.sph(sx > 0 && spec.eye2 ? spec.eye2 : spec.eye, sx * ex, ey, ez + 0.035, er * 0.74, er * 0.74, 0.05); h.sph('#0b0610', sx * ex, ey, ez + 0.06, er * 0.36, er * 0.46, 0.035); h.sph('#ffffff', sx * ex - 0.04, ey + 0.05, ez + 0.085, 0.03);
     if (spec.lids) h.sph(pA, sx * ex, ey + 0.075, ez + 0.03, er * 1.12, er * 0.62, 0.085);
     if (spec.brows) h.box(INK, sx * (ex - 0.02), ey + 0.18, ez + 0.04, 0.2, 0.05, 0.05, 0, 0, sx * -0.45);
   }

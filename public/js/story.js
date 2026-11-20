@@ -48,7 +48,10 @@ ACT.syEnd = () => { const p = play; play = null; if (p && p.then) p.then(); else
 .sy-ch{display:flex;gap:10px;align-items:center;background:rgba(18,4,31,.55);border:2px solid rgba(255,210,63,.6);border-radius:16px;padding:8px 12px;margin:8px 0;text-align:left;font-size:13px}.sy-ch b{display:block;font-size:14px;color:#ffd23f}.sy-ch .em{font-size:28px}`; document.head.appendChild(css); }
 
 // intro before the first game; one card set after each chapter boss
-{ const play0 = ACT.play; ACT.play = () => { const d = St.data; if (!S().seen.intro && d.intro && d.intro.length && VP.S.unlocked <= 1 && !VP.totalStars()) St.show('intro', d.intro, play0); else play0(); }; }
+// (a brand-new player gets the training first and the story right after it; whoever already trained sees it on the next "play")
+const wantIntro = () => !S().seen.intro && St.data.intro && St.data.intro.length && VP.S.unlocked <= 1 && !VP.totalStars();
+{ const play0 = ACT.play; ACT.play = () => { if (VP.S.tut && wantIntro()) St.show('intro', St.data.intro, play0); else play0(); }; }
+{ const end0 = UI.endTutorial; UI.endTutorial = function (skipped) { if (wantIntro()) { VP.S.tut = 1; St.show('intro', St.data.intro, () => end0(skipped)); const sk = document.getElementById('tutskip'); if (sk) sk.remove(); } else end0(skipped); }; }
 { const res0 = UI.result; UI.result = function (win, why) {
     const G = Game.G, m = G && G.m, first = m && m.boss && !VP.S.stars[m.n];
     res0(win, why);
@@ -79,10 +82,11 @@ St.nextStory = () => M.list.find(m => !m.bonus && m.n <= VP.S.unlocked && !VP.S.
   }; }
 St.hudDraw = function (c, G, h) {
   const ob = H.ob; if (!ob || G.tutorial) return;
-  const k = H.k, w = H.w, a = G.car || G.cats[G.active], ow = Math.min(w - 20 * k, 420 * k), ox = w > 700 ? w / 2 - ow / 2 : 10 * k, oy = w > 700 ? H.top + 12 * k : H.top + (G.wanted > 0 || G.wantedFlash > 0 ? 142 : 124) * k;
+  const k = H.k, a = G.car || G.cats[G.active], bx = H.obBox; if (!bx) return;
   const dist = ob.at ? Math.round(Math.hypot(ob.at.x - a.x, ob.at.y - a.y) / 24) : null, s = '🎯 ' + t('sy_goal') + (dist !== null ? ' · ' + dist + ' m' : '') + (G.easy ? ' · 🕊' : '');
   c.font = '900 ' + 9.5 * k + 'px system-ui,sans-serif'; const tw = c.measureText(s).width + 14 * k;
-  h.pill(ox + 12 * k, oy - 9 * k, tw, 15 * k, '#ffd23f', null); h.txt(s, ox + 12 * k + tw / 2, oy - 1.2 * k, 9.5 * k, '#12041f', 'center', false);
+  const ty = bx.y + bx.h - 5 * k; // a small tab hanging from the bottom-left corner of the goal box
+  h.pill(bx.x + 12 * k, ty, tw, 15 * k, '#ffd23f', null); h.txt(s, bx.x + 12 * k + tw / 2, ty + 7.8 * k, 9.5 * k, '#12041f', 'center', false);
 };
 
 // ---------- release calendar: chapters (and with them their neighbourhoods) can open on a date ----------

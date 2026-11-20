@@ -8,7 +8,15 @@ const api = (path, method, body) => fetch(path, { method: method || 'GET', heade
   .then(async r => Object.assign({ status: r.status }, await r.json().catch(() => ({})))).catch(() => ({ status: 0, error: 'network' }));
 A.api = api;
 const BREEDS = ['persa', 'siames', 'vira-lata', 'srd', 'maine-coon', 'sphynx', 'angora', 'bengal', 'ragdoll', 'british', 'sem-raca', 'outro'];
-const FACES = ['round', 'flat', 'wedge', 'square', 'long'], PATTERNS = ['solid', 'calico', 'tuxedo', 'tabby', 'bicolor', 'pointed'];
+const FACES = ['round', 'flat', 'wedge', 'square', 'long'], PATTERNS = ['solid', 'tabby', 'spotted', 'tuxedo', 'bicolor', 'calico', 'tortie', 'pointed'];
+const EARS = ['pointy', 'big', 'round', 'fold', 'tuft'], TAILS = ['long', 'fluffy', 'short', 'bob', 'curl'], ROLES = ['shooter', 'biter', 'glutton'];
+// real coat and eye colours, one tap each (the colour picker stays for anything else)
+const FURS = ['#17141a', '#3a2e45', '#5b5f6b', '#9aa0a8', '#c9ced6', '#ffffff', '#f7ead0', '#e8c9a0', '#d9a066', '#f28a2e', '#b5642a', '#6b4326', '#8a8f6a'];
+const EYES = ['#7bc86c', '#3fae6a', '#f2b01e', '#ffc928', '#c98f4b', '#3fa9f5', '#8fd3ff', '#b9a6d9'];
+// starting points: tap one, then fine-tune
+const LOOKS = { frajola: { pattern: 'tuxedo', furBase: '#17141a', patchColors: ['#ffffff'], eyeColor: '#f2b01e' }, laranja: { pattern: 'tabby', furBase: '#f28a2e', patchColors: ['#b5642a'], eyeColor: '#7bc86c' }, tigrado: { pattern: 'tabby', furBase: '#9aa0a8', patchColors: ['#5b5f6b'], eyeColor: '#7bc86c' },
+  siames: { pattern: 'pointed', furBase: '#f7ead0', patchColors: ['#5a4030'], eyeColor: '#3fa9f5', faceShape: 'wedge', furLength: 0.15, ears: 'big' }, tricolor: { pattern: 'calico', furBase: '#ffffff', patchColors: ['#f28a2e', '#17141a'], eyeColor: '#f2b01e' }, escaminha: { pattern: 'tortie', furBase: '#2b1f24', patchColors: ['#f28a2e', '#b5642a'], eyeColor: '#ffc928' },
+  preto: { pattern: 'solid', furBase: '#17141a', patchColors: [], eyeColor: '#ffc928' }, branco: { pattern: 'solid', furBase: '#ffffff', patchColors: [], eyeColor: '#3fa9f5' }, persa: { pattern: 'solid', furBase: '#f7ead0', patchColors: [], eyeColor: '#c98f4b', faceShape: 'flat', furLength: 0.9, tail: 'fluffy' }, bengal: { pattern: 'spotted', furBase: '#d9a066', patchColors: ['#6b4326'], eyeColor: '#3fae6a', furLength: 0.15 } };
 const ACCS = ['collar', 'bell', 'bow', 'bowtie', 'bandana', 'scarf', 'sunglasses', 'glasses', 'hat', 'cap', 'crown', 'flower', 'chain'];
 const ACC_ICON = { collar: '📿', bell: '🔔', bow: '🎀', bowtie: '🤵', bandana: '🧣', scarf: '🧣', sunglasses: '🕶', glasses: '👓', hat: '🎩', cap: '🧢', crown: '👑', flower: '🌼', chain: '⛓' };
 const light = hex => { const n = parseInt(hex.slice(1), 16), f = v => Math.round(v + (255 - v) * 0.55).toString(16).padStart(2, '0'); return '#' + f(n >> 16) + f((n >> 8) & 255) + f(n & 255); };
@@ -20,10 +28,12 @@ A.toSpec = function (s) {
   if (a.includes('bandana')) acc.scarf = '#2de2e6'; if (a.includes('scarf')) acc.scarf = '#e01e37';
   if (a.includes('sunglasses')) acc.glasses = '#17101c'; else if (a.includes('glasses')) acc.glasses = '#8ff3ff';
   if (a.includes('hat')) acc.hat = '#17101c'; if (a.includes('cap')) acc.hat = '#2de2e6'; if (a.includes('crown')) { acc.crown = '#ffd23f'; delete acc.hat; }
-  const fur = s.furBase || '#d9a066', pat = { bicolor: 'tuxedo', pointed: 'points' }[s.pattern] || s.pattern || 'solid';
-  return { size: Math.max(0.6, Math.min(1.2, (s.size || 1) * 0.92)), fur, fur2: pat === 'tuxedo' ? (pc[0] || '#ffffff') : light(fur), pattern: pat, patchA: pc[0] || (pat === 'points' ? '#5a4030' : '#f28a2e'), patchB: pc[1] || pc[0] || '#2b1f24',
-    eye: s.eyeColor || '#7bc86c', earIn: '#f4a9b8', face: s.faceShape === 'flat' ? 'flat' : 'round', headShape: s.faceShape || 'round', fluff: s.faceShape === 'flat' ? 1 : 0.6, acc };
+  const tortie = s.pattern === 'tortie', fur = s.furBase || '#d9a066', pat = { bicolor: 'tuxedo', pointed: 'points', tortie: 'calico' }[s.pattern] || s.pattern || 'solid';
+  const fl = typeof s.furLength === 'number' ? s.furLength * 1.4 : (s.faceShape === 'flat' ? 1 : 0.6);
+  return { size: Math.max(0.6, Math.min(1.2, (s.size || 1) * 0.92)), fur, fur2: pat === 'tuxedo' ? (pc[0] || '#ffffff') : tortie ? fur : light(fur), pattern: pat, patchA: pc[0] || (pat === 'points' ? '#5a4030' : pat === 'spotted' || pat === 'tabby' ? shade(fur) : '#f28a2e'), patchB: pc[1] || pc[0] || '#2b1f24',
+    eye: s.eyeColor || '#7bc86c', eye2: s.eyeColor2 || undefined, earIn: '#f4a9b8', face: s.faceShape === 'flat' ? 'flat' : 'round', headShape: s.faceShape || 'round', fluff: fl, ears: s.ears || 'pointy', tail: s.tail || (fl > 1 ? 'fluffy' : 'long'), acc };
 };
+const shade = hex => { const n = parseInt(hex.slice(1), 16), f = v => Math.round(v * 0.62).toString(16).padStart(2, '0'); return '#' + f(n >> 16) + f((n >> 8) & 255) + f(n & 255); };
 const blank = () => ({ name: '', breed: 'vira-lata', bio: '', instagram: '', isPublic: true, spec: { size: 1, faceShape: 'round', furBase: '#d9a066', pattern: 'solid', patchColors: ['#ffffff', '#2b1f24'], eyeColor: '#7bc86c', accessories: [] } });
 
 // ---------- boot + cloud save ----------
@@ -56,11 +66,12 @@ UI.SCREENS.account = {
       ${A.step === 'code' ? `<p class="small">${t('ac_sent', esc(A.email))}</p><input class="txt" id="acode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code"><div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="acBackEmail">${t('ac_other')}</button><button class="btn" data-act="acVerify">${t('ac_enter')}</button></div>`
         : `<input class="txt" id="aemail" type="email" inputmode="email" placeholder="voce@email.com" value="${esc(A.email)}" autocomplete="email"><div class="row" style="margin-top:10px"><button class="btn" data-act="acStart">✉ ${t('ac_send')}</button></div>`}
       <p class="small" style="margin-top:10px">🔒 ${t('ac_note')}</p></div>
-      <button class="btn ghost" data-act="creator" data-i="local">🐱 ${t('ac_create')} (${t('ac_local')})</button><button class="btn ghost sm" data-act="privacy">🔒 ${t('ac_privacy')}</button></div>`;
+      <button class="btn ghost" data-act="creator" data-i="local">🐱 ${t('ac_create')} (${t('ac_local')})</button>${VP.S.avatar ? `<button class="btn teal" data-act="party">🐱 ${t('pa_title')}</button>` : ''}<button class="btn ghost sm" data-act="privacy">🔒 ${t('ac_privacy')}</button></div>`;
     return head + `<div class="panel t"><p class="small">✉ ${esc(A.user.email)} · ☁ ${t('ac_cloud')}</p></div>
       <h3>🐱 ${t('ac_mycats')} (${A.cats.length}/5)</h3>
       ${A.cats.map((c, i) => `<div class="mrow"><div style="flex:1"><b>${esc(c.name)}</b> <span class="small">· ${esc(c.breed)} ${c.isPublic ? '· 🌍' : '· 🔒'}</span></div><button class="btn ghost sm" data-act="acUse" data-i="${i}">${VP.S.avatarId === c.id ? '✓ ' + t('ac_playing') : t('ac_play')}</button><button class="btn sm" data-act="creator" data-i="${i}">✎</button></div>`).join('')}
       ${A.cats.length < 5 ? `<button class="btn" data-act="creator" data-i="new">＋ ${t('ac_create')}</button>` : ''}
+      ${VP.S.avatar ? `<button class="btn teal" data-act="party">🐱 ${t('pa_title')}</button>` : ''}
       <div class="row"><button class="btn ghost sm" data-act="acLogout">${t('ac_logout')}</button><button class="btn ghost sm" data-act="privacy">🔒 ${t('ac_privacy')}</button><button class="btn ghost sm" data-act="acDelete" style="color:#ff6b6b">🗑 ${t('ac_delete')}</button></div></div>`;
   },
 };
@@ -80,7 +91,7 @@ UI.act.acVerify = async el => {
 };
 UI.act.acLogout = async () => { await api('/api/auth/logout', 'POST'); A.user = null; A.cats = []; A.status = 'guest'; UI.show('account'); };
 UI.act.acDelete = async () => { if (!confirm(t('ac_delAsk'))) return; const r = await api('/api/me', 'DELETE'); if (r.status === 200) { A.user = null; A.cats = []; A.status = 'guest'; VP.S.avatarId = null; UI.toast(t('ac_deleted'), 3000); UI.show('account'); } else UI.toast(errMsg(r)); };
-UI.act.acUse = el => { const c = A.cats[+el.dataset.i]; if (VP.S.avatarId === c.id) { VP.S.avatar = null; VP.S.avatarId = null; } else { VP.S.avatar = Object.assign(A.toSpec(c.spec), { label: c.name }); VP.S.avatarId = c.id; } VP.persist(); UI.show('account'); };
+UI.act.acUse = el => { const c = A.cats[+el.dataset.i]; if (VP.S.avatarId === c.id) { VP.S.avatar = null; VP.S.avatarId = null; } else { VP.S.avatar = Object.assign(A.toSpec(c.spec), { label: c.name }); VP.S.avatarId = c.id; if (VP.Party) VP.Party.S().role = VP.Party.roleSlot(c.spec.role || 'shooter'); } VP.persist(); if (VP.Party) VP.Party.apply(); UI.show('account'); };
 UI.SCREENS.privacy = { hideHud: true, html: () => `<div class="corner l"><button class="chip" data-act="account">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="teal">🔒 ${t('ac_privacy')}</h2><div class="panel t">${t('ac_privTxt')}</div><a class="btn ghost" href="privacy.html" target="_blank" rel="noopener">${t('ac_privFull')}</a></div>` };
 UI.act.privacy = () => UI.show('privacy');
 
@@ -130,28 +141,51 @@ UI.act.gcView = el => UI.show('catview', +el.dataset.i);
 UI.act.gcWalk = () => UI.free(VP.S.pos || null);
 
 // ---------- cat creator ----------
-let ed = null, edIdx = null;
-const sw = (key, val, on) => `<button class="tab ${on ? 'on' : ''}" data-act="crSet" data-k="${key}" data-v="${val}">${t('cr_' + val) === 'cr_' + val ? val : t('cr_' + val)}</button>`;
+// One scrolling sheet under the live 3D preview: looks first (presets, coat, colours, fur, face, ears, tail), then extras and the game role.
+let ed = null, edIdx = null, crScroll = 0;
+const lab = (pre, v) => (t(pre + v) === pre + v ? v : t(pre + v));
+const sw = (key, val, on) => `<button class="tab ${on ? 'on' : ''}" data-act="crSet" data-k="${key}" data-v="${val}">${lab('cr_', val)}</button>`;
+const dots = (key, list, cur) => `<div class="cr-dots">${list.map(c => `<button class="${(cur || '').toLowerCase() === c ? 'on' : ''}" style="background:${c}" data-act="crCol" data-k="${key}" data-v="${c}" aria-label="${c}"></button>`).join('')}<label class="cr-pick" title="+"><input type="color" data-c="${key}" value="${cur || '#ffffff'}">🎨</label></div>`;
 UI.SCREENS.creator = {
   cls: 'clear', hideHud: true, stage: true,
-  html: () => { const s = ed.spec; return `<div class="corner l"><button class="chip" data-act="account">‹ ${t('back')}</button></div>
-    <div class="wrap narrow" style="margin-top:auto"><div class="panel" style="max-height:46vh;overflow-y:auto">
+  html: () => { const s = ed.spec, role = s.role || 'shooter', needs2 = ['calico', 'tortie'].includes(s.pattern), needs1 = s.pattern !== 'solid'; return `<div class="corner l"><button class="chip" data-act="account">‹ ${t('back')}</button></div><div class="corner"><button class="chip" data-act="crRandom">🎲 ${t('cr_random')}</button></div>
+    <div class="wrap narrow" style="margin-top:auto"><div class="panel cr-sheet" id="crsheet" style="max-height:50vh;overflow-y:auto">
       <div class="row" style="flex-wrap:nowrap;gap:6px"><input class="txt" id="cname" maxlength="20" placeholder="${t('cr_name')}" value="${esc(ed.name)}"><select class="txt" id="cbreed" style="max-width:42%">${BREEDS.map(b => `<option ${b === ed.breed ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
-      <h3>${t('cr_face')}</h3><div class="row">${FACES.map(f => sw('faceShape', f, s.faceShape === f)).join('')}</div>
+      <h3>✨ ${t('cr_looks')}</h3><div class="row">${Object.keys(LOOKS).map(k => `<button class="tab" data-act="crLook" data-v="${k}">${lab('cl_', k)}</button>`).join('')}${A.status === 'in' ? `<label class="tab" style="margin:0;cursor:pointer">📷 ${t('cr_photo')}<input type="file" accept="image/*" id="cphoto" style="display:none"></label>` : ''}</div>
       <h3>${t('cr_pattern')}</h3><div class="row">${PATTERNS.map(f => sw('pattern', f, s.pattern === f)).join('')}</div>
-      <h3>${t('cr_colors')}</h3><div class="row"><label class="small">${t('cr_fur')} <input type="color" data-c="furBase" value="${s.furBase}"></label><label class="small">${t('cr_p1')} <input type="color" data-c="p0" value="${s.patchColors[0] || '#ffffff'}"></label><label class="small">${t('cr_p2')} <input type="color" data-c="p1" value="${s.patchColors[1] || '#2b1f24'}"></label><label class="small">${t('cr_eyes')} <input type="color" data-c="eyeColor" value="${s.eyeColor}"></label></div>
-      <div class="row" style="margin-top:6px"><label class="small">${t('cr_size')} <input type="range" min="0.8" max="1.2" step="0.05" value="${s.size}" data-c="size"></label>${A.status === 'in' ? `<label class="btn ghost sm" style="margin:0">📷 ${t('cr_photo')}<input type="file" accept="image/*" id="cphoto" style="display:none"></label>` : ''}</div>
-      <h3>${t('cr_acc')} (${s.accessories.length}/4)</h3><div class="row">${ACCS.map(a => `<button class="tab ${s.accessories.includes(a) ? 'on' : ''}" data-act="crAcc" data-v="${a}">${ACC_ICON[a]} ${t('cr_' + a) === 'cr_' + a ? a : t('cr_' + a)}</button>`).join('')}</div>
+      <h3>${t('cr_fur')}</h3>${dots('furBase', FURS, s.furBase)}
+      ${needs1 ? `<h3>${t('cr_p1')}</h3>${dots('p0', FURS, s.patchColors[0] || '#ffffff')}` : ''}${needs2 ? `<h3>${t('cr_p2')}</h3>${dots('p1', FURS, s.patchColors[1] || '#2b1f24')}` : ''}
+      <h3>${t('cr_eyes')}</h3>${dots('eyeColor', EYES, s.eyeColor)}
+      <div class="row" style="margin-top:4px"><button class="tab ${s.eyeColor2 ? 'on' : ''}" data-act="crOdd">👁 ${t('cr_odd')}</button></div>${s.eyeColor2 ? dots('eyeColor2', EYES, s.eyeColor2) : ''}
+      <h3>${t('cr_furLen')}</h3><div class="cr-range"><span>${t('cr_short')}</span><input type="range" min="0" max="1" step="0.05" value="${s.furLength === undefined ? (s.faceShape === 'flat' ? 0.7 : 0.4) : s.furLength}" data-c="furLength"><span>${t('cr_longf')}</span></div>
+      <h3>${t('cr_size')}</h3><div class="cr-range"><span>${t('cr_small')}</span><input type="range" min="0.8" max="1.2" step="0.05" value="${s.size}" data-c="size"><span>${t('cr_bigc')}</span></div>
+      <h3>${t('cr_face')}</h3><div class="row">${FACES.map(f => sw('faceShape', f, s.faceShape === f)).join('')}</div>
+      <h3>${t('cr_ears')}</h3><div class="row">${EARS.map(f => sw('ears', f, (s.ears || 'pointy') === f)).join('')}</div>
+      <h3>${t('cr_tail')}</h3><div class="row">${TAILS.map(f => sw('tail', f, (s.tail || 'long') === f)).join('')}</div>
+      <h3>${t('cr_acc')} (${s.accessories.length}/4)</h3><div class="row">${ACCS.map(a => `<button class="tab ${s.accessories.includes(a) ? 'on' : ''}" data-act="crAcc" data-v="${a}">${ACC_ICON[a]} ${lab('cr_', a)}</button>`).join('')}</div>
+      <h3>🎮 ${t('cr_role')}</h3><div class="row">${ROLES.map(r => `<button class="tab ${role === r ? 'on' : ''}" data-act="crSet" data-k="role" data-v="${r}">${{ shooter: '🫧', biter: '🦷', glutton: '🍖' }[r]} ${t('role_' + r)}</button>`).join('')}</div><p class="small" style="margin:4px 0">${t('rd_' + role)}</p>
       <input class="txt" id="cbio" maxlength="120" placeholder="${t('cr_bio')}" value="${esc(ed.bio)}" style="margin-top:8px"><div class="row" style="flex-wrap:nowrap;gap:6px;margin-top:6px"><input class="txt" id="cig" maxlength="30" placeholder="@instagram" value="${esc(ed.instagram || '')}"><button class="tab ${ed.isPublic ? 'on' : ''}" data-act="crPub">${ed.isPublic ? '🌍 ' + t('cr_public') : '🔒 ' + t('cr_private')}</button></div>
-    </div><div class="row">${edIdx !== 'local' && edIdx !== 'new' ? `<button class="btn ghost sm" data-act="crDelete">🗑</button>` : ''}<button class="btn" data-act="crSave">💾 ${t('cr_save')}</button></div></div>`; },
+    </div><div class="row">${edIdx !== 'local' && edIdx !== 'new' ? `<button class="btn ghost sm" data-act="crDelete">🗑</button>` : ''}<button class="btn" data-act="crSave">💾 ${t('cr_save')}</button><button class="btn teal" data-act="crPlay">▶ ${t('cr_savePlay')}</button></div></div>`; },
   after: () => {
     preview();
-    const root = document.getElementById('s-creator');
-    root.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.c; if (!k) return; const s = ed.spec, v = e.target.value; if (k === 'p0') s.patchColors[0] = v; else if (k === 'p1') { s.patchColors[0] = s.patchColors[0] || '#ffffff'; s.patchColors[1] = v; } else if (k === 'size') s.size = +v; else s[k] = v; preview(); });
+    const root = document.getElementById('s-creator'), sheet = document.getElementById('crsheet'); if (sheet) { sheet.scrollTop = crScroll; sheet.addEventListener('scroll', () => { crScroll = sheet.scrollTop; }, { passive: true }); }
+    root.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.c; if (!k) return; setCol(k, e.target.value); preview(); });
     const ph = document.getElementById('cphoto'); if (ph) ph.addEventListener('change', photo);
   },
 };
-function keep() { const g = id => { const el = document.getElementById(id); return el ? el.value : null; }; if (g('cname') !== null) { ed.name = g('cname'); ed.breed = g('cbreed'); ed.bio = g('cbio'); ed.instagram = g('cig'); } }
+function setCol(k, v) { const s = ed.spec; if (k === 'p0') s.patchColors[0] = v; else if (k === 'p1') { s.patchColors[0] = s.patchColors[0] || '#ffffff'; s.patchColors[1] = v; } else if (k === 'size' || k === 'furLength') s[k] = +v; else s[k] = v; }
+{ const css = document.createElement('style'); css.textContent = `.cr-sheet h3{margin:10px 0 5px;font-size:13.5px}.cr-dots{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.cr-dots button{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.35);cursor:pointer;padding:0}.cr-dots button.on{border-color:#ffd23f;box-shadow:0 0 0 3px #ffd23f66;transform:scale(1.1)}
+.cr-pick{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.14);cursor:pointer;position:relative;overflow:hidden;font-size:16px}.cr-pick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.cr-range{display:flex;gap:8px;align-items:center;font-size:12px}.cr-range input{flex:1;min-height:30px}`; document.head.appendChild(css); }
+Object.assign(VP.L, {
+  cr_looks: ['Parece com…', 'Looks like…'], cr_random: ['Sortear', 'Random'], cr_odd: ['Um olho de cada cor', 'Odd eyes'], cr_furLen: ['Comprimento do pelo', 'Fur length'], cr_short: ['curto', 'short'], cr_longf: ['bem peludo', 'very fluffy'], cr_small: ['pequeno', 'small'], cr_bigc: ['grandão', 'big'],
+  cr_ears: ['Orelhas', 'Ears'], cr_tail: ['Rabo', 'Tail'], cr_role: ['No jogo, seu gato é…', 'In the game, your cat is the…'], cr_savePlay: ['Salvar e jogar', 'Save and play'],
+  cr_pointy: ['pontudas', 'pointy'], cr_big: ['grandes', 'big'], cr_fold: ['dobradas', 'folded'], cr_tuft: ['com tufos', 'tufted'], cr_fluffy: ['peludo', 'fluffy'], cr_short2: ['curto', 'short'], cr_bob: ['cotoco', 'bobtail'], cr_curl: ['enrolado', 'curled'], cr_spotted: ['pintado', 'spotted'], cr_tortie: ['escaminha', 'tortie'],
+  cl_frajola: ['Frajola', 'Tuxedo'], cl_laranja: ['Laranja', 'Ginger'], cl_tigrado: ['Tigrado cinza', 'Grey tabby'], cl_siames: ['Siamês', 'Siamese'], cl_tricolor: ['Tricolor', 'Calico'], cl_escaminha: ['Escaminha', 'Tortie'], cl_preto: ['Preto', 'Black'], cl_branco: ['Branco', 'White'], cl_persa: ['Persa creme', 'Cream Persian'], cl_bengal: ['Bengal', 'Bengal'],
+  cr_card: ['Tem um gato em casa?', 'Got a cat at home?'], cr_cardSub: ['Crie um igualzinho e jogue com ele.', 'Make one just like it and play as your cat.'], cr_cardGo: ['Criar', 'Create'],
+});
+VP.L.cr_long = VP.L.cr_long || ['longo', 'long']; VP.L.cr_short = VP.L.cr_short || ['curto', 'short'];
+function keep() { const g = id => { const el = document.getElementById(id); return el ? el.value : null; }; for (const [id, k] of [['cname', 'name'], ['cbreed', 'breed'], ['cbio', 'bio'], ['cig', 'instagram']]) { const v = g(id); if (v !== null) ed[k] = v; } }
 function preview() { const R3 = VP.R3; if (R3 && R3.ok) R3.showcase([{ spec: A.toSpec(ed.spec), x: 0, z: 0, s: 1 }], { dist: 7.2, shift: 2.8, lookY: 1.0 }); }
 UI.act.creator = el => {
   const i = el.dataset.i; edIdx = i === 'new' || i === 'local' ? i : +i;
@@ -160,8 +194,16 @@ UI.act.creator = el => {
   UI.show('creator');
 };
 UI.act.crSet = el => { keep(); ed.spec[el.dataset.k] = el.dataset.v; UI.show('creator'); };
+A.LOOKS = LOOKS;
 UI.act.crAcc = el => { keep(); const a = ed.spec.accessories, v = el.dataset.v, i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else if (a.length < 4) a.push(v); UI.show('creator'); };
 UI.act.crPub = () => { keep(); ed.isPublic = !ed.isPublic; UI.show('creator'); };
+UI.act.crCol = el => { keep(); setCol(el.dataset.k, el.dataset.v); UI.show('creator'); };
+UI.act.crOdd = () => { keep(); if (ed.spec.eyeColor2) delete ed.spec.eyeColor2; else ed.spec.eyeColor2 = ed.spec.eyeColor === '#3fa9f5' ? '#f2b01e' : '#3fa9f5'; UI.show('creator'); };
+UI.act.crLook = el => { keep(); const L0 = LOOKS[el.dataset.v]; if (!L0) return; const s = ed.spec; delete s.eyeColor2; Object.assign(s, { faceShape: 'round', furLength: 0.4, ears: 'pointy', tail: 'long' }, JSON.parse(JSON.stringify(L0))); UI.show('creator'); };
+UI.act.crRandom = () => { keep(); const pick = a => a[Math.floor(Math.random() * a.length)], s = ed.spec; Object.assign(s, { pattern: pick(PATTERNS), furBase: pick(FURS), patchColors: [pick(FURS), pick(FURS)], eyeColor: pick(EYES), faceShape: pick(FACES), ears: pick(EARS), tail: pick(TAILS), furLength: Math.round(Math.random() * 20) / 20, size: 0.8 + Math.round(Math.random() * 8) / 20 }); delete s.eyeColor2; UI.show('creator'); };
+UI.act.crPlay = async el => { A.playAfterSave = true; await UI.act.crSave(el); };
+// after a save: the cat becomes the avatar; "save and play" also puts it in the team, in the role picked above
+function afterSave(spec, name) { crScroll = 0; if (VP.Party) { const P2 = VP.Party, slot = P2.roleSlot(spec.role || 'shooter'); if (A.playAfterSave) P2.set(true, slot); else { P2.S().role = slot; P2.apply(); } } const go = A.playAfterSave; A.playAfterSave = false; void name; if (go) { UI.act.play(); return true; } return false; }
 async function photo(e) {
   const f = e.target.files && e.target.files[0]; if (!f) return; keep();
   try {
@@ -175,12 +217,12 @@ async function photo(e) {
 UI.act.crSave = async el => {
   keep(); const name = (ed.name || '').trim(); if (!name) { UI.toast(t('cr_name') + '?'); return; }
   const body = { name, breed: ed.breed, bio: ed.bio || '', instagram: ed.instagram || null, isPublic: !!ed.isPublic, spec: ed.spec };
-  if (edIdx === 'local' || A.status !== 'in') { VP.S.avatarLocal = body; VP.S.avatar = Object.assign(A.toSpec(body.spec), { label: name }); VP.S.avatarId = 'local'; VP.persist(); UI.toast('🐱 ' + t('cr_saved')); UI.show('account'); return; }
+  if (edIdx === 'local' || A.status !== 'in') { VP.S.avatarLocal = body; VP.S.avatar = Object.assign(A.toSpec(body.spec), { label: name }); VP.S.avatarId = 'local'; VP.persist(); UI.toast('🐱 ' + t('cr_saved')); if (!afterSave(body.spec, name)) UI.show('account'); return; }
   el.disabled = true;
   const r = edIdx === 'new' ? await api('/api/cats', 'POST', body) : await api('/api/cats?id=' + encodeURIComponent(ed.id), 'PUT', body);
   el.disabled = false;
-  if ((r.status === 200 || r.status === 201) && r.cat) { if (edIdx === 'new') A.cats.push(r.cat); else A.cats[edIdx] = r.cat; VP.S.avatar = Object.assign(A.toSpec(r.cat.spec), { label: r.cat.name }); VP.S.avatarId = r.cat.id; VP.persist(); UI.toast('🐱 ' + t('cr_saved')); A.loadGallery(); UI.show('account'); }
-  else UI.toast(errMsg(r), 3200);
+  if ((r.status === 200 || r.status === 201) && r.cat) { if (edIdx === 'new') A.cats.push(r.cat); else A.cats[edIdx] = r.cat; VP.S.avatar = Object.assign(A.toSpec(r.cat.spec), { label: r.cat.name }); VP.S.avatarId = r.cat.id; VP.persist(); UI.toast('🐱 ' + t('cr_saved')); A.loadGallery(); if (!afterSave(r.cat.spec, r.cat.name)) UI.show('account'); }
+  else { A.playAfterSave = false; UI.toast(errMsg(r), 3200); }
 };
 UI.act.crDelete = async () => { if (!confirm(t('cr_delAsk'))) return; const r = await api('/api/cats?id=' + encodeURIComponent(ed.id), 'DELETE'); if (r.status === 200) { A.cats.splice(edIdx, 1); if (VP.S.avatarId === ed.id) { VP.S.avatar = null; VP.S.avatarId = null; VP.persist(); } UI.show('account'); } else UI.toast(errMsg(r)); };
 })();

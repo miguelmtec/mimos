@@ -53,9 +53,10 @@ function pill(x, y, w, h, fill, stroke) { Art.rr(c, x, y, w, h, Math.min(h / 2, 
 function bar(x, y, w, h, f, col, back) { Art.rr(c, x, y, w, h, h / 2); c.fillStyle = back || 'rgba(10,4,25,.75)'; c.fill(); if (f > 0.01) { Art.rr(c, x + 1, y + 1, Math.max(h - 2, (w - 2) * U.clamp(f, 0, 1)), h - 2, (h - 2) / 2); c.fillStyle = col; c.fill(); } }
 function wrap(s, maxW, size) { c.font = '800 ' + size + 'px ' + FONT; const words = s.split(' '), lines = []; let cur = ''; for (const w of words) { const t = cur ? cur + ' ' + w : w; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; } if (cur) lines.push(cur); return lines; }
 function portrait(name, x, y, r) {
-  const img = VP.Assets.image('portrait_' + name);
+  const custom = VP.Party && VP.Party.custom(name), img = custom ? VP.Party.image(name) : VP.Assets.image('portrait_' + name);
   c.save(); c.beginPath(); c.arc(x, y, r, 0, 6.283); c.clip();
-  if (img) { const s = img.naturalWidth; c.drawImage(img, s * 0.1, s * 0.02, s * 0.8, s * 0.8, x - r, y - r, r * 2, r * 2); }
+  if (img && custom) { c.fillStyle = '#2a0b4a'; c.fillRect(x - r, y - r, r * 2, r * 2); c.drawImage(img, x - r, y - r, r * 2, r * 2); }
+  else if (img) { const s = img.naturalWidth; c.drawImage(img, s * 0.1, s * 0.02, s * 0.8, s * 0.8, x - r, y - r, r * 2, r * 2); }
   else { c.fillStyle = '#2a0b4a'; c.fillRect(x - r, y - r, r * 2, r * 2); Art.cat(c, x, y + r * 0.9, { name, t: 0, face: 1, scale: r / 22 }); }
   c.restore();
 }
@@ -109,6 +110,7 @@ H.draw = function (G, dt) {
   const lines = wrap(ob.txt, ow - 26 * k - (ob.cat ? 30 * k : 0), ofs), oh = (lines.length * lh + 12 + (ob.prog ? 9 : 0)) * k;
   if (G.objFlash > 0) G.objFlash -= dt * 1.2;
   pill(ox, oy, ow, oh, 'rgba(18,4,31,.72)', G.objFlash > 0 ? GOLD : (ob.cat ? CATCOL[ob.cat] : 'rgba(255,79,184,.8)'));
+  H.obBox = { x: ox, y: oy, w: ow, h: oh };
   let tx = ox + 13 * k;
   if (ob.cat) { portrait(ob.cat, ox + 20 * k, oy + oh / 2, 13 * k); c.beginPath(); c.arc(ox + 20 * k, oy + oh / 2, 13 * k, 0, 6.283); c.strokeStyle = CATCOL[ob.cat]; c.lineWidth = 2; c.stroke(); tx += 30 * k; }
   lines.forEach((l, i) => txt(l, tx, oy + (15 + i * lh) * k, ofs, '#fff', 'left', false, '800'));

@@ -138,7 +138,7 @@ function obj(e, make) {
 }
 function turn(o, target, k) { const cur = o.userData.h === undefined ? target : o.userData.h; o.userData.h = cur + U.angDiff(cur, target) * Math.min(1, k); o.rotation.y = Math.PI / 2 - o.userData.h; }
 R.spec = function (name, vip) { const Wd = VP.Wardrobe; if (Wd) return Wd.spec(name, vip); return CAT_SPECS[vip ? name + '_vip' : name] || CAT_SPECS[name]; };
-R.catSpec = function (name, G) { return R.spec(name, (G && G.forceVip) || (!VP.Wardrobe && VP.Shop && VP.Shop.has('vip'))); };
+R.catSpec = function (name, G) { const ps = VP.Party && !(G && G.forceVip) ? VP.Party.specFor(name) : null; if (ps) return ps; return R.spec(name, (G && G.forceVip) || (!VP.Wardrobe && VP.Shop && VP.Shop.has('vip'))); };
 R.refreshCats = function () { for (const [e, o] of ents) if (e.kind === 'cat') { dyn.remove(o); ents.delete(e); } };
 
 // height of a cat: the ground, or the top of the parkour platform it stands on (with the arcs of hops and jump-pad flights)

@@ -43,7 +43,7 @@ const out = [], ok = (n, c) => { out.push((c ? 'PASS ' : 'FAIL ') + n); };
     await tap('[data-act=tryOn]'); await page.waitForTimeout(900); await L.shot(page, P + 'tryon');
     await tap('[data-act=testLap]'); await page.waitForTimeout(2500); await L.shot(page, P + 'testlap');
     ok(P + 'trial running in gold car', await page.evaluate(() => !!(__vp.G && __vp.G.trial && __vp.G.car && __vp.G.car.type === 'gold')));
-    await page.evaluate(() => { __vp.G.mtimer = 0.3; }); await page.waitForTimeout(3500);
+    await page.evaluate(() => { __vp.G.mtimer = 0.3; }); await page.waitForFunction(() => __vp.state().screen === 'shop', null, { timeout: 15000 }).catch(() => {});
     ok(P + 'trial returns to shop', (await page.evaluate(() => __vp.state().screen)) === 'shop');
     await tap('[data-act=buy][data-p=vip]'); await page.waitForTimeout(500);
     ok(P + 'checkout modal QR', await page.locator('.modal img.qr').count() === 1 && /Aguardando pagamento/.test(await page.locator('.modal').textContent()));

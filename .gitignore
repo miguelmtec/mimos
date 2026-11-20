@@ -2,3 +2,4 @@ node_modules
 .vercel
 .claude
 tests/e2e/results.json
+server/node_modules

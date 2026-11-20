@@ -633,8 +633,12 @@ test('db/schema.sql documents every table and index the code creates', async () 
   const schema = await readFile(new URL('../db/schema.sql', import.meta.url), 'utf8');
   const code = await readFile(new URL('../api/_lib/db.js', import.meta.url), 'utf8');
   const names = [...code.matchAll(/create (?:table|index) if not exists (\w+)/g)].map((m) => m[1]);
-  assert.equal(names.length, 11);
+  assert.equal(names.length, 15);   // 11 for accounts + vp_presence, vp_online_reports and their 2 indexes (Cidade Online)
   for (const n of names) assert.ok(schema.includes(`if not exists ${n} `), n);
   const columns = (src, table) => new RegExp(`create table if not exists ${table} \\(([\\s\\S]*?)\\)\\s*[;\`]`).exec(src)[1].replace(/--.*$/gm, '').replace(/\s+/g, ' ').trim();
-  for (const t of ['vp_users', 'vp_login_codes', 'vp_sessions', 'vp_cats', 'vp_saves']) assert.equal(columns(schema, t), columns(code, t), t);
+  for (const t of ['vp_users', 'vp_login_codes', 'vp_sessions', 'vp_cats', 'vp_saves', 'vp_online_reports']) assert.equal(columns(schema, t), columns(code, t), t);
+  // presence: unlogged first, a normal table as the fallback, the same columns in all three places
+  const unlogged = (src) => columns(src.replace('create unlogged table', 'create table'), 'vp_presence');
+  assert.equal(unlogged(schema), unlogged(code));
+  assert.equal(columns(code, 'vp_presence'), unlogged(code));
 });

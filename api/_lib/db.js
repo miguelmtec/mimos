@@ -4,7 +4,8 @@
 // anything else living in the same database. Keep db/schema.sql in sync.
 let testSql = null;   // injected by tests (see tests/accounts.test.mjs)
 let cached = null;    // { url, sql }
-let ready = null;     // schema promise, reset on failure
+let ready = null;    // schema promise, reset on failure
+let onlineReady = null;   // same, for the Cidade Online tables
 
 export function dbUrl() {
   return process.env.DATABASE_URL || process.env.POSTGRES_URL || '';

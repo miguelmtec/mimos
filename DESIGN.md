@@ -43,7 +43,7 @@ tools/build-cities.mjs  copia os extratos OSM e gera data/cities/index.json
 | **Mimosa** (a brava) | tanque corpo a corpo | combo de 3 mordidas | bote com mordida | **ROSNADO**: atordoa em área, racha armadura, apaga projéteis | recarga do rosnado; leva 28% menos dano e atrai a agressão |
 | **Mortícia** (a comilona) | ladra furtiva | rouba o item que o cachorro carrega (comida, munição, rede, chave) e come | some por 2 s | **LANCHÃO**: aspira tudo em volta | fome: barriga vazia tira vida; cheia libera o Lanchão |
 
-Dependência real: Mimo acerta **botões** à distância (lasers/cofres); Mimosa **morde** portões de madeira, caixotes, cadeados e quebra **armaduras**; Mortícia passa por **portinhas** (tile GAP), puxa alavancas e rouba **chaves**. Comer cura o time; o pique do time depende da energia do Mimo. Troca estilo GTA V (retratos ou 1/2/3), com os outros dois como seguidores de IA.
+Dependência real: Mimo acerta **botões** à distância (lasers/cofres); Mimosa **morde** portões de madeira, caixotes, cadeados e quebra **armaduras**; Mortícia passa por **portinhas** (tile GAP), puxa alavancas e rouba **chaves**. Comer cura o time; o pique do time depende da energia do Mimo. Troca instantânea entre os três (retratos ou 1/2/3), com os outros dois como seguidores de IA.
 
 **Vidas / ninguém fica pra trás.** Gato caído é reanimado ficando ao lado e SEGURANDO o botão de ação (gasta 1 vida). Missão só termina com os três de pé. Vidas: patinhas douradas, 1ª vez com 3 estrelas, chefões, todas as patinhas de um bairro. Sem vidas, aparece uma patinha de misericórdia. Gato caído em lugar inalcançável é carregado para perto do líder.
 

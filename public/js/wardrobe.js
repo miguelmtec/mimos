@@ -45,7 +45,7 @@ Wd.preview = function (wearOverride) {
   const R3 = VP.R3; if (!R3 || !R3.ok) return;
   let spec = Wd.spec(Wd.cat);
   if (wearOverride) { const s = VP.S, old = s.wear[Wd.cat]; s.wear[Wd.cat] = wearOverride; const keepOwn = Wd.owns; Wd.owns = () => true; spec = Wd.spec(Wd.cat); Wd.owns = keepOwn; s.wear[Wd.cat] = old; }
-  R3.showcase([{ spec, x: 0, z: 0, s: 1.25 }], { dist: 6.4, shift: 2.3, lookY: 1.0 });
+  R3.showcase([{ spec, x: 0, z: 0, s: 1 }], { dist: 7.2, shift: 2.5, lookY: 1.0 });
 };
 Wd.open = () => UI.show('wardrobe');
 UI.act.wdBack = () => { const G = VP.Game.G; if (VP.R3.refreshCats) VP.R3.refreshCats(); if (G && UI.state === 'play') { UI.hide(); UI.paused = false; } else UI.show('title'); };

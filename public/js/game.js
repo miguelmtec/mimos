@@ -1043,7 +1043,7 @@ Game.update = function (dt) {
 };
 Game.fail = function (why) { if (G.over) return; G.over = true; VP.Audio.engine(0, false); sfx('fail'); setTimeout(() => VP.UI.result(false, why), 900); };
 Game.win = function () {
-  if (G.over) return; G.over = true; G.won = true; VP.Audio.engine(0, false); sfx('win');
+  if (G.over) return; if (G.car) exitCar(true); G.over = true; G.won = true; VP.Audio.engine(0, false); sfx('win');
   for (const c of G.cats) burst(c.x, c.y - 20, 14, ['#ffd23f', '#ff4fb8', '#2de2e6'], 220, 'star', 8, 1);
   setTimeout(() => VP.UI.result(true), 1100);
 };

@@ -27,8 +27,8 @@ const DOG = Game.DOG = {
   pug: { hp: 6400, spd: 92, dmg: 23, r: 30, armor: 360, boss: { moves: ['suck', 'spray', 'charge', 'barrels', 'summon'], minion: ['chi', 'shooter', 'heavy'], snack: 'donut' } },
   dogcatcher: { hp: 7200, spd: 96, dmg: 20, r: 31, armor: 400, boss: { moves: ['nets', 'charge', 'barrels', 'summon', 'slam', 'spray', 'suck'], minion: ['catcher', 'cop', 'heavy', 'shooter'], snack: 'steak' } },
 };
-// Difficulty curve: mission levels above 22 keep growing, but at roughly half the pace (smoother late game).
-Game.eff = lv => { lv = lv || 1; return lv <= 22 ? lv : 22 + (lv - 22) * 0.55; };
+// Difficulty curve: mission levels above 20 keep growing, but at half the pace (smoother late game).
+Game.eff = lv => { lv = lv || 1; return lv <= 20 ? lv : 20 + (lv - 20) * 0.5; };
 const CARSTAT = { pickup: [150, 300],  gold: [100, 345], pink: [100, 345], sedan: [80, 320], taxi: [80, 320], sport: [80, 360], cop: [90, 315], van: [150, 262], truck: [170, 270], limo: [260, 285] };
 
 // ---------- helpers ----------
@@ -579,7 +579,7 @@ function pickTarget(e) {
 }
 function dogAttack(e) {
   const st = DOG[e.type], tg = e.target;
-  if (e.atkHouse) { const h = G.house; if (h && !h.done) { h.hp -= e.dmg * 0.5; h.flash = 0.1; burst(h.x + U.rand(-30, 30), h.y, 4, '#fff1d6', 120, 'dot', 5); sfx('hit', 0.1); if (h.hp <= 0) { h.hp = 0; h.done = true; Game.fail('house'); } } return; }
+  if (e.atkHouse) { const h = G.house; if (h && !h.done) { h.hp -= e.dmg * 0.5; h.flash = 0.1; burst(h.x + U.rand(-30, 30), h.y, 4, '#fff1d6', 120, 'dot', 5); sfx('hit', 0.1); if (h.hp <= 0) { h.hp = 0; h.done = true; Game.fail(h.failWhy || 'house'); } } return; }
   if (st.range && !e.disarmed) {
     const a = e.aim;
     if (e.type === 'shooter') { G.bullets.push({ k: 'ball', x: e.x + Math.cos(a) * 18, y: e.y - 12 + Math.sin(a) * 18, vx: Math.cos(a) * 290, vy: Math.sin(a) * 290, life: 1.6, dmg: e.dmg, from: 'dog', r: 6, t: 0 }); sfx('hairball', 0.1); }

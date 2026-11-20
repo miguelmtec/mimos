@@ -11,8 +11,9 @@ M.load = function (data, act) {
   for (const d of M.DIST) VP.L['d' + d.id] = [d.name.pt, d.name.en];
   M.list = data.missions.map(r => {
     const d = M.DIST.find(x => r.n >= x.from && r.n <= x.to);
-    return { n: r.n, geo: d.geo, d: d.id, type: r.type, name: [r.name.pt, r.name.en], p: r.params || {}, lv: r.lv || r.n, par: r.par, hunger: (r.params && r.params.hunger) || 1, boss: r.boss || null, bonus: !!d.grant };
-  }).filter(m => TYPES[m.type]);
+    if (!d) return null;
+    return { n: r.n, geo: r.geo === undefined ? d.geo : r.geo, d: d.id, type: r.type, name: [r.name.pt, r.name.en], p: r.params || {}, lv: r.lv || r.n, par: r.par, hunger: (r.params && r.params.hunger) || 1, boss: r.boss || null, bonus: !!d.grant || !!d.arc, arc: !!d.arc, talk: r.talk || null };
+  }).filter(m => m && TYPES[m.type]);
   M.act = act || { trials: [], quests: [], pawsPerDistrict: 0 };
   // time trials become side missions (n >= 100)
   M.side = (M.act.trials || []).map((t, i) => ({ n: 100 + i, id: t.id, geo: t.d, d: t.d, type: 'race', name: [t.name.pt, t.name.en], p: { route: t.cps, time: t.time, cps: t.cps.length, start: t.start, reward: t.reward || 100 }, lv: t.lv || 5, par: Math.round(t.time * 0.8), hunger: 1, boss: null, bonus: true, side: true }));
@@ -20,12 +21,15 @@ M.load = function (data, act) {
 M.tourList = [];
 M.get = n => M.list.find(m => m.n === n) || M.side.find(m => m.n === n) || M.tourList.find(m => m.n === n);
 M.next = n => { const i = M.list.findIndex(m => m.n === n); const nx = M.list[i + 1]; return nx && nx.d === M.list[i].d ? nx : (n === 50 ? null : (nx && n < 50 ? nx : null)); };
+M.dist = id => M.DIST.find(d => d.id === id);
+// chapters ("arcs") open with total stars and/or after a story mission; inside a chapter missions open one by one
+M.distOpen = d => { if (!d) return false; if (d.grant) return !!(VP.Shop && VP.Shop.has(d.grant)); const r = d.req || {}; return (!r.stars || VP.totalStars() >= r.stars) && (!r.after || !!VP.S.stars[r.after]); };
 M.unlocked = m => {
-  if (m.side) return true;
+  if (m.side || M.allOpen) return true;
   if (!m.bonus) return m.n <= VP.S.unlocked;
-  const d = M.DIST[m.d];
-  if (!d || !VP.Shop || !VP.Shop.has(d.grant)) return false;
-  return m.n === d.from || !!VP.S.stars[m.n - 1];
+  const d = M.dist(m.d);
+  if (!M.distOpen(d)) return false;
+  return m.n === d.from || !!VP.S.stars[m.n - 1] || !!VP.S.stars[m.n];
 };
 M.par = m => m.par || (m.p.time ? Math.round(m.p.time * 0.72) : 120);
 
@@ -109,8 +113,9 @@ function gateSteps(B, lot, gate) {
 }
 function compGuards(B, lot, n, extra) {
   const gap = lot.gate === 'gap', inner = lot.vault ? (gap ? [[3, 6], [4, 6], [6, 5], [6, 6]] : [[1, 3], [6, 4], [3, 6], [4, 1]]) : gap ? [[2, 5], [5, 5], [3, 5], [4, 4]] : [[2, 2], [5, 2], [2, 5], [5, 5], [3, 3]];
-  const types = pack(B, n).concat(extra || []);
-  types.forEach((t, i) => { const s = inner[i % inner.length]; Game.addDog(t, (lot.tx + s[0] + 0.5) * T, (lot.ty + s[1] + 0.5) * T, { guard: true, tag: 'g', aggro: 150 }); });
+  // behind a cat flap only Morticia gets in, so those guards are fewer, lighter and less alert
+  const types = pack(B, gap ? Math.max(1, n - 1) : n).map(t => (gap && (t === 'heavy' || t === 'shooter') ? 'mutt' : t)).concat(extra || []);
+  types.forEach((t, i) => { const s = inner[i % inner.length]; Game.addDog(t, (lot.tx + s[0] + 0.5) * T, (lot.ty + s[1] + 0.5) * T, { guard: true, tag: 'g', aggro: gap ? 110 : 150 }); });
 }
 
 // ---------- mission types ----------
@@ -283,51 +288,7 @@ const TYPES = {
       for (let i = 0; i < p.waves; i++) { B.wait(i ? 2.5 : 2, 'o_waveIn', [i + 1, p.waves]); B.wave(pack(B, Math.min(10, Math.round(4 + i * 1.3 + B.lv / 14))), { raid: true, txt: 'o_defend', args: [i + 1, p.waves], hold: { x: h.x, y: h.y + 90 } }); }
     },
   },
-  // "Volta ao Mundo": missions on real maps, built from the city's landmarks
-  tour: {
-    setup(B) {
-      const p = B.p, G = B.G, W = B.W, L = W.landmarks, comu = (W.real.tags || []).includes('comunidade');
-      const pick = i => { if (L.length) { const l = L[(i * 7 + B.m.n) % L.length]; return { x: l.gx, y: l.gy, name: l.name }; } const q = W.randWalk(B.rng); return { x: q.x, y: q.y, name: '' }; };
-      const far = (from, i) => { let best = pick(i), bd = 0; for (let k = 0; k < Math.max(1, Math.min(8, L.length)); k++) { const c = pick(i + k), d = U.d2(c.x, c.y, from.x, from.y); if (d > bd && d < 9000 * 9000) { bd = d; best = c; } } return best; };
-      const start = W.tourStart || pick(0);
-      B.begin(start, { traffic: comu ? 0 : 8, coffee: 8, parked: comu ? 0 : 10 });
-      if (comu) { G.noPolice = true; G.noHeat = true; }
-      const kind = p.kind;
-      if (kind === 'race') {
-        const car = Game.addCar(B.getaway(), start.x, start.y, 0); car.hp = car.max = 260; Game.enterCar(car); G.noHeat = true;
-        let cur = start, dist = 0; const cps = []; for (let k = 0; k < 5; k++) { const c = far(cur, k * 3 + 1); dist += Math.hypot(c.x - cur.x, c.y - cur.y); cps.push(c); cur = c; }
-        G.mtimer = Math.round(dist / 24 / 7 + 40);
-        cps.forEach((pt, k) => B.step({ txt: 'o_tourCp', args: [k + 1, cps.length, pt.name], car: true, at: () => pt, done: () => !!G.car && U.d2(G.car.x, G.car.y, pt.x, pt.y) < 130 * 130 }));
-      } else if (kind === 'deliver') {
-        const dest = far(start, 2); G.mtimer = Math.round(Math.hypot(dest.x - start.x, dest.y - start.y) / 24 / 3.2 + 50);
-        if (!comu) B.dogs({ x: dest.x, y: dest.y }, pack(B, gsize(B)));
-        B.goto(dest, comu ? 'o_tourCarry' : 'o_tourDeliver', { args: [dest.name] });
-      } else if (kind === 'brawl') {
-        const spot = far(start, 4); B.goto(spot, 'o_tourGo', { args: [spot.name] }); G.noPolice = true; G.noHeat = true;
-        for (let i = 0; i < 3; i++) { B.wait(2, 'o_waveIn', [i + 1, 3]); B.wave(pack(B, 4 + i * 2), { args: [i + 1, 3] }); }
-      } else if (kind === 'feast' || kind === 'treats') {
-        for (let i = 0; i < 26; i++) { const q = W.randWalk(B.rng); if (U.d2(q.x, q.y, start.x, start.y) < 1500 * 1500 || i < 8) Game.addItem(B.rng.pick(['treat', 'donut', 'sushi', 'hotdog']), q.x, q.y); }
-        for (let i = 0; i < 4; i++) { const q = Game.nearFree(start.x, start.y, 120 + i * 60, 0); if (q) Game.addProp({ k: 'stand', x: q.x, y: q.y, food: B.rng.pick(['sushi', 'hotdog', 'donut']), free: true }); }
-        G.mtimer = 120; G.restock = 9;
-        B.step({ txt: comu ? 'o_tourTreats' : 'o_eat', args: [p.n || 22], cat: 'morticia', act: 'attack', at: () => nearestFood(G), done: () => G.stat.eaten >= (p.n || 22), prog: () => [Math.min(p.n || 22, G.stat.eaten), p.n || 22] });
-      } else if (kind === 'escape') {
-        B.wantedOn(2); const dest = far(start, 5);
-        B.step({ txt: 'o_survive', t: 0, fight: true, roam: true, tick(dt) { this.t += dt; }, done() { return this.t >= 35; }, prog() { return [Math.floor(this.t), 35]; }, at: () => null });
-        B.goto(dest, 'o_tourGo', { args: [dest.name] });
-        B.step({ txt: 'o_done', enter() { G.minWanted = 0; G.heat = 0; G.noPolice = true; }, done: () => true, at: () => null });
-      } else if (kind === 'rescue') { // kitten stuck up high: climb, then bring it home
-        let top = pick(1), th = -1; for (let k = 0; k < Math.max(1, L.length); k++) { const c = pick(k), h = W.hpx ? W.hpx(c.x, c.y) : 0, d = U.d2(c.x, c.y, start.x, start.y); if (d > 300 * 300 && h + d * 1e-9 > th) { th = h; top = c; } }
-        const kit = Game.addFriend(top.x, top.y, 'f1'); kit.stay = true;
-        B.goto(top, 'o_tourKitten', { args: [top.name], enter() {}, });
-        B.step({ txt: 'o_done', enter() { kit.stay = false; VP.Audio.sfx('revive'); Game.fx.say(VP.t('freed'), '#7CFF6B'); }, done: () => true, at: () => null });
-        B.goto(start, 'o_escort');
-      } else { // 'kites': on-foot checkpoints
-        let cur = start, dist = 0; const cps = []; for (let k = 0; k < 4; k++) { const c = far(cur, k * 2 + 3); dist += Math.hypot(c.x - cur.x, c.y - cur.y); cps.push(c); cur = c; }
-        G.mtimer = Math.round(dist / 24 / 3 + 45);
-        cps.forEach((pt, k) => B.step({ txt: 'o_tourKite', args: [k + 1, cps.length, pt.name], at: () => pt, done: () => { const a = G.car || G.cats[G.active]; return U.d2(a.x, a.y, pt.x, pt.y) < 90 * 90; } }));
-      }
-    },
-  },
+  // the "tour" type (real maps) lives in minigames.js
   boss: {
     setup(B) {
       const G = B.G, A = B.R('arena');
@@ -367,7 +328,7 @@ M.world = () => VP.City || (VP.City = World.gen({ seed: 7 }));
 M.start = function (m) {
   const type = TYPES[m.type], p = m.p, W = m.tourCity ? VP.CityCache[m.tourCity] : M.world();
   if (m.tourCity && !W.tourStart) { M.startTour(m.tourCity); Game.end(); }
-  const B = { m, p, lv: m.lv, geo: m.geo, rng: U.rng(m.n * 977 + 13), comps: {} };
+  const B = { m, p, lv: Game.eff(m.lv), geo: m.geo, rng: U.rng(m.n * 977 + 13), comps: {} };
   if (type.plan) type.plan(B);
   W.reset();
   if (!W.real) for (const role in B.comps) { const lot = W.roles[m.geo][role]; lot.props = W.setComp(lot, B.comps[role]); }
@@ -384,7 +345,7 @@ M.startFree = function (pos, opts) {
   const W = M.world(); W.reset();
   const m = { n: 0, d: 0, geo: 0, type: 'free', name: ['Cidade livre', 'Free roam'], p: {}, lv: Math.max(1, Math.min(40, VP.S.unlocked)), hunger: 0.35, free: true };
   const G = Game.create(W, m);
-  const B = mk({ m, p: {}, lv: m.lv, geo: 0, rng: U.rng(99), W, G });
+  const B = mk({ m, p: {}, lv: Game.eff(m.lv), geo: 0, rng: U.rng(99), W, G });
   const sp = pos && W.clear(pos.x, pos.y) ? pos : W.front(W.roles[0].arena, 's');
   B.begin(sp, { paws: 2 });
   G.free = true; G.steps = []; G.markers = []; G.npcs = [];
@@ -397,7 +358,7 @@ M.startFree = function (pos, opts) {
     for (const q of M.act.quests || []) { if (S.quests[q.id]) continue; const lot = W.roles[q.d][q.spot] || W.roles[q.d].plaza1, pt = W.front(lot, 'e'); const f = Game.addFriend(pt.x, pt.y, q.npc); f.stay = true; G.markers.push({ x: pt.x, y: pt.y, k: 'npc', q, col: '#7CFF6B', label: q.name[VP.lang() === 'pt' ? 'pt' : 'en'], thin: true }); }
   }
   for (let d = 0; d < 5; d++) {
-    const R = M.DIST[d]; let nx = null;
+    const R = M.dist(d); let nx = null;
     for (let n = R.from; n <= R.to; n++) if (n <= VP.S.unlocked && !VP.S.stars[n]) { nx = n; break; }
     if (!nx && VP.S.unlocked > R.to) nx = R.to; // replay the boss
     const pt = W.front(W.roles[d].arena, 'n');
@@ -420,11 +381,21 @@ M.startFree = function (pos, opts) {
 // ---------- Volta ao Mundo (real cities) ----------
 M.cities = [];
 M.loadCities = idx => { M.cities = (idx && idx.cities) || []; M.osm = (idx && idx.attribution) || '© OpenStreetMap contributors'; };
-const TOUR_KINDS = ['race', 'deliver', 'brawl', 'feast', 'escape'], COMU_KINDS = ['deliver', 'treats', 'rescue', 'kites'];
+// City mission packs (data/citypacks.json): hand-written packs per city, a default template of 10 for any new city,
+// and a positive-only template for maps tagged "comunidade".
+M.packs = { templates: [], comunidade: [], packs: {} };
+M.loadPacks = d => { if (d) M.packs = d; };
+const cityHash = id => { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 500; return h; };
+M.tourBase = meta => 1000 + (meta && meta.order !== undefined && meta.order < 400 ? meta.order : 400 + cityHash(meta ? meta.id : 'x')) * 10;
 M.tourMissions = function (id) {
-  const ci = M.cities.findIndex(c => c.id === id), meta = M.cities[ci], W = VP.CityCache[id], comu = (W.real.tags || []).includes('comunidade');
-  const kinds = comu ? COMU_KINDS : TOUR_KINDS;
-  const list = kinds.map((kind, k) => ({ n: 1000 + ci * 10 + k, type: 'tour', tourCity: id, name: [VP.L['tk_' + kind][0], VP.L['tk_' + kind][1]], p: { kind, comu }, lv: Math.min(40, 4 + ci * 2 + k * 2), par: kind === 'race' ? 260 : kind === 'deliver' || kind === 'kites' ? 160 : 190, hunger: 1, boss: null, bonus: true, side: true, d: 0, geo: 0 }));
+  const ci = M.cities.findIndex(c => c.id === id), meta = M.cities[ci], W = VP.CityCache[id], tags = (W ? W.real.tags : meta.tags) || [], comu = tags.includes('comunidade');
+  const pk = M.packs.packs[id];
+  let defs = pk && pk.missions && pk.missions.length ? pk.missions : comu ? M.packs.comunidade : M.packs.templates;
+  if (comu) defs = defs.filter(d => M.COMU_SAFE.includes(d.kind)); // hard rule: comunidade maps only get positive missions
+  defs = defs.filter(d => !d.needs || d.needs.every(t => tags.includes(t))).slice(0, 10);
+  const base = M.tourBase(meta), L = VP.lang;
+  const list = defs.map((d, k) => ({ n: base + k, type: 'tour', tourCity: id, name: [d.name.pt, d.name.en], story: d.story || null, p: Object.assign({ kind: d.kind, comu, seed: k }, d.params || {}, d.at ? { at: d.at } : {}), lv: Math.min(40, d.lv || 4 + (ci > 0 ? ci : 0) + k * 2), par: d.par || (d.kind === 'race' ? 260 : d.kind === 'deliver' || d.kind === 'kiterun' ? 160 : 190), hunger: 1, boss: null, bonus: true, side: true, d: 0, geo: 0 }));
+  void L;
   M.tourList = M.tourList.filter(m => m.tourCity !== id).concat(list);
   return list;
 };
@@ -433,13 +404,16 @@ M.startTour = function (id) {
   const m = { n: 0, d: 0, geo: 0, type: 'free', name: [C.name, C.name], p: {}, lv: Math.max(1, Math.min(30, VP.S.unlocked)), hunger: 0.35, free: true };
   const G = Game.create(W, m);
   const B = mk({ m, p: {}, lv: m.lv, geo: 0, rng: U.rng(321 + id.length), W, G });
-  const L = W.landmarks, S = VP.S;
+  const S = VP.S;
   if (!W.tourStart) { let best = W.snap(W.pw / 2, W.ph / 2) || W.randWalk(B.rng), bd = 1e18; for (const rd of W.roads) if (rd.w >= 6) for (const q of rd.pts) { const d = U.d2(q.x, q.y, W.pw / 2, W.ph / 2); if (d < bd && !W.blocked(q.x, q.y, 40, 0)) { bd = d; best = { x: q.x, y: q.y }; } } W.tourStart = best;
     // keep everything on the street network connected to the start (courtyards and islands are skipped)
     const fm = W.fieldMax; W.fieldMax = 0; const conn = W.field(best.x, best.y, 0); W.fieldMax = fm; W.conn = conn;
     W.walkList = W.walkList.filter(i => conn[i] >= 0);
     const snapC = (x, y) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); for (let r = 0; r < 30; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const X = cx + dx, Y = cy + dy; if (X > 1 && Y > 1 && X < W.W - 2 && Y < W.H - 2 && conn[Y * W.W + X] >= 0 && W.gnd[Y * W.W + X] <= 2) return { x: (X + 0.5) * T, y: (Y + 0.5) * T }; } return null; };
     W.landmarks = W.landmarks.filter(l => { const q = snapC(l.x, l.y); if (!q) return false; l.gx = q.x; l.gy = q.y; return true; });
+    // extra named places of the city pack (lat/lon -> map), used as mission waypoints
+    const pk = M.packs.packs[id], C0 = W.real, half = C0.half, MPT = World.MPT;
+    W.places = ((pk && pk.places) || []).map(pl => { const mx = (pl[2] - C0.lon) * Math.cos(C0.lat * Math.PI / 180) * 111320, mz = -(pl[1] - C0.lat) * 110540; if (Math.abs(mx) > half - 25 || Math.abs(mz) > half - 25) return null; const q = snapC((mx + half) / MPT * T, (mz + half) / MPT * T); return q ? { name: pl[0], x: q.x, y: q.y, gx: q.x, gy: q.y, h: 8, place: true } : null; }).filter(Boolean);
     for (const rd of W.roads) rd.pts = rd.pts.filter(q => conn[Math.floor(q.y / T) * W.W + Math.floor(q.x / T)] >= 0);
     W.roads = W.roads.filter(rd => rd.pts.length >= 2);
   }
@@ -451,13 +425,16 @@ M.startTour = function (id) {
   else for (let i = 0; i < 6; i++) { const q = W.randWalk(B.rng); if (U.d2(q.x, q.y, sp.x, sp.y) > 600 * 600) B.dogs(q, pack(B, 2), { aggro: 170 }); }
   const r = U.rng(700 + id.length * 7); for (let i = 0; i < 5; i++) { const q = W.randWalk(r), pid = id + '_' + i; if (!S.paws[pid]) { const it = Game.addItem('gpaw', q.x, q.y); it.pid = pid; } }
   const ms = M.tourMissions(id);
-  ms.forEach((mm, k) => { const l = L.length ? L[(k * 5 + 2) % L.length] : null, q = l ? { x: l.gx, y: l.gy } : W.randWalk(r); G.markers.push({ x: q.x + 60, y: q.y + 40, k: 'mission', n: mm.n, col: VP.S.stars[mm.n] ? '#2de2e6' : '#ff4fb8' }); });
+  // mission beams: spread around the start so they are easy to find
+  ms.forEach((mm, k) => { let q = null; for (let i = 0; i < 40 && !q; i++) { const c = W.randWalk(r), d = Math.hypot(c.x - sp.x, c.y - sp.y); if (d > 180 + k * 60 && d < 520 + k * 130 && !G.markers.some(o => U.d2(o.x, o.y, c.x, c.y) < 200 * 200)) q = c; } q = q || W.randWalk(r); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: mm.n, col: VP.S.stars[mm.n] ? '#2de2e6' : '#ff4fb8' }); });
   if (S.avatar) { const f = Game.addFriend(sp.x + 30, sp.y + 50, 'avatar'); f.spec = S.avatar; f.label = S.avatar.label || ''; }
   return G;
 };
 M.current = G => G.steps[G.step] || null;
+M._ = { TYPES, mk, pack, gsize, arenaStuff, gateSteps, compGuards, nearestFood, nearestLoot };
 M.update = function (G, dt) {
   if (G.over) return;
+  if (G.ticks) for (const f of G.ticks) { const r = f(dt); if (r) return Game.fail(r); }
   if (G.mtimer !== null) {
     G.mtimer -= dt;
     if (G.mtimer <= 10 && Math.floor(G.mtimer) !== Math.floor(G.mtimer + dt) && G.mtimer > 0) VP.Audio.sfx('tick');
@@ -482,6 +459,7 @@ M.update = function (G, dt) {
   if (st.tick) st.tick(dt);
   if (st.fail) { const f = st.fail(); if (f) return Game.fail(f); }
   if (st.done()) {
+    if (st.exit) st.exit();
     G.step++;
     if (G.steps[G.step] && st.txt !== 'o_ready' && st.txt !== 'o_waveIn' && st.txt !== 'o_ambush') { VP.Audio.sfx('step'); G.objFlash = 1; }
   }
@@ -493,5 +471,52 @@ M.objective = function (G) {
   const st = G.steps[G.step];
   if (!st) return { txt: G.needRevive ? VP.t('o_reviveAll') : VP.t('o_done'), at: G.needRevive ? G.cats.find(c => c.down) : null, cat: null };
   return { txt: VP.t.apply(null, [st.txt].concat(st.args || [])), prog: st.prog ? st.prog() : null, at: st.at ? st.at() : null, cat: st.cat || null, car: !!st.car, step: st };
+};
+// ---------- daily challenges (3 per day, generated from the date) and weekly events ----------
+M.dayKey = d => { d = d || new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+const DAILY_GOALS = [['win', 150], ['nofaint', 250], ['par', 400]];
+// Deterministic: the same date and the same unlocked missions always give the same three challenges.
+M.daily = function (date) {
+  const key = M.dayKey(date), r = U.rng(key * 7919 + 17); for (let i = 0; i < 5; i++) r();
+  let pool = M.list.filter(m => !m.boss && M.unlocked(m)); if (!pool.length) pool = M.list.slice(0, 1);
+  const out = [], used = {};
+  DAILY_GOALS.forEach((g, i) => {
+    let m = null; for (let k = 0; k < 12 && !m; k++) { const c = pool[Math.floor(r() * pool.length)]; if (!used[c.n] && (k > 7 || !used['t' + c.type])) m = c; }
+    m = m || pool[Math.floor(r() * pool.length)]; used[m.n] = used['t' + m.type] = 1;
+    out.push({ i, n: m.n, goal: g[0], reward: g[1] });
+  });
+  return { key, list: out };
+};
+M.dailyState = function (date) { const S = VP.S, key = M.dayKey(date); if (!S.daily || S.daily.k !== key) S.daily = { k: key, done: [0, 0, 0], all: 0, list: M.daily(date).list }; return S.daily; };
+// called with the result of a won mission; returns the reward lines to show
+M.dailyCheck = function (r, date) {
+  const st = M.dailyState(date), S = VP.S, out = [];
+  st.list.forEach(c => {
+    if (st.done[c.i] || c.n !== r.m.n) return;
+    if (c.goal === 'nofaint' && !r.noFaint) return; if (c.goal === 'par' && !r.underPar) return;
+    st.done[c.i] = 1; S.cash += c.reward; out.push(VP.t('dc_done', c.reward));
+  });
+  if (out.length && !st.all && st.done.every(Boolean)) {
+    st.all = 1; S.lives = Math.max(S.lives, Math.min(9, S.lives + 1));
+    const y = M.dayKey(new Date((date || new Date()).getTime() - 864e5)); S.streak = S.streak && S.streak.k === y ? { k: st.k, n: S.streak.n + 1 } : { k: st.k, n: 1 };
+    out.push(VP.t('dc_all', S.streak.n));
+  }
+  return out;
+};
+M.events = [];
+M.loadEvents = d => { M.events = (d && d.events) || []; M.eventEpoch = (d && d.epoch) || '2026-01-05'; };
+// one event per ISO-like week, rotating through data/events.json
+M.weekly = function (date) {
+  if (!M.events.length) return null;
+  const t0 = new Date(M.eventEpoch + 'T00:00:00').getTime(), w = Math.floor(((date || new Date()).getTime() - t0) / (7 * 864e5));
+  const ev = M.events[((w % M.events.length) + M.events.length) % M.events.length];
+  return Object.assign({ week: w, endsIn: 7 - Math.floor((((date || new Date()).getTime() - t0) / 864e5) % 7 + 7) % 7 }, ev);
+};
+M.weeklyHooks = []; // future: (event, result) => extra reward lines
+M.weeklyBonus = function (r, date) {
+  const ev = M.weekly(date); if (!ev) return null;
+  const kind = r.m.type === 'tour' ? r.m.p.kind : r.m.type;
+  if (!(ev.types || []).includes(kind) && !(ev.tour && r.m.tourCity)) return null;
+  return { ev, coins: Math.round(r.cash * ((ev.mult || 1.5) - 1)) };
 };
 })();

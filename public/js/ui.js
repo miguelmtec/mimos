@@ -327,7 +327,7 @@ function boot2() {
 // ---------- test hooks ----------
 window.__vp = {
   VP, get G() { return G; }, start: n => UI.startMission(n), free: p => UI.free(p), win: () => Game.win(), fail: w => Game.fail(w || 'time'),
-  unlockAll: () => { VP.S.unlocked = 51; VP.persist(); }, state: () => ({ screen: UI.screen, state: UI.state, paused: UI.paused, mission: G ? G.m.n : null, step: G ? G.step : -1, over: G ? G.over : null }),
+  unlockAll: () => { VP.S.unlocked = 51; M.allOpen = true; VP.persist(); }, state: () => ({ screen: UI.screen, state: UI.state, paused: UI.paused, mission: G ? G.m.n : null, step: G ? G.step : -1, over: G ? G.over : null }),
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', UI.boot); else UI.boot();
 })();

@@ -62,6 +62,9 @@ export const CAT_SPECS = {
   f1: { size: 0.6, fur: '#f6a94a', fur2: '#fff', pattern: 'tabby', patchA: '#d9822b', eye: '#7bd88f', earIn: '#f4a9b8', face: 'round', acc: {} },
   f2: { size: 0.6, fur: '#ffffff', fur2: '#fff', pattern: 'solid', eye: '#6fc3ff', earIn: '#f4a9b8', face: 'round', acc: { collar: '#ff4fb8' } },
   f3: { size: 0.6, fur: '#2b2b33', fur2: '#fff', pattern: 'tuxedo', eye: '#ffd23f', earIn: '#f4a9b8', face: 'round', acc: {} },
+  // friendly neighbours
+  elder: { size: 0.9, fur: '#c9c4cf', fur2: '#f2eef5', pattern: 'tabby', patchA: '#9a94a3', eye: '#7bd88f', earIn: '#f4a9b8', face: 'round', fluff: 0.8, lids: 1, acc: { glasses: '#b8860b', scarf: '#b967ff', shirt: '#f7d9ff' } },
+  farmer: { size: 0.95, fur: '#d9a066', fur2: '#fff3df', pattern: 'tabby', patchA: '#b5763a', eye: '#7bd88f', earIn: '#f4a9b8', face: 'round', acc: { cowboy: '#8a5a2b', scarf: '#e01e37', shirt: '#2a6bff', shirt2: '#ffffff' } },
 };
 export function buildCat(spec) {
   const A = spec.acc || {}, fur = spec.fur, fur2 = spec.fur2 || fur, pA = spec.patchA || fur, pB = spec.patchB || pA, fl = spec.fluff || 0;
@@ -91,6 +94,12 @@ export function buildCat(spec) {
   if (A.scarf) { b.tor(A.scarf, 0, 0.84, 0.06, 0.34, 0.5, 0.34, Math.PI / 2); b.box(A.scarf, 0.2, 0.62, 0.36, 0.14, 0.4, 0.07, 0, 0, -0.2); }
   if (A.pack) { b.box(A.pack, 0, 0.6, -0.5, 0.44, 0.44, 0.26); b.box('#ffffff', 0, 0.66, -0.64, 0.24, 0.14, 0.04); b.box(A.pack, -0.2, 0.7, -0.2, 0.06, 0.4, 0.5); b.box(A.pack, 0.2, 0.7, -0.2, 0.06, 0.4, 0.5); }
   if (A.cape) { b.box(A.cape, 0, 0.52, -0.5, 0.74, 0.86, 0.05, 0.42); b.tor(A.cape, 0, 0.86, 0.02, 0.32, 0.32, 0.4, Math.PI / 2); }
+  if (A.bells) for (let i = 0; i < 5; i++) { const a = (i / 4 - 0.5) * 1.6; b.sph(i % 2 ? '#ffd23f' : A.bells, Math.sin(a) * 0.3, 0.78, 0.26 + Math.cos(a) * 0.1, 0.06); }
+  if (A.lei) for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283; b.lo(A.lei[i % A.lei.length], Math.sin(a) * 0.33, 0.8 - Math.cos(a) * 0.04, 0.05 + Math.cos(a) * 0.3, 0.085); }
+  if (A.board) { b.sph(A.board, 0.12, 0.8, -0.56, 0.2, 0.74, 0.05, 0, 0, 0.25); b.box(A.board2 || '#ffffff', 0.12, 0.8, -0.59, 0.05, 1.3, 0.02, 0, 0, 0.25); }
+  if (A.guitar) { b.sph(A.guitar, -0.06, 0.52, -0.56, 0.24, 0.3, 0.07); b.sph('#3a2140', -0.06, 0.56, -0.62, 0.08, 0.08, 0.02); b.box('#8a5a2b', 0.2, 0.98, -0.56, 0.07, 0.62, 0.05, 0, 0, -0.5); }
+  if (A.balloon) { b.cyl('#ffffff', 0.3, 1.4, -0.36, 0.008, 1.3, 0.008); b.sph(A.balloon, 0.3, 2.2, -0.36, 0.26, 0.32, 0.26); b.sph('#ffffff', 0.22, 2.3, -0.2, 0.05); }
+  if (A.gift) { b.box(A.gift, 0, 0.62, -0.52, 0.4, 0.4, 0.3); b.box('#ffd23f', 0, 0.62, -0.52, 0.42, 0.08, 0.32); b.box('#ffd23f', 0, 0.62, -0.52, 0.08, 0.42, 0.32); b.lo('#ffd23f', 0, 0.86, -0.52, 0.09); }
   if (A.wings) for (const sx of [-1, 1]) { b.sph(A.wings, sx * 0.42, 0.86, -0.4, 0.34, 0.2, 0.05, 0, sx * 0.5, sx * 0.6); b.sph(A.wings, sx * 0.36, 0.64, -0.42, 0.22, 0.14, 0.05, 0, sx * 0.5, sx * 0.2); }
   // arms
   const sleeve = coat || A.shirt || fur;
@@ -138,6 +147,14 @@ export function buildCat(spec) {
   if (A.glasses) { for (const sx of [-1, 1]) { h.cyl('#2a1436', sx * ex, ey + 0.02, ez + 0.1, 0.17, 0.03, 0.15, Math.PI / 2); h.tor(A.glasses, sx * ex, ey + 0.02, ez + 0.11, 0.17, 0.16, 0.06); } h.box(A.glasses, 0, ey + 0.05, ez + 0.11, 0.14, 0.03, 0.03); }
   if (A.crown) { h.cyl(A.crown, 0, 0.5, 0, 0.16, 0.1); for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; h.cone(A.crown, Math.sin(a) * 0.13, 0.6, Math.cos(a) * 0.13, 0.05, 0.14); } h.lo('#ff4fb8', 0, 0.52, 0.16, 0.035); }
   if (A.hat) { h.cyl(A.hat, 0, 0.46, 0, 0.5, 0.04); h.cyl(A.hat, 0, 0.56, 0, 0.3, 0.2); }
+  if (A.cowboy) { h.cyl(A.cowboy, 0, 0.44, 0, 0.66, 0.035, 0.6); h.sph(A.cowboy, 0, 0.56, 0, 0.3, 0.2, 0.28); h.tor(A.band || '#3a2140', 0, 0.49, 0, 0.3, 0.3, 0.28, Math.PI / 2); for (const sx of [-1, 1]) h.box(A.cowboy, sx * 0.56, 0.5, 0, 0.2, 0.035, 0.5, 0, 0, sx * 0.5); }
+  if (A.antlers) { for (const sx of [-1, 1]) { h.cyl(A.antlers, sx * 0.2, 0.62, -0.02, 0.035, 0.36, 0.035, 0, 0, -sx * 0.35); h.cyl(A.antlers, sx * 0.33, 0.7, -0.02, 0.03, 0.2, 0.03, 0, 0, -sx * 1.1); h.cyl(A.antlers, sx * 0.2, 0.78, -0.02, 0.028, 0.18, 0.028, 0, 0, sx * 0.5); } h.sph('#ff3355', 0, -0.07, 0.52, 0.07); }
+  if (A.party) { h.cone(A.party, 0, 0.66, 0, 0.2, 0.46, 0.2); h.sph('#ffffff', 0, 0.9, 0, 0.07); for (let i = 0; i < 5; i++) { const a = i * 1.257; h.lo(i % 2 ? '#ffd23f' : '#2de2e6', Math.sin(a) * 0.14, 0.52 + (i % 3) * 0.08, Math.cos(a) * 0.14, 0.035); } }
+  if (A.halo) h.tor(A.halo, 0, 0.74, 0, 0.26, 0.26, 0.3, Math.PI / 2);
+  if (A.phones) { h.tor(A.phones, 0, 0.12, -0.02, 0.56, 0.5, 0.36); for (const sx of [-1, 1]) { h.sph(A.phones, sx * 0.56, 0.04, 0, 0.1, 0.18, 0.18); h.sph('#17101c', sx * 0.6, 0.04, 0, 0.07, 0.13, 0.13); } }
+  if (A.flowers) for (let i = 0; i < 7; i++) { const a = (i / 6 - 0.5) * 2.4; h.lo(A.flowers[i % A.flowers.length], Math.sin(a) * 0.42, 0.34 + Math.cos(a) * 0.14, 0.12, 0.085); h.lo('#ffd23f', Math.sin(a) * 0.42, 0.34 + Math.cos(a) * 0.14, 0.19, 0.035); }
+  if (A.beanie) { h.sph(A.beanie, 0, 0.36, -0.02, 0.5, 0.3, 0.44); h.tor(A.trim2 || '#ffffff', 0, 0.3, -0.02, 0.5, 0.44, 0.5, Math.PI / 2); h.sph(A.trim2 || '#ffffff', 0, 0.68, -0.02, 0.1); }
+  if (A.star) { for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; h.cone(A.star, Math.sin(a) * 0.09, 0.62 + Math.cos(a) * 0.09, 0.05, 0.06, 0.16, 0.03, 0, 0, -a); } h.sph(A.star, 0, 0.62, 0.05, 0.08, 0.08, 0.03); }
   if (A.santa) { h.cyl('#ffffff', 0, 0.42, 0, 0.36, 0.1); h.cone('#e01e37', 0.06, 0.66, -0.04, 0.3, 0.5, 0.3, 0, 0, -0.35); h.sph('#ffffff', 0.24, 0.86, -0.04, 0.09); }
   const head = h.mesh(); head.position.set(0, 1.12, 0.1); inner.add(head);
   // ---- tool (Mimo's toy blaster), pivot at the paw ----
@@ -236,7 +253,12 @@ export function buildCar(type, K, col) {
   const g = new THREE.Group(), b = new GB();
   const S = 1 / 24, L = K.len * S, W = K.wid * S, body = col ? col[0] : K.body, body2 = col ? col[1] : K.body2, hl = L / 2, hw = W / 2;
   for (const z of [-hl * 0.62, hl * 0.58]) for (const sx of [-1, 1]) { b.cyl('#120a18', sx * (hw - 0.02), 0.3, z, 0.3, 0.26, 0.3, 0, 0, Math.PI / 2); b.cyl('#c0c7d1', sx * (hw + 0.115), 0.3, z, 0.14, 0.03, 0.14, 0, 0, Math.PI / 2); }
-  if (K.truck) {
+  if (K.pickup) { // farm pickup: cab in front, open bed with hay
+    b.box(body, 0, 0.6, 0, W, 0.5, L); b.box(body2, 0, 0.36, 0, W + 0.04, 0.12, L - 0.1);
+    b.box(body, 0, 1.12, 0.35, W - 0.1, 0.6, 1.3); b.box('#9fe8ff', 0, 1.15, 1.01, W - 0.3, 0.42, 0.06); for (const sx of [-1, 1]) b.box('#9fe8ff', sx * (hw - 0.04), 1.15, 0.35, 0.04, 0.4, 0.9);
+    for (const sx of [-1, 1]) b.box(body, sx * (hw - 0.05), 0.98, -hl * 0.55, 0.1, 0.3, L * 0.4); b.box(body, 0, 0.98, -hl + 0.06, W, 0.3, 0.1);
+    b.box('#e8c860', 0, 1.0, -hl * 0.55, W - 0.4, 0.44, 0.9); b.box('#c9a43c', 0, 1.0, -hl * 0.55, W - 0.38, 0.06, 0.92); b.box('#c0c7d1', 0, 0.42, hl + 0.06, W + 0.1, 0.16, 0.12);
+  } else if (K.truck) {
     b.box(body2, 0, 0.75, hl - 0.6, W, 0.9, 1.2); b.box('#9fe8ff', 0, 1.0, hl - 0.05, W - 0.2, 0.36, 0.12); b.box('#fff7dc', 0, 1.15, -0.65, W + 0.06, 1.7, L - 1.5);
     b.box(body, 0, 0.4, 0, W, 0.2, L); for (const sx of [-1, 1]) { b.sph('#ffb347', sx * (hw + 0.04), 1.2, -0.7, 0.03, 0.34, 0.6); b.cone('#ff9a3d', sx * (hw + 0.04), 1.2, -1.45, 0.03, 0.4, 0.3, Math.PI / 2); }
     b.box('#ff8a3d', 0, 0.45, -hl, W, 0.14, 0.1);
@@ -291,6 +313,13 @@ export function itemGeo(k) {
     case 'catnip': for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; b.sph('#7CFF6B', Math.sin(a) * 0.16, 0.05 + Math.cos(a) * 0.16, 0, 0.14, 0.2, 0.04, 0, 0, -a); } b.cyl('#2e9e3f', 0, -0.2, 0, 0.03, 0.3, 0.03); break;
     case 'milk': b.box('#ffffff', 0, 0, 0, 0.28, 0.4, 0.28); b.box('#4cc9f0', 0, -0.04, 0, 0.29, 0.12, 0.29); b.cone('#bfe9ff', 0, 0.27, 0, 0.2, 0.14, 0.2, 0, Math.PI / 4); break;
     case 'key': b.tor('#ffd23f', -0.16, 0, 0, 0.13, 0.16, 0.13); b.box('#ffd23f', 0.14, 0, 0, 0.4, 0.07, 0.06); b.box('#ffd23f', 0.24, -0.08, 0, 0.06, 0.12, 0.06); b.box('#ffd23f', 0.33, -0.07, 0, 0.06, 0.1, 0.06); break;
+    case 'kite': case 'kite1': case 'kite2': case 'kite3': case 'kite4': { const cs = { kite: ['#ff4fb8', '#ffd23f'], kite1: ['#2de2e6', '#ffffff'], kite2: ['#ffd23f', '#ff5a3d'], kite3: ['#7CFF6B', '#2de2e6'], kite4: ['#b967ff', '#ff9fe0'] }[k];
+      b.box(cs[0], 0, 0.05, 0, 0.62, 0.62, 0.03, 0, 0, Math.PI / 4); b.box(cs[1], 0, 0.05, 0.01, 0.3, 0.3, 0.035, 0, 0, Math.PI / 4); b.box('#3a2140', 0, 0.05, 0.02, 0.03, 0.86, 0.02); b.box('#3a2140', 0, 0.05, 0.02, 0.86, 0.03, 0.02);
+      for (let i = 0; i < 4; i++) b.box(i % 2 ? cs[0] : cs[1], Math.sin(i * 1.3) * 0.07, -0.5 - i * 0.2, 0, 0.13, 0.08, 0.02, 0, 0, i % 2 ? 0.5 : -0.5); break; }
+    case 'ball': b.sph('#ffffff', 0, 0, 0, 0.3); b.tor('#2de2e6', 0, 0, 0, 0.3, 0.3, 0.3); b.tor('#ffd23f', 0, 0, 0, 0.3, 0.3, 0.3, Math.PI / 2); b.tor('#ff4fb8', 0, 0, 0, 0.3, 0.3, 0.3, 0, Math.PI / 2); break;
+    case 'bag': b.sph('#c98f4b', 0, -0.05, 0, 0.3, 0.34, 0.26); b.cyl('#a8743a', 0, 0.26, 0, 0.13, 0.14, 0.13); b.tor('#ff4f5e', 0, 0.2, 0, 0.15, 0.15, 0.2, Math.PI / 2); b.sph('#ffb347', 0, -0.05, 0.25, 0.1, 0.07, 0.03); b.cone('#ff9a3d', 0.12, -0.05, 0.25, 0.07, 0.09, 0.03, 0, 0, Math.PI / 2); break;
+    case 'gcoin': b.cyl('#ffd23f', 0, 0, 0, 0.26, 0.06, 0.26, Math.PI / 2); b.cyl('#fff3a8', 0, 0, 0.01, 0.19, 0.07, 0.19, Math.PI / 2); b.sph('#ffb300', 0, -0.03, 0.05, 0.08, 0.07, 0.02); for (const [x, y] of [[-0.09, 0.05], [0, 0.1], [0.09, 0.05]]) b.sph('#ffb300', x, y, 0.05, 0.04, 0.045, 0.02); break;
+    case 'bobber': b.sph('#ff3355', 0, 0.06, 0, 0.14, 0.12, 0.14); b.sph('#ffffff', 0, -0.05, 0, 0.14, 0.1, 0.14); b.cyl('#3a2140', 0, 0.24, 0, 0.015, 0.2, 0.015); break;
     default: b.sph('#ffffff', 0, 0, 0, 0.2);
   }
   return (itemCache[k] = b.geo());

@@ -4,7 +4,7 @@ let list = process.argv[2] && process.argv[2] !== 'all' ? process.argv[2].split(
   await L.serve();
   const { browser, page, errors } = await L.open(false);
   await page.addScriptTag({ content: fs.readFileSync(__dirname + '/bot.cjs', 'utf8') });
-  await page.evaluate(() => { __vp.unlockAll(); VP.Audio.sfx = () => {}; VP.Shop.P.grants.vip = true; VP.Shop.P.grants.season = true; for (const m of VP.Missions.list) if (m.bonus) VP.S.stars[m.n] = 1; });
+  await page.evaluate(() => { __vp.unlockAll(); VP.Audio.sfx = () => {}; VP.Shop.P.grants.vip = true; VP.Shop.P.grants.season = true; });
   if (process.argv[3]) { await page.evaluate(async ids => { for (const id of ids) { await VP.Tour.load(id); VP.Missions.tourMissions(id); } }, process.argv[3].split(',')); }
   if (!list) list = await page.evaluate(() => VP.Missions.list.map(m => m.n));
   let ok = 0; const all = [];

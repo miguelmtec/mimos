@@ -479,7 +479,7 @@ UI.SCREENS.online = {
     return `<div class="corner l"><button class="chip" data-act="back">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="teal">🌐 ${t('on_title')}</h2>
       <p class="small">${t('on_sub')}</p>
       ${ok === false ? `<div class="panel t"><p><b>😿 ${t('on_unavail')}</b></p><p class="small">${t('on_unavailSub')}</p></div><button class="btn" data-act="onSolo">🐾 ${t('on_solo')}</button>` : `
-      <div class="panel"><div class="sw"><span>🗺 ${t('on_where')}</span><select class="txt osel" id="onroom">${rooms.map(r => `<option value="${esc(r.id)}" ${r.id === O.sel.room ? 'selected' : ''}>${r.flag} ${esc(r.name)}</option>`).join('')}</select></div>
+      <div class="panel"><div class="sw col"><span>🗺 ${t('on_where')}</span><select class="txt osel" id="onroom">${rooms.map(r => `<option value="${esc(r.id)}" ${r.id === O.sel.room ? 'selected' : ''}>${r.flag} ${esc(r.name)}</option>`).join('')}</select></div>
         <div class="sw col" style="border:0"><span>🐱 ${t('on_who')}</span><span class="row">${looks.map(l => `<button class="tab ${l.k === O.sel.cat ? 'on' : ''}" data-act="onCat" data-k="${l.k}">${l.k === 'mine' ? '💛 ' : ''}${esc(l.label)}</button>`).join('')}</span></div>
         <p class="small">${look.named ? t('on_nameCat', esc(look.label)) : t('on_nameNick')}${guest ? '' : ''}</p></div>
       <div class="panel t"><p class="small"><b>🛡 ${t('on_rules')}</b></p><p class="small">${t('on_rulesTxt')}</p></div>

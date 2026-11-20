@@ -31,6 +31,7 @@ Jogo de fã em **3D de mundo aberto** com os gatos **Mimo, Mimosa e Mortícia**,
 - **Rio no horizonte:** Cristo Redentor e Pão de Açúcar (com bondinho) aparecem ao fundo nos mapas do Rio; a câmera chega olhando para eles.
 - **Parkour de telhado:** nas missões de parkour o gato sobe caixotes só andando, salta vãos sozinho e voa em trampolins até o telhado alto. Sem botão de pulo: igual no toque e no teclado.
 - **Cidade dos Gatos:** galeria com os gatos cadastrados pelos jogadores (retrato 3D, nome, raça, recado e @), os mesmos que passeiam pela cidade. **Emotes** do gato (miau, dançar, sentar, acenar) por botões no celular ou Z X C V.
+- **Cidade Online:** passeio livre com os gatos de outros jogadores na mesma cidade (cidade neon ou cidades reais): andar, dirigir, emotes, patinhas douradas compartilhadas. Feito para crianças: **sem chat livre** (só 12 frases prontas), apelido sorteado para convidados, silenciar e denunciar com um toque. Roda em Vercel + Neon (polling de 1,5 s); as missões continuam offline. Se a API cair, o jogo avisa e segue no passeio solo.
 - **Ranking** soma todas as missões (história, capítulos e Volta ao Mundo). **Vibração** nos golpes no celular (dá para desligar em Ajustes).
 - PT-BR e inglês, feito primeiro para celular (retrato, navegador do Instagram).
 
@@ -54,6 +55,8 @@ Na Vercel: projeto estático com `outputDirectory = public`; as funções ficam 
 | `DATABASE_URL` | Neon Postgres: ranking, contas, gatos e save na nuvem |
 | `MP_ACCESS_TOKEN` | Mercado Pago: loja Pix (sem ela a loja mostra "abre em breve") |
 | `RESEND_API_KEY`, `MAIL_FROM`, `AUTH_SECRET` | login por e-mail (ver `docs/ACCOUNTS.md`) |
+| `ONLINE_ENABLED` | `false` desliga a Cidade Online na hora (padrão: ligada). Ajustes do cliente em `public/data/online.json` |
+| `ONLINE_TICKET_SECRET` | só se usar o servidor em tempo real opcional (`server/deploy/README.md`) |
 
 Sem nenhuma variável o jogo funciona inteiro offline, com progresso salvo no aparelho.
 
@@ -70,7 +73,8 @@ Tudo fica em `public/data/` e o esquema está em [DESIGN.md](DESIGN.md):
 ## Testes
 
 ```bash
-npm test                                   # API de contas + validação do conteúdo (Node, sem instalar nada)
+npm test                                   # API de contas e da Cidade Online + validação do conteúdo (Node, sem instalar nada)
+npm --prefix server install                # só para os testes do servidor em tempo real (sem isso eles são pulados)
 node tests/e2e/missions.cjs all             # bot joga as 209 missões em modo acelerado (~2 min)
 node tests/e2e/expansion.cjs                # modelos novos, diário/semanal, treino no toque, relevo + comunidade, compartilhar, pacotes
 node tests/e2e/expansion2.cjs [seção]       # cidades esparsas, horizonte do Rio, mapa-múndi, ranking, galeria, emotes, vibração, parkour, HUD, peso da 1ª carga
@@ -80,6 +84,8 @@ node tests/e2e/shots.cjs [filtro]           # capturas 390x844 (toque) e 1280x80
 node tests/e2e/missions.cjs 1000,1001 miami # missões de viagem
 node tests/e2e/controls.cjs                 # teclado, mouse e toque
 node tests/e2e/shop-accounts.cjs            # loja Pix e contas com API simulada
+node tests/e2e/online.cjs [poll|desktop|fallback|ws]  # Cidade Online: dois navegadores na mesma sala contra a API real em memória
+node tests/helpers/online-dev-server.mjs    # jogo + API online em memória em http://localhost:8790 (abra em duas abas)
 ```
 Os testes e2e usam Playwright (Chromium com WebGL por software). Capturas vão para `$VP_SHOTS` (padrão `/tmp`).
 

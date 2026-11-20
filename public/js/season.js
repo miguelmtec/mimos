@@ -124,7 +124,7 @@ Ext.init.push(G => {
 // ---------- decoration: light strings on the buildings, trees, pretend snow ----------
 let dec = null;
 function buildDecor(gfx, W, def) {
-  const TH = gfx.THREE, g = new TH.Group(), cols = def.colors || ['#e01e37', '#7CFF6B', '#ffd23f'], low = VP.R3.quality === 0, step = low ? 3.2 : 1.7, D = def.decor;
+  const TH = gfx.THREE, g = new TH.Group(), cols = def.colors || ['#e01e37', '#7CFF6B', '#ffd23f'], low = VP.R3.quality, step = [3.6, 2.6, 1.7][low] || 2.6, D = def.decor;
   if (D.lights) {
     const per = [0, 1, 2, 3, 4].map(() => new gfx.GB()); let i = 0;
     for (const b of W.blds) {
@@ -151,7 +151,7 @@ function buildDecor(gfx, W, def) {
 Ext.render.push((G, dt, gfx) => {
   const def = Sn.cur, W = G.W, on = !!(def && def.decor && !W.real && (def.decor.lights || def.decor.trees || def.decor.snow));
   if (!on) { if (dec) dec.visible = false; return; }
-  if (!dec || dec.userData.W !== W || dec.userData.id !== def.id || dec.userData.low !== (VP.R3.quality === 0)) { if (dec) { VP.R3.three.scene.remove(dec); dec.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } dec = buildDecor(gfx, W, def); Sn.dec = dec; }
+  if (!dec || dec.userData.W !== W || dec.userData.id !== def.id || dec.userData.low !== VP.R3.quality) { if (dec) { VP.R3.three.scene.remove(dec); dec.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } dec = buildDecor(gfx, W, def); Sn.dec = dec; }
   dec.visible = true;
   const xmasMood = VP.R3.moodOf(G) === 6; // the older "Natal Neon" bonus district already brings trees and snow of its own
   if (dec.userData.trees) for (const m of dec.userData.trees) m.visible = !xmasMood;

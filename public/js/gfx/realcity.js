@@ -71,12 +71,59 @@ export function buildRealCity(W, scene, VP) {
     chunkMesh(g, mat, scene, city, { cell: 80 });
   }
 
+  // ---------- procedural street frontage for sparse maps (lots come from World.infill, so collision matches) ----------
+  const fill = W.infill || [], STY = VP.World.STYLES[W.style] || VP.World.STYLES.us, KH = K * 1.35, fillBody = new GB(), fillDet = new GB(), fillNeon = new GB();
+  const fillBlocks = fill.filter(L => L.k === 'block').map(L => { const hw = L.w / 2 - 0.4, hd = L.d / 2 - 0.4, o = [L.h]; for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) o.push(L.x + L.ux * hw * a + L.fx * hd * b, L.z + L.uz * hw * a + L.fz * hd * b); return o; });
+  {
+    const ROOFS = { clay: ['#c96a3b', '#b85c34', '#d47a4a', '#a8552f'], gray: ['#6b6f7a', '#585c68', '#7a6a5e', '#8a4a44'] }, AWN = ['#e01e37', '#2a6bff', '#1fa85a', '#ff8a1f', '#ffd23f', '#8a4fd0'], _c = new THREE.Color();
+    // gable roof: ridge along the street, pushed straight into the merged buffers
+    const gable = (g, col, cx, y, cz, ux, uz, fx, fz, hl, hd, rise) => {
+      _c.set(col); const v = (a, b, h) => [u(cx + ux * hl * a + fx * hd * b), y + h, u(cz + uz * hl * a + fz * hd * b)], A = v(-1, -1, 0), B = v(1, -1, 0), Cc = v(1, 1, 0), D = v(-1, 1, 0), E0 = v(-1, 0, rise), E1 = v(1, 0, rise);
+      const tri = (p, q, r, sh) => { const ax = q[0] - p[0], ay = q[1] - p[1], az = q[2] - p[2], bx = r[0] - p[0], by = r[1] - p[1], bz = r[2] - p[2]; let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx; const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l; const fl = ny < 0; for (const t of fl ? [p, r, q] : [p, q, r]) { g.p.push(t[0], t[1], t[2]); g.n.push(fl ? -nx : nx, fl ? -ny : ny, fl ? -nz : nz); g.c.push(_c.r * sh, _c.g * sh, _c.b * sh); } };
+      tri(A, B, E1, 1); tri(A, E1, E0, 1); tri(D, Cc, E1, 0.86); tri(D, E1, E0, 0.86);
+      // gable ends face outwards along the ridge
+      for (const [p, q, r, sgn] of [[A, D, E0, -1], [B, Cc, E1, 1]]) { for (const t of sgn * (ux * ((q[2] - p[2]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[2] - p[2]))) > 0 ? [p, q, r] : [p, r, q]) { g.p.push(t[0], t[1], t[2]); g.n.push(ux * sgn, 0, uz * sgn); g.c.push(_c.r * 0.7, _c.g * 0.7, _c.b * 0.7); } }
+    };
+    for (const L of fill) {
+      if (L.k === 'block') continue;
+      const r = U.rng(L.s + 5), ry = -Math.atan2(L.uz, L.ux), col = r.pick(STY.cols), y0 = Math.min(hM(L.x, L.z), hM(L.x + L.fx * L.d / 2, L.z + L.fz * L.d / 2), hM(L.x - L.fx * L.d / 2, L.z - L.fz * L.d / 2));
+      const at = (a, b) => [L.x + L.ux * a + L.fx * b, L.z + L.uz * a + L.fz * b]; // a along the street, b towards it (metres from the lot centre)
+      if (L.k === 'house') {
+        const bw = L.w - (STY.walls ? 1.8 : 3), bd = L.d * 0.56, bh = 3.1, cb = at(0, -(L.d / 2 - bd / 2 - 0.4)), ft = -(L.d / 2 - bd - 0.4);
+        fillBody.box(col, u(cb[0]), y0 + bh * KH / 2 - 0.3, u(cb[1]), bw * K, bh * KH + 0.6, bd * K, 0, ry, 0);
+        if (STY.roof !== 'flat') gable(fillBody, r.pick(ROOFS[STY.roof]), cb[0], y0 + bh * KH, cb[1], L.ux, L.uz, L.fx, L.fz, bw / 2 + 0.5, bd / 2 + 0.6, 1.25 * KH);
+        else fillBody.box(r.pick(STY.trim), u(cb[0]), y0 + bh * KH + 0.1, u(cb[1]), (bw + 0.3) * K, 0.22, (bd + 0.3) * K, 0, ry, 0);
+        const dx = (r() < 0.5 ? -1 : 1) * bw * 0.22, d0 = at(dx, ft + 0.04), w0 = at(-dx, ft + 0.04), tc = r.pick(STY.trim);
+        fillDet.box(r.pick(['#6b4a32', '#3f6b8a', '#8a3b2f', '#3d6b4a']), u(d0[0]), y0 + 1.05 * KH, u(d0[1]), 0.95 * K, 2.1 * KH, 0.08, 0, ry, 0);
+        fillDet.box('#9fd8ff', u(w0[0]), y0 + 1.6 * KH, u(w0[1]), 1.3 * K, 1.0 * KH, 0.08, 0, ry, 0); fillDet.box(tc, u(w0[0]), y0 + 1.03 * KH, u(w0[1]), 1.5 * K, 0.12 * KH, 0.14, 0, ry, 0);
+        if (STY.walls) { // front wall with a gate, short side walls: the classic Brazilian street front
+          const gx = (r() < 0.5 ? -1 : 1) * L.w * 0.2, gw = 2.6, fb = L.d / 2 - 0.2, wh = 1.85, yf = hM(L.x + L.fx * fb, L.z + L.fz * fb);
+          for (const [a0, a1] of [[-L.w / 2 + 0.2, gx - gw / 2], [gx + gw / 2, L.w / 2 - 0.2]]) { if (a1 - a0 < 0.4) continue; const m = at((a0 + a1) / 2, fb); fillDet.box(tc, u(m[0]), yf + wh * KH / 2 - 0.15, u(m[1]), (a1 - a0) * K, wh * KH + 0.3, 0.2, 0, ry, 0); }
+          const gp = at(gx, fb); fillDet.box(r.pick(['#4a5560', '#7a4a32', '#2f5d4a', '#59636e']), u(gp[0]), yf + 0.8 * KH, u(gp[1]), gw * K, 1.6 * KH, 0.09, 0, ry, 0);
+          for (const sx of [-1, 1]) { const m = at(sx * (L.w / 2 - 0.25), (fb + ft) / 2); fillDet.box(tc, u(m[0]), yf + wh * KH / 2 - 0.15, u(m[1]), 0.2, wh * KH + 0.3, (fb - ft) * K, 0, ry, 0); }
+        }
+      } else { // shop: full-width front, awning over the pavement, sign band
+        const bw = L.w - 0.5, bd = L.d - 1.2, bh = 4.2, cb = at(0, -0.4), ft = bd / 2 - 0.4, ac = r.pick(AWN);
+        fillBody.box(col, u(cb[0]), y0 + bh * KH / 2 - 0.3, u(cb[1]), bw * K, bh * KH + 0.6, bd * K, 0, ry, 0);
+        fillBody.box(r.pick(STY.trim), u(cb[0]), y0 + bh * KH + 0.12, u(cb[1]), (bw + 0.2) * K, 0.24, (bd + 0.2) * K, 0, ry, 0);
+        const f0 = at(0, ft + 0.05), f1 = at(0, ft + 0.95), f2 = at(0, ft + 1.85);
+        fillDet.box('#2b3a4a', u(f0[0]), y0 + 1.15 * KH, u(f0[1]), bw * 0.62 * K, 2.3 * KH, 0.08, 0, ry, 0);
+        fillDet.box(ac, u(f1[0]), y0 + 2.75 * KH, u(f1[1]), (bw - 0.6) * K, 0.1, 1.8 * K, 0, ry, 0); fillDet.box('#ffffff', u(f2[0]), y0 + 2.58 * KH, u(f2[1]), (bw - 0.6) * K, 0.3 * KH, 0.06, 0, ry, 0);
+        (STY.sign ? fillNeon : fillDet).box(STY.sign ? r.pick(pal.neon) : r.pick(['#ffffff', '#ffd23f', '#1f2a44', '#e01e37', '#1fa85a']), u(f0[0]), y0 + 3.55 * KH, u(f0[1]), (bw - 1) * K, 0.7 * KH, 0.1, 0, ry, 0);
+      }
+    }
+    city.infill = fill.length;
+    if (fillBody.p.length) chunkMesh(fillBody.geo(), MAT.flat, scene, city, { cell: 80 });
+    if (fillDet.p.length) chunkMesh(fillDet.geo(), MAT.flat, scene, city, { cell: 80, detail: 1.7 });
+    if (fillNeon.p.length) chunkMesh(fillNeon.geo(), MAT.glow, scene, city, { cell: 80, detail: 1.8 });
+  }
+
   // ---------- buildings (extruded footprints) ----------
   const neon = new GB(), mural = new GB(), pitches = [];
   {
     const P = [], N = [], Cc = [], UV = [], cols = comu ? VIVID : pal.roofs, _c = new THREE.Color(), white = new THREE.Color('#ffffff'), dusk = new THREE.Color('#8a7ab8');
     let neonEdges = 0;
-    for (const B of C.buildings) {
+    for (const B of C.buildings.concat(fillBlocks)) {
       const n = (B.length - 1) >> 1; if (n < 3) continue;
       const pts = []; let area = 0, ymin = 1e9, ymax = -1e9, cx = 0, cz = 0;
       for (let i = 0; i < n; i++) { cx += B[1 + i * 2]; cz += B[2 + i * 2]; } cx /= n; cz /= n;
@@ -123,8 +170,17 @@ export function buildRealCity(W, scene, VP) {
     const spots = [], inPoly = (P, x, z) => { let c = false; for (let i = 0, j = P.length - 2; i < P.length; j = i, i += 2) if ((P[i + 1] > z) !== (P[j + 1] > z) && x < (P[j] - P[i]) * (z - P[i + 1]) / (P[j + 1] - P[i + 1]) + P[i]) c = !c; return c; };
     for (const P of C.green || []) { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i < P.length; i += 2) { x0 = Math.min(x0, P[i]); x1 = Math.max(x1, P[i]); z0 = Math.min(z0, P[i + 1]); z1 = Math.max(z1, P[i + 1]); } const want = Math.min(26, Math.ceil((x1 - x0) * (z1 - z0) / 420)); for (let k = 0, tries = 0; k < want && tries < want * 6; tries++) { const x = rng.range(x0, x1), z = rng.range(z0, z1); if (Math.abs(x) < half - 4 && Math.abs(z) < half - 4 && inPoly(P, x, z) && gAt(x, z) === GT.G_GRASS) { spots.push([x, z]); k++; } } }
     for (let i = 0; i < 500 && spots.length < 420; i++) { const x = rng.range(-half, half), z = rng.range(-half, half), g = gAt(x, z); if (g === GT.G_SAND && rng() < 0.25 || (g === GT.G_LOT && rng() < 0.12)) spots.push([x, z]); }
-    const list = spots.slice(0, 420);
-    chunkInstances(meta.palms ? palmGeo() : treeGeo(), meta.palms ? palmGeoLo() : treeGeoLo(), MAT.lit, list.map(sp => ({ x: u(sp[0]), y: hM(sp[0], sp[1]), z: u(sp[1]), ry: rng() * 6.283, s: 0.85 + rng() * 0.5 })), scene, city, { cell: 90 });
+    const list = spots.slice(0, 420), inst = sp => ({ x: u(sp[0]), y: hM(sp[0], sp[1]), z: u(sp[1]), ry: rng() * 6.283, s: 0.85 + rng() * 0.5 });
+    // street trees of the procedural frontage: ipês in bloom (yellow, pink, purple, white), palms or plain trees
+    const ft = W.infillTrees || [], IPE = ['#ffd23f', '#ff8fd0', '#b388ff', '#fff3fa'], extraPalms = ft.filter(t => t[2] === 'palm'), extraTrees = ft.filter(t => t[2] === 'tree'), ipes = ft.filter(t => t[2] === 'ipe');
+    const palmsL = (meta.palms ? list : []).concat(extraPalms), treesL = (meta.palms ? [] : list).concat(extraTrees);
+    if (palmsL.length) chunkInstances(palmGeo(), palmGeoLo(), MAT.lit, palmsL.map(inst), scene, city, { cell: 90 });
+    if (treesL.length) chunkInstances(treeGeo(), treeGeoLo(), MAT.lit, treesL.map(inst), scene, city, { cell: 90 });
+    for (let ci = 0; ci < 4 && ipes.length; ci++) { // one small instanced set per blossom colour (the trunk stays brown)
+      const some = ipes.filter(t => t[3] % 4 === ci); if (!some.length) continue; const cc = new THREE.Color(IPE[ci]), c2 = '#' + cc.clone().multiplyScalar(0.9).getHexString(), c3 = '#' + cc.clone().multiplyScalar(0.8).getHexString();
+      const hi = new GB(); hi.add(PR.cyl6, '#7a5a3b', 0, 1.3, 0, 0.2, 2.6, 0.2); hi.lo(IPE[ci], 0, 3.5, 0, 1.9, 1.4, 1.9); hi.lo(c2, 0.7, 4.3, 0.3, 1.2, 1.0, 1.2); hi.lo(c3, -0.7, 4.1, -0.4, 1.1, 0.9, 1.1); const lo = new GB(); lo.add(PR.cyl6, '#7a5a3b', 0, 1.3, 0, 0.2, 2.6, 0.2); lo.add(PR.cone, IPE[ci], 0, 3.9, 0, 1.9, 2.6, 1.9);
+      chunkInstances(hi.geo(), lo.geo(), MAT.lit, some.map(inst), scene, city, { cell: 90 }); }
+    city.ipes = ipes.length;
     const mt = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(); void mt; void q; void p; void sc;
     // street lamps along the main roads
     const lg = new GB(); lg.add(PR.cyl6, '#59536b', 0, 2.2, 0, 0.07, 4.4, 0.07); lg.box('#fff6c8', 0, 4.45, 0, 0.5, 0.12, 0.5);

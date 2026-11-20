@@ -429,7 +429,7 @@ R.snapshot = function (items, w, h) {
   for (const it of items) { const g = buildCat(it.spec); g.position.set(it.x || 0, 0.1, it.z || 0); if (it.s) g.scale.multiplyScalar(it.s); animCat(g, { t: 1.3 + (it.x || 0), walk: 0 }); stageGroup.add(g); }
   stageGroup.rotation.y = 0;
   renderer.setPixelRatio(1); renderer.setSize(w, h, false);
-  stageCam.aspect = w / h; stageCam.fov = 34; stageCam.updateProjectionMatrix(); stageCam.position.set(0, 2.0, 8.6); stageCam.lookAt(0, 1.05, 0);
+  stageCam.aspect = w / h; stageCam.fov = 34; stageCam.updateProjectionMatrix(); stageCam.position.set(0, 2.0, 7.6); stageCam.lookAt(0, 0.95, 0);
   renderer.render(stage, stageCam);
   out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
   while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);

@@ -8,10 +8,11 @@
    "country": "EUA",
    "file": "miami.json",
    "kb": 132,
-   "landmarks": 78,
+   "landmarks": 72,
    "tags": [
     "beach"
    ],
+   "elev": 1,
    "order": 0,
    "flag": "🇺🇸",
    "mood": 0,
@@ -29,6 +30,7 @@
    "tags": [
     "beach"
    ],
+   "elev": 1,
    "order": 1,
    "flag": "🇧🇷",
    "mood": 2,
@@ -48,6 +50,7 @@
     "comunidade",
     "morro"
    ],
+   "elev": 1,
    "order": 2,
    "flag": "🇧🇷",
    "mood": 0,
@@ -66,6 +69,7 @@
     "comunidade",
     "morro"
    ],
+   "elev": 1,
    "order": 3,
    "flag": "🇧🇷",
    "mood": 2,

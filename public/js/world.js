@@ -346,7 +346,7 @@ World.fromCity = function (C, meta) {
     const seen = new Uint8Array(W * H);
     while (st.length) { const i = st.pop(); if (seen[i] || bar[i]) continue; seen[i] = 1; grid[i] = WATER; gnd[i] = G_WATER; const x = i % W; if (x > 0) st.push(i - 1); if (x < W - 1) st.push(i + 1); if (i >= W) st.push(i - W); if (i < W * (H - 1)) st.push(i + W); }
     let sea = 0; for (let i = 0; i < W * H; i++) sea += seen[i];
-    if (sea > W * H * 0.8) for (let i = 0; i < W * H; i++) if (seen[i]) { grid[i] = FLOOR; gnd[i] = G_LOT; } // orientation looked wrong: keep it dry rather than flood the city
+    if (sea > W * H * 0.8) { for (let i = 0; i < W * H; i++) if (seen[i]) { grid[i] = FLOOR; gnd[i] = G_LOT; } } // orientation looked wrong: keep it dry rather than flood the city
     else if ((C.tags || []).includes('beach') && !(C.beach || []).length && sea > 0) {
       // beach map without a beach polygon in OSM: lay a ~60 m strip of sand along the land side of the coastline
       const dist = new Int16Array(W * H).fill(-1), q = []; const lim = Math.round(60 / MPT);

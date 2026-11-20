@@ -196,12 +196,14 @@ const CH = [
 
 const districts = old.districts.filter(d => d.id <= 6), missions = old.missions.filter(m => m.n < 200);
 const PAR = { volley: 110, kites: 75, fish: 100, photo: 110, chain: 110, parkour: 90, escort: 130, eat: 80, kittens: 150, duel: 110, stealth: 80, steal: 100, waves: 160, heist: 150, cash: 120, rescue: 160, chase: 100, defend: 190, truck: 120, escape: 100, vault: 90, race: 85 };
+// the bot is unnaturally good at some things (weaving between sleeping dogs, ramming trucks): humans get a floor
+const FLOOR = { stealth: 75, parkour: 60, heist: 95, chain: 70, duel: 75, kittens: 100, escort: 90, photo: 90, fish: 70, volley: 60, kites: 60 };
 CH.forEach((c, i) => {
   const id = 7 + i, from = 201 + i * 10, [pt, en, geo, song, stars, lv0, step, ipt, ien, col, list] = c;
   districts.push({ id, geo, song, from, to: from + 9, grant: null, arc: true, req: { stars }, col, name: { pt, en }, intro: { pt: ipt, en: ien } });
   list.forEach((m, k) => {
     const n = from + k, [type, npt, nen, params, who, lpt, len] = m, t = res[n];
-    const par = t ? Math.max(40, Math.min(300, Math.round((t * 2.4 + 20) / 5) * 5)) : oldPar[n] || PAR[type] || 120;
+    const par = t ? Math.max(FLOOR[type] || 45, Math.min(300, Math.round((t * 2.4 + 20) / 5) * 5)) : oldPar[n] || PAR[type] || 120;
     missions.push({ n, type, name: { pt: npt, en: nen }, lv: Math.round(lv0 + k * step * (10 / 9) * 0.9 + (k === 9 ? 1 : 0)), par, params, talk: [[who, lpt, len]] });
   });
 });

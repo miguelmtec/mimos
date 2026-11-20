@@ -295,10 +295,11 @@ Object.assign(TYPES, {
       const G = B.G, W = B.W, start = B.front('arena', 's');
       B.begin(start, { traffic: 0, coffee: 4 }); G.noHeat = true; G.noPolice = true; G.noCars = true; G.tutorial = true;
       for (const e of G.dogs) e.dead = true;
-      const a = { x: start.x + 190, y: start.y }, tx = Math.floor((start.x + 300) / T), ty = Math.floor(start.y / T);
+      const a = { x: start.x + 190, y: start.y };
       B.goto(a, 'tu_move', { hint: 'move' });
-      let crate = null; if (W.grid[ty * W.W + tx] === 0) crate = Game.addProp({ k: 'crate', tx, ty });
-      B.step({ txt: 'tu_attack', hint: 'attack', act: 'attack', at: () => (crate && !crate.done ? crate : null), done: () => !crate || crate.done });
+      // a dizzy, harmless mutt to practise on (any cat can do it)
+      let dummy = null;
+      B.step({ txt: 'tu_attack', hint: 'attack', fight: true, enter() { const q = freeNear(B, a.x + 150, a.y, 0, 60) || { x: a.x + 120, y: a.y }; dummy = Game.addDog('mutt', q.x, q.y, { guard: true, tag: 't' }); dummy.hp = dummy.max = 30; dummy.stun = 1e6; dummy.carry = null; }, at: () => (dummy && !dummy.dead ? dummy : null), done: () => !!dummy && dummy.dead });
       B.step({ txt: 'tu_switch', hint: 'switch', at: () => null, seen: {}, enter() { this.seen = { [G.active]: 1 }; }, tick() { this.seen[G.active] = 1; }, done() { return Object.keys(this.seen).length >= 2; } });
       B.step({ txt: 'tu_revive', hint: 'revive', at: () => G.cats.find(c => c.down) || null,
         enter() { const c = G.cats[G.active === 2 ? 1 : 2]; c.hp = 0; c.down = true; G.tutLives = VP.S.lives; VP.S.lives = Math.max(1, VP.S.lives) + 1; Game.fx.poof(c.x, c.y - 14, 8); VP.Audio.sfx('down'); },
@@ -386,7 +387,8 @@ TYPES.tour = {
       G.mtimer = p.time || 100; B.goto(c, 'o_tourGo', { args: [tr('tp_kites')] });
       kiteGame(B, c, p.n || 8, { rad: 250, txt: comu ? 'o_kiteContest' : 'o_kites' });
     } else if (kind === 'football' || kind === 'volley') {
-      const c = (kind === 'football' && W.pitch) || patch(W, start.x, start.y, kind === 'volley' ? 40 : 10, 3, g => (kind === 'volley' ? g === GT.G_SAND : g === GT.G_LOT || g === GT.G_GRASS)) || start;
+      const sandy = kind === 'volley' || (!comu && (C.tags || []).includes('beach')); // beach maps play on the sand
+      const c = (kind === 'football' && W.pitch) || patch(W, start.x, start.y, sandy ? 60 : 10, 3, g => (sandy ? (g === GT.G_SAND ? 900 : 0) : g === GT.G_LOT || g === GT.G_GRASS)) || start;
       B.goto(c, 'o_tourGo', { args: [tr(kind === 'volley' ? 'tp_court' : 'tp_pitch')] });
       for (let i = 0; i < 2; i++) { const q = freeNear(B, c.x + (i ? 70 : -70), c.y - 150, 0, 60); if (q) { const f = Game.addFriend(q.x, q.y, i ? 'f3' : 'f1'); f.stay = true; } }
       ballGame(B, c, p.n || 8, { txt: kind === 'volley' ? 'o_volley' : 'o_football' });

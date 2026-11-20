@@ -11,7 +11,7 @@ const info = page => page.evaluate(() => { const O = VP.Online, G = __vp.G; retu
 const until = async (page, fn, arg, ms = 12000) => { try { await page.waitForFunction(fn, arg, { timeout: ms }); return true; } catch (e) { return false; } };
 const tap = async (page, sel) => { await page.locator(sel).first().click({ force: true }); await page.waitForTimeout(250); };
 // tap on the HUD canvas (touch or mouse, whatever the context is)
-const hudTap = async (P, x, y) => { if (P.mobile) await P.page.touchscreen.tap(x, y); else await P.page.mouse.click(x, y); await P.page.waitForTimeout(300); };
+const hudTap = async (P, x, y) => { if (process.env.VP_DEBUG) console.log('hudTap', x, y, JSON.stringify(await P.page.evaluate(([x, y]) => [VP.HUD.hit(x, y), VP.UI.screen, VP.UI.paused, VP.I.enabled, VP.Online.sheet, document.elementFromPoint(x, y).id, VP.Online.state], [x, y]))); if (P.mobile) await P.page.touchscreen.tap(x, y); else await P.page.mouse.click(x, y); await P.page.waitForTimeout(300); };
 // two software-rendered browsers share the CPU here: the lightest graphics keep the frame rate usable
 async function client(mobile) { const P = await L.open(mobile, { routes }); P.mobile = mobile; await P.page.evaluate(() => { VP.Audio.sfx = () => {}; VP.R3.setQuality(0); }); return P; }
 // through the menus, like a player: title -> Cidade Online -> pick who the others see -> enter

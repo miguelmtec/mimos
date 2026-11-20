@@ -84,6 +84,51 @@ UI.act.acUse = el => { const c = A.cats[+el.dataset.i]; if (VP.S.avatarId === c.
 UI.SCREENS.privacy = { hideHud: true, html: () => `<div class="corner l"><button class="chip" data-act="account">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="teal">🔒 ${t('ac_privacy')}</h2><div class="panel t">${t('ac_privTxt')}</div><a class="btn ghost" href="privacy.html" target="_blank" rel="noopener">${t('ac_privFull')}</a></div>` };
 UI.act.privacy = () => UI.show('privacy');
 
+// ---------- "Cidade dos Gatos": gallery of the cats players registered (public ones), each with a 3D portrait ----------
+A.thumbs = {};
+const STARS = () => ['mimo', 'mimosa', 'morticia'].map(n => ({ id: 'star_' + n, name: n === 'morticia' ? 'Mortícia' : n[0].toUpperCase() + n.slice(1), breed: 'persa', bio: t('gc_star_' + n), instagram: 'mimo.mimosa.morticia', star: n }));
+A.cityCats = function () {
+  const mine = VP.S.avatar ? [{ id: 'me', name: VP.S.avatar.label || t('gc_mine'), breed: '', bio: t('gc_mine_bio'), mine: true, built: VP.S.avatar }] : [];
+  return mine.concat(A.gallery.filter(c => !VP.S.avatarId || c.id !== VP.S.avatarId)).concat(STARS());
+};
+const specOf = c => c.built || (c.star ? VP.R3.spec(c.star, false) : A.toSpec(c.spec));
+UI.SCREENS.catcity = {
+  hideHud: true,
+  html: () => {
+    const cats = A.cityCats(), n = A.gallery.length;
+    return `<div class="corner l"><button class="chip" data-act="back">‹ ${t('back')}</button></div><div class="wrap" style="margin-top:46px"><h2 class="teal">🐱 ${t('gc_title')}</h2>
+      <p class="small">${n ? t('gc_sub', n) : t('gc_empty')}</p>
+      <div class="row"><button class="btn sm" data-act="gcWalk">🐾 ${t('gc_walk')}</button><button class="btn ghost sm" data-act="${A.status === 'in' && A.cats.length < 5 ? 'creator' : A.status === 'in' ? 'account' : 'creator'}" data-i="${A.status === 'in' ? 'new' : 'local'}">＋ ${t('ac_create')}</button></div>
+      <div class="catgrid">${cats.map((c, i) => `<button class="catcard ${c.mine ? 'mine' : ''} ${c.star ? 'star' : ''}" data-act="gcView" data-i="${i}"><span class="ph"><img id="gc-${i}" alt="" ${A.thumbs[c.id] ? `src="${A.thumbs[c.id]}"` : ''}></span><b>${c.star ? '⭐ ' : c.mine ? '💛 ' : ''}${esc(c.name)}</b><small>${esc(c.breed || '')}</small>${c.instagram ? `<small class="ig">@${esc(c.instagram)}</small>` : ''}</button>`).join('')}</div>
+      <p class="small">${t('gc_note')}</p></div>`;
+  },
+  after: () => {
+    const cats = A.cityCats(), R3 = VP.R3; let i = 0;
+    if (!A.gallery.length && !A.galleryTried) { A.galleryTried = true; A.loadGallery().then(() => { if (UI.screen === 'catcity' && A.gallery.length) UI.show('catcity'); }); }
+    if (!R3 || !R3.ok || !R3.snapshot) return;
+    // one 3D portrait per frame, cached, so the list opens at once and fills in
+    const step = () => {
+      if (UI.screen !== 'catcity') return;
+      while (i < cats.length && A.thumbs[cats[i].id]) i++;
+      if (i >= cats.length) return;
+      const c = cats[i], img = document.getElementById('gc-' + i);
+      try { const cv = R3.snapshot([{ spec: specOf(c), s: 1.3 }], 256, 256); if (cv) { A.thumbs[c.id] = cv.toDataURL('image/jpeg', 0.82); if (img) img.src = A.thumbs[c.id]; } else A.thumbs[c.id] = ''; } catch (e) { A.thumbs[c.id] = ''; }
+      i++; requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  },
+};
+UI.SCREENS.catview = {
+  cls: 'clear', hideHud: true, stage: true,
+  html: i => { const c = A.cityCats()[i] || A.cityCats()[0]; return `<div class="corner l"><button class="chip" data-act="catcity">‹ ${t('back')}</button></div>
+    <div class="wrap narrow" style="margin-top:auto"><div class="panel t"><h3 style="margin-top:0">${c.star ? '⭐ ' : ''}${esc(c.name)}</h3>${c.breed ? `<p class="small">${esc(c.breed)}</p>` : ''}${c.bio ? `<p>${esc(c.bio)}</p>` : ''}${c.instagram ? `<p class="small">📸 @${esc(c.instagram)}</p>` : ''}</div>
+    <div class="row"><button class="btn ghost sm" data-act="catcity">‹ ${t('gc_title')}</button><button class="btn sm" data-act="gcWalk">🐾 ${t('gc_walk')}</button></div></div>`; },
+  after: i => { const c = A.cityCats()[i] || A.cityCats()[0], R3 = VP.R3; if (R3 && R3.ok) R3.showcase([{ spec: specOf(c), x: 0, z: 0, s: 1 }], { dist: 7.2, shift: 2.4, lookY: 1.0 }); },
+};
+UI.act.catcity = () => UI.show('catcity');
+UI.act.gcView = el => UI.show('catview', +el.dataset.i);
+UI.act.gcWalk = () => UI.free(VP.S.pos || null);
+
 // ---------- cat creator ----------
 let ed = null, edIdx = null;
 const sw = (key, val, on) => `<button class="tab ${on ? 'on' : ''}" data-act="crSet" data-k="${key}" data-v="${val}">${t('cr_' + val) === 'cr_' + val ? val : t('cr_' + val)}</button>`;

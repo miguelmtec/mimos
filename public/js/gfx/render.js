@@ -155,6 +155,8 @@ function syncCat(c, G, dt, near) {
   st.t = c.t; st.walk = c.walk && !c.down; st.atk = c.atk; st.down = c.down; st.sleepy = c.exhausted || (c.name === 'mimo' && G.nap > 0); st.recoil = c.recoil; st.mouth = c.mouth; st.hop = 0; st.spin = 0;
   if (dance && !c.down) { const vip = ud.spec && ud.spec.shiny, t = G.real * (vip ? 7 : 5) + c.idx * 1.2; st.hop = Math.abs(Math.sin(t)) * (vip ? 0.5 : 0.3); st.walk = 1; if (vip) st.spin = c.name === 'morticia' ? G.real * 7 : Math.sin(G.real * 3.5 + c.idx) * 0.9; }
   if (c.root > 0) st.walk = 0;
+  st.sit = 0; st.wave = 0;
+  if (c.emote && !c.down) { const k = c.emote.k, et = c.t; if (k === 'dance') { st.walk = 1; st.hop = Math.abs(Math.sin(et * 8)) * 0.38; st.spin = Math.sin(et * 4.5) * 1.1; } else if (k === 'sit') st.sit = 1; else if (k === 'wave') { st.wave = 1; st.hop = Math.abs(Math.sin(et * 6)) * 0.08; } else st.mouth = Math.max(st.mouth || 0, 0.8); }
   animCat(o, st);
   setMat(o, c.flash > 0 ? MAT.white : c.invis > 0 ? MAT.ghost : null);
   if (!c.down) shadow(o.position.x, o.position.z, o.position.y, 0.5 * ud.size, 0.5 * ud.size);

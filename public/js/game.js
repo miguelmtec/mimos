@@ -44,7 +44,7 @@ function burst(x, y, n, col, spd, k, size, life) {
 }
 function poof(x, y, n, col) { burst(x, y, n || 8, col || '#fff', 70, 'puff', 12, 0.5); }
 function text(x, y, txt, col, size) { G.texts.push({ x: x + U.rand(-6, 6), y, txt, col: col || '#fff', t: 0, size: size || 16 }); if (G.texts.length > 40) G.texts.shift(); }
-function shake(v) { G.shake = Math.max(G.shake, v); }
+function shake(v) { G.shake = Math.max(G.shake, v); VP.haptic(v >= 10 ? 32 : 16); }
 function hitstop(v) { G.hitstop = Math.max(G.hitstop, v); }
 function say(txt, col, dur) { G.banner = { txt, col: col || '#fff', t: 0, dur: dur || 2.4 }; }
 Game.fx = { part, burst, poof, text, shake, say };
@@ -219,6 +219,7 @@ Game.healTeam = healTeam;
 // src: 'bolt' | 'bite' | 'snatch' | 'car' | 'hair' | 'roar'
 function hurtDog(e, dmg, src, fx, fy, kb) {
   if (e.dead) return;
+  VP.haptic(e.isBoss ? 14 : 9);
   if (G.catnip > 0) dmg *= 1.6;
   let shown = dmg, tink = false;
   const exposed = e.isBoss && e.boss.phase === 'exposed';
@@ -431,6 +432,19 @@ function doSpecial(c) {
   }
 }
 Game.special = doSpecial;
+// Emotes: little gestures of the active cat (HUD buttons or Z X C V). Pure fun today; they travel in Game.snapshot()
+// so other players will see them when the shared world arrives.
+const EMOTES = Game.EMOTES = { miau: 1.3, dance: 3.2, sit: 5, wave: 1.9 };
+Game.emote = function (k, c) {
+  if (!G || G.over || G.car || !EMOTES[k]) return false;
+  c = c || active(); if (c.down || c.dashT > 0) return false;
+  c.emote = { k, t: EMOTES[k] }; G.stat.emotes = (G.stat.emotes || 0) + 1;
+  if (k === 'miau') { c.mouth = 1; text(c.x, c.y - 62, tr('em_miau_say'), '#fff', 18); part({ x: c.x, y: c.y - 30, k: 'ring', col: '#ffffff', size: 10, life: 0.45, grow: 120 }); sfx('paw', 0.1); }
+  else if (k === 'dance') { burst(c.x, c.y - 30, 8, ['#ff4fb8', '#2de2e6', '#ffd23f'], 150, 'star', 6, 0.6); sfx('star', 0.1); }
+  else if (k === 'wave') { text(c.x, c.y - 62, '👋', '#fff', 22); sfx('sw', 0.1); }
+  else sfx('step', 0.1);
+  return true;
+};
 function updCat(c, dt) {
   const isA = c.idx === G.active;
   c.t += dt; c.walk = 0;
@@ -476,6 +490,7 @@ function updCat(c, dt) {
   let spd = c.spd * pace * (c.exhausted ? 0.62 : 1) * (c.root > 0 ? 0 : 1);
   if (c.name === 'morticia' && c.belly <= 0) spd *= 0.8;
   if (c.hopT > 0) c.hopT -= dt;
+  if (c.emote) { c.emote.t -= dt; if (c.emote.t <= 0 || (isA && (Math.hypot(I.mx, I.my) > 0.3 || I.attack))) c.emote = null; else if (c.emote.k === 'miau') c.mouth = Math.max(c.mouth, 0.6); } // moving or attacking ends the gesture
   if (isA) {
     const m = Math.hypot(I.mx, I.my);
     if (m > 0.12 && spd > 0) spd *= slopeMul(c.x, c.y, I.mx / m, I.my / m);
@@ -1065,6 +1080,7 @@ Game.update = function (dt) {
   updContext(dt);
   if (I.take('special')) { if (G.car) { sfx(G.car.type === 'gold' ? 'viphorn' : 'honk', 0.6); } else doSpecial(active()); }
   if (I.take('dash')) { if (!G.car) doDash(active()); }
+  { const em = I.take('emote'); if (em) Game.emote(em); }
   for (const c of G.cats) updCat(c, dt);
   // friends follow
   for (const f of G.friends) {
@@ -1122,6 +1138,6 @@ Game.snapshot = function () {
   if (!G) return null;
   const r = v => Math.round(v);
   return { t: +G.real.toFixed(2), a: G.active, car: G.car ? { k: G.car.type, x: r(G.car.x), y: r(G.car.y), a: +G.car.a.toFixed(2), v: r(G.car.spd) } : null,
-    cats: G.cats.map(c => ({ n: c.name, x: r(c.x), y: r(c.y), h: +(c.aim || 0).toFixed(2), w: c.walk ? 1 : 0, s: c.down ? 'down' : c.atk > 0.1 ? 'atk' : c.dashT > 0 ? 'dash' : 'idle', hp: r(c.hp) })) };
+    cats: G.cats.map(c => ({ n: c.name, x: r(c.x), y: r(c.y), h: +(c.aim || 0).toFixed(2), w: c.walk ? 1 : 0, s: c.down ? 'down' : c.atk > 0.1 ? 'atk' : c.dashT > 0 ? 'dash' : 'idle', hp: r(c.hp), e: c.emote ? c.emote.k : undefined })) };
 };
 })();

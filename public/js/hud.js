@@ -8,6 +8,9 @@ const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 const PINK = '#ff4fb8', TEAL = '#2de2e6', GOLD = '#ffd23f', INK = '#12041f';
 const NAMES = ['mimo', 'mimosa', 'morticia'], CATCOL = { mimo: '#8ff3ff', mimosa: '#ff7ac0', morticia: '#ffb347' };
 
+H.EMO = [['miau', '😺', 'Z'], ['dance', '💃', 'X'], ['sit', '🪑', 'C'], ['wave', '👋', 'V']]; H.emoOpen = 0;
+// emote buttons live in the calm moments: free roam and city visits, on foot, outside the tutorial
+H.emoOn = G => !!G && G.free && !G.car && !G.tutorial && !G.over && !G.trial;
 H.init = function (canvas) { cv = canvas; c = cv.getContext('2d'); H.resize(); addEventListener('resize', H.resize); };
 H.resize = function () {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -22,10 +25,13 @@ H.resize = function () {
   const by = h - sb;
   b.special = { x: w - 60 * k, y: by - 236 * k, r: 31 * k }; b.dash = { x: w - 132 * k, y: by - 206 * k, r: 26 * k }; b.ctx = { x: w - 60 * k, y: by - 318 * k, r: 31 * k };
   H.map = { x: w - 56 * k, y: st + 56 * k, r: 46 * k };
+  // emotes: a small toggle on the left edge (above the stick area) that opens four big buttons
+  b.emo = { x: 30 * k, y: by - 250 * k, r: 20 * k }; H.EMO.forEach((e, i) => { b['em_' + e[0]] = { x: (34 + i * 60) * k, y: by - 310 * k, r: 25 * k }; });
   H.atkHint = { x: w - 92 * k, y: by - 112 * k }; H.stickHint = { x: 88 * k, y: by - 112 * k };
 };
 H.hit = function (x, y) {
   const G = VP.Game.G; if (!G) return null;
+  if (H.emoOn(G)) { if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; if (U.d2(x, y, b.x, b.y) < (b.r + 4) * (b.r + 4)) return 'em_' + e[0]; } const b = H.btn.emo; if (U.d2(x, y, b.x, b.y) < (b.r + 8) * (b.r + 8)) return 'emo'; }
   for (const id of ['c0', 'c1', 'c2', 'pause', 'special', 'dash', 'ctx']) {
     const b = H.btn[id]; if (id === 'ctx' && !G.ctx) continue; if (id === 'dash' && G.car) continue;
     if (U.d2(x, y, b.x, b.y) < (b.r + 7) * (b.r + 7)) return id;
@@ -130,6 +136,13 @@ H.draw = function (G, dt) {
   if (G.banner) { const b = G.banner, al = Math.min(1, b.t * 6, (b.dur - b.t) * 3); c.globalAlpha = Math.max(0, al); const bl = wrap(b.txt, w - 40, 20 * k); bl.forEach((l, i) => txt(l, w / 2, h * 0.3 + i * 26 * k, 20 * k, b.col)); c.globalAlpha = 1; }
   // ---- controls ----
   controls(G, k, t, touch, a);
+  if (H.emoOn(G)) {
+    if (H.emoOpen > 0) H.emoOpen -= dt;
+    const eb = H.btn.emo; c.save(); c.globalAlpha = 0.9; c.beginPath(); c.arc(eb.x, eb.y, eb.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = H.emoOpen > 0 ? GOLD : 'rgba(255,255,255,.7)'; c.stroke(); c.restore();
+    c.font = 20 * k + 'px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText('😺', eb.x, eb.y + 1);
+    if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.78)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = TEAL; c.stroke(); c.font = 22 * k + 'px ' + FONT; c.fillStyle = '#fff'; c.fillText(e[1], b.x, b.y - 3 * k); txt(VP.t('em_' + e[0]), b.x, b.y + b.r * 0.62, 9 * k, '#fff', 'center', INK); if (!touch) txt(e[2], b.x - b.r * 0.8, b.y - b.r * 0.8, 11 * k, GOLD); }
+    else if (!touch) txt('Z X C V', eb.x + eb.r + 30 * k, eb.y, 10 * k, 'rgba(255,255,255,.8)');
+  }
   if (G.tutorial) tutorial(G, k, t, touch, ob);
   if (G.real < 0.5) { c.fillStyle = 'rgba(18,4,31,' + (1 - G.real * 2) + ')'; c.fillRect(0, 0, w, h); }
   if (G.W.real) txt('© OpenStreetMap', 6, h - 8, 9, 'rgba(255,255,255,.75)', 'left', false, '600');

@@ -53,9 +53,11 @@ SCREENS.title = {
       <div class="grid2"><button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>
       <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="rank">🏆 ${t('ranking')}</button>
       <button class="btn ghost sm" data-act="account">👤 ${VP.Acct && VP.Acct.status === 'in' ? t('ac_mycats') : t('account')}</button><button class="btn ghost sm" data-act="world">✈ ${t('world')}</button>
-      <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button></div>
+      <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button>
+      <button class="btn ghost sm wide" data-act="catcity">🐱 ${t('gc_title')}</button></div>
       ${foot()}</div>`,
 };
+ACT.haptic = () => { const off = VP.ls.get('vp_haptic') === '0'; VP.ls.set('vp_haptic', off ? '1' : '0'); if (off) VP.haptic(30); UI.relabel(); };
 ACT.lang = () => VP.setLang(VP.lang() === 'pt' ? 'en' : 'pt');
 ACT.mute = () => { VP.Audio.toggleMute(); UI.relabel(); };
 ACT.title = () => { endGame(); VP.Audio.music(6); UI.show('title'); };
@@ -101,6 +103,7 @@ SCREENS.settings = {
     <div class="sw"><span>${t('quality')}</span><span class="row">${['a', 0, 1, 2].map(v => `<button class="tab ${(v === 'a' ? !q : q === '' + v) ? 'on' : ''}" data-act="q" data-v="${v}">${t('q' + v)}</button>`).join('')}</span></div>
     <div class="sw"><span>${t('fpsShow')}</span><button class="tab ${VP.ls.get('vp_fps') === '1' ? 'on' : ''}" data-act="fps">${VP.ls.get('vp_fps') === '1' ? t('on') : t('off')}${VP.R3 && VP.R3.ok ? ' · ' + VP.R3.fps + ' fps' : ''}</button></div>
     <div class="sw"><span>${t('sound')}</span><button class="tab on" data-act="mute">${VP.Audio.muted ? t('off') : t('on')}</button></div>
+    <div class="sw"><span>📳 ${t('haptic')}</span><button class="tab on" data-act="haptic">${VP.ls.get('vp_haptic') === '0' ? t('off') : t('on')}</button></div>
     <div class="sw"><span>${t('lang')}</span><button class="tab on" data-act="lang">${VP.lang() === 'pt' ? 'Português' : 'English'}</button></div>
     ${VP.Shop.has('season') ? `<div class="sw"><span>🎄 ${t('xmasOn')}</span><button class="tab on" data-act="xmas">${VP.S.xmas ? t('on') : t('off')}</button></div>` : ''}
     <div class="sw"><span>${t('tu_replay')}</span><button class="tab" data-act="tutorial">🎓</button></div>
@@ -234,19 +237,21 @@ SCREENS.rank = {
   hideHud: true,
   html: () => `${corner('back')}<div class="wrap narrow" style="margin-top:46px"><h2 class="gold">🏆 ${t('ranking')}</h2>
     <div class="panel"><ol class="rank" id="rk"><li>${t('loading')}</li></ol></div>
-    <div class="panel t"><p class="small">${t('yourName')} · ⭐ ${mainStars()} · ${mainScore()} pts</p><div class="row" style="flex-wrap:nowrap"><input class="txt" id="nick" maxlength="12" value="${esc(VP.S.name || '')}" placeholder="Mimo"><button class="btn sm" data-act="sendScore">${t('send')}</button></div></div>
+    <div class="panel t"><p class="small">${t('rk_all')}</p><p class="small">${t('yourName')} · 🎯 ${doneCount()} · ⭐ ${mainStars()} · ${mainScore()} pts</p><div class="row" style="flex-wrap:nowrap"><input class="txt" id="nick" maxlength="12" value="${esc(VP.S.name || '')}" placeholder="Mimo"><button class="btn sm" data-act="sendScore">${t('send')}</button></div></div>
     <button class="btn ghost" data-act="back">${t('back')}</button>${foot()}</div>`,
   after: () => loadRank(),
 };
-const mainStars = () => { let s = 0; for (let n = 1; n <= 50; n++) s += VP.S.stars[n] || 0; return s; };
-const mainScore = () => { let s = 0; for (let n = 1; n <= 50; n++) s += VP.S.best[n] || 0; return s; };
-UI.mainStars = mainStars; UI.mainScore = mainScore; UI.last = () => lastResult;
+// the ranking counts every mission: story, chapters, bonus districts, time trials and World Tour cities
+const mainStars = () => VP.totalStars();
+const mainScore = () => VP.totalScore();
+const doneCount = () => Object.values(VP.S.stars).filter(v => v > 0).length;
+UI.mainStars = mainStars; UI.mainScore = mainScore; UI.doneCount = doneCount; UI.last = () => lastResult;
 const mainLevel = () => { let l = 0; for (let n = 1; n <= 50; n++) if (VP.S.stars[n]) l = n; return l; };
 function drawRank(top) {
   const ol = $('#rk'); if (!ol) return;
   if (!top || !top.length) { ol.innerHTML = `<li>${t('rankEmpty')}</li>`; return; }
   const me = (VP.S.name || '').toLowerCase();
-  ol.innerHTML = top.map((r, i) => { const vip = r.vip || (me && String(r.name).toLowerCase() === me && VP.Shop.has('vip')), sup = me && String(r.name).toLowerCase() === me && VP.Shop.has('supporter'); return `<li class="${String(r.name).toLowerCase() === me ? 'me' : ''}"><span class="pos">${i + 1}</span><span class="nm ${vip || sup ? 'gold-name' : ''}">${vip ? '👑 ' : ''}${esc(r.name)}${sup ? ' 💖' : ''}</span><span class="small">M${r.level} · ${r.stars}⭐</span><span class="sc">${r.score}</span></li>`; }).join('');
+  ol.innerHTML = top.map((r, i) => { const vip = r.vip || (me && String(r.name).toLowerCase() === me && VP.Shop.has('vip')), sup = me && String(r.name).toLowerCase() === me && VP.Shop.has('supporter'); return `<li class="${String(r.name).toLowerCase() === me ? 'me' : ''}"><span class="pos">${i + 1}</span><span class="nm ${vip || sup ? 'gold-name' : ''}">${vip ? '👑 ' : ''}${esc(r.name)}${sup ? ' 💖' : ''}</span><span class="small">${r.missions ? '🎯' + r.missions : 'M' + r.level} · ${r.stars}⭐</span><span class="sc">${r.score}</span></li>`; }).join('');
 }
 function loadRank() {
   fetch('/api/scores', { cache: 'no-store' }).then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => drawRank(j.top)).catch(() => { const ol = $('#rk'); if (ol) ol.innerHTML = `<li>${t('rankOff')}</li>`; });
@@ -255,8 +260,8 @@ ACT.sendScore = () => {
   const inp = $('#nick'), name = (inp.value || '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 12);
   if (!name) { inp.focus(); return; }
   VP.S.name = name; VP.persist();
-  const level = mainLevel(); if (!level) { UI.toast(t('rankEmpty')); return; }
-  fetch('/api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, score: mainScore(), level, stars: mainStars(), vip: VP.Shop.has('vip') }) })
+  const level = Math.max(1, mainLevel()), missions = doneCount(); if (!missions) { UI.toast(t('rankEmpty')); return; }
+  fetch('/api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, score: mainScore(), level, missions, stars: mainStars(), vip: VP.Shop.has('vip') }) })
     .then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => { UI.toast(t('sent')); drawRank(j.top); }).catch(() => UI.toast(t('rankOff'), 3000));
 };
 // ---------- no webgl ----------

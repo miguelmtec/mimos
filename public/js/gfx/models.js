@@ -187,6 +187,9 @@ export function animCat(g, st) {
   const k = 1 + (st.mouth || 0) * 0.08, hs = u.hs || [1, 1, 1]; u.head.scale.set(k * hs[0], k * hs[1], k * hs[2]);
   u.body.position.z = atk * 0.1;
   if (u.tool) { u.tool.position.z = 0.42 - (st.recoil || 0) * 0.16; u.tool.rotation.x = -(st.recoil || 0) * 0.5; }
+  // emotes: sit (haunches down, leaning back) and wave (front paws up, swaying)
+  if (st.sit) { u.inner.rotation.x = -0.34; u.inner.position.y = -0.12 * u.size; u.legsA.rotation.x = 0.3; u.legsB.rotation.x = 1.25; u.tail.rotation.z = Math.sin(t * 2.2) * 0.5; }
+  if (st.wave) { u.body.rotation.z = Math.sin(t * 9) * 0.16; u.legsA.rotation.x = -1.25 + Math.sin(t * 16) * 0.45; u.head.rotation.z = Math.sin(t * 9) * 0.14; }
   if (st.down) { u.inner.rotation.z = Math.PI / 2 * 0.92; u.inner.position.y = 0.38 * u.size; u.legsA.rotation.x = 0.4; u.legsB.rotation.x = -0.3; } else u.inner.rotation.z = 0;
 }
 

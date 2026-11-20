@@ -211,3 +211,14 @@ h3.ctry small{font-size:11.5px;color:var(--gold);font-weight:800;margin-left:6px
 .flight small{font-size:14px;opacity:.9}
 .flight .wmap{border-radius:18px;box-shadow:inset 0 0 0 2px #2de2e650;max-height:60vh}
 .flight .wmap .pin:not(.sel){opacity:.45}
+
+/* ---------- Cidade dos Gatos (gallery) ---------- */
+.catgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin:10px 0}
+.catcard{appearance:none;border:0;border-radius:16px;background:linear-gradient(160deg,#2a0b4a,#12041f);box-shadow:inset 0 0 0 2px #2de2e650;color:#fff;font:inherit;padding:6px 6px 10px;cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;min-width:0}
+.catcard .ph{display:block;width:100%;aspect-ratio:1;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 60%,#3a1560,#14052a)}
+.catcard .ph img{width:100%;height:100%;object-fit:cover;display:block}.catcard .ph img:not([src]){visibility:hidden}
+.catcard b{font-size:15px;font-style:italic;margin-top:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catcard small{font-size:11px;opacity:.85;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.catcard small.ig{color:var(--teal);opacity:1}
+.catcard.mine{box-shadow:inset 0 0 0 3px var(--gold)}.catcard.star{box-shadow:inset 0 0 0 2px #ff4fb880}
+@media (min-width:760px){.catgrid{grid-template-columns:repeat(4,1fr)}}
+.grid2 .wide{grid-column:span 2}

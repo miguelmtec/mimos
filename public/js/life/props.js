@@ -27,7 +27,7 @@ _.placeProps = function (L) {
       const lots = W.lots.filter(l => l.d === d), of = t => lots.filter(l => l.type === t), R = W.roles[d] || {};
       for (const lot of lots) if (lot.type === 'plaza' || lot.type === 'park' || lot.type === 'arena') for (const [fx, fy, a] of [[0.55, 5.2, 0], [7.45, 2.2, Math.PI]]) { const x = px(lot, fx), y = py(lot, fy); if (ok(x, y, 60)) add(L, 'bench', x, y, a, { r: 15 }); }
       const tl = R.plaza2 || of('plaza')[0]; if (tl) for (const [fx, fy] of [[4.6, 4.4], [2.2, 4.6], [4.4, 1.8]]) if (ok(px(tl, fx), py(tl, fy), 90) && tables(L, px(tl, fx), py(tl, fy))) break;
-      for (const lot of [of('lot')[0], R.arena, of('dock')[0] || of('beach')[0]]) { if (!lot) continue; for (const [fx, fy] of [[6.5, 4.4], [0.7, 0.7], [1.5, 3.5]]) { const x = px(lot, fx), y = py(lot, fy); if (ok(x, y, 70)) { add(L, 'box', x, y, r() * 6.283, { r: 0 }); break; } } }
+      for (const lot of [of('lot')[0], R.arena, of('dock')[0] || of('beach')[0]]) { if (!lot) continue; for (const [fx, fy] of [[0.7, 6.9], [0.7, 0.7], [1.5, 3.5]]) { const x = px(lot, fx), y = py(lot, fy); if (ok(x, y, 70)) { add(L, 'box', x, y, r() * 6.283, { r: 0 }); break; } } }
       const sl = R.plaza1 || of('plaza')[1]; if (sl) for (const [fx, fy] of [[4.5, 6.3], [5.5, 2.4], [2.4, 5.6]]) { const x = px(sl, fx), y = py(sl, fy); if (ok(x, y, 96) && ok(x + 56, y - 30, 40)) { const s = add(L, 'sofa', x, y, Math.PI / 2, { r: 24, n: 0 }); s.guard = guard(L, x + 56, y - 30, Math.PI / 2, 'vendor', 'lf_sofa'); s.guard.look.apron = '#b967ff'; break; } }
       for (const [lot, fx, fy] of [[of('park')[0], 2.2, 1.7], [of('beach')[0], 3.5, 1.5], [R.house, 1.5, 6.2], [of('pool')[0], 6.5, 5]]) if (lot && ok(px(lot, fx), py(lot, fy), 60)) add(L, 'sun', px(lot, fx), py(lot, fy), 0, { r: 0 });
       if (R.plaza3 && ok(px(R.plaza3, 3.2), py(R.plaza3, 2.8), 80)) add(L, 'laser', px(R.plaza3, 3.2), py(R.plaza3, 2.8), 0, { r: 0 });
@@ -91,7 +91,7 @@ function scratch(L, s, c) {
   if (s.cd > 0) return; c.atk = 1; s.n++; sfx('bite', 0.05); s.shake = 0.3;
   for (let i = 0; i < 5; i++) Game.fx.part({ x: s.x + U.rand(-16, 16), y: s.y - 20 + U.rand(-8, 8), k: 'slash', a: U.rand(0.8, 2.2), size: 12, life: 0.18, col: '#fff3d6' });
   _.points(L, 12, s.x, s.y, 'lf_scratched');
-  if (s.n >= 3 && s.guard && s.guard.st === 'guard') { s.n = 0; s.cd = 25; const g = s.guard; g.st = 'chase'; g.stT = 6.5; g.chaseSpd = 122; g.chaseLine = 'lf_sofa'; _.say(g, Life.line('lf_sofa'), 2.2); }
+  if (s.n >= 3 && s.guard && s.guard.st === 'guard') { s.n = 0; s.cd = 25; const g = s.guard; g.st = 'chase'; g.stT = 7; g.shock = 0.8; g.chaseSpd = 122; g.chaseLine = 'lf_sofa'; _.say(g, Life.line('lf_sofa'), 2.2); }
 }
 function gangTalk(L, p) {
   const S = Life.S(), day = VP.Missions.dayKey(), cats = L.animals.filter(c => c.gang && U.d2(c.x, c.y, p.x, p.y) < 90 * 90), who = cats[(Math.random() * cats.length) | 0]; if (!who) return;

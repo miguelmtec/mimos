@@ -52,6 +52,7 @@ function geos() {
   { const b = new GB(); b.cyl('#3a3f55', 0, 1.7, 0, 0.07, 3.4, 0.07); b.cyl('#3a3f55', 0, 0.08, 0, 0.2, 0.16, 0.2); b.box('#17121d', 0, 3.3, 0, 0.34, 1.0, 0.3); b.box('#17121d', 0, 3.86, 0, 0.42, 0.1, 0.4); for (let i = 0; i < 3; i++) b.lo('#2a2a33', 0, 3.6 - i * 0.3, 0.14, 0.1); g.tl = b.geo(); }
   { const b = new GB(); b.box('#d9d2c4', 0, -0.2, 0.18, 0.8, 0.1, 0.36); b.box('#b5763a', 0, -0.06, 0.3, 0.74, 0.18, 0.12); b.lo(white, 0, 0.12, 0.08, 0.19, 0.22, 0.17); b.lo(white, 0, 0.42, 0.12, 0.17); b.cone(white, 0.1, 0.61, 0.12, 0.06, 0.14, 0.06); b.cone(white, -0.1, 0.61, 0.12, 0.06, 0.14, 0.06); b.box('#2a1c1c', 0.06, 0.44, 0.27, 0.04, 0.05, 0.04); b.box('#2a1c1c', -0.06, 0.44, 0.27, 0.04, 0.05, 0.04); b.box(white, 0.2, 0.0, 0.0, 0.07, 0.07, 0.3, 0, 0.6, 0);
     b.lo('#ff7ac0', -0.28, 0.06, 0.3, 0.07); b.lo('#ffd23f', 0.28, 0.06, 0.3, 0.07); b.lo('#3fc27f', 0, 0.03, 0.34, 0.08); g.wincat = b.geo(); }
+  { const b = new GB(); b.lo(white, 0, 0.3, -0.05, 0.24, 0.3, 0.3); b.lo(white, 0, 0.66, 0.12, 0.23, 0.21, 0.21); b.cone(white, 0.12, 0.9, 0.1, 0.08, 0.18, 0.08); b.cone(white, -0.12, 0.9, 0.1, 0.08, 0.18, 0.08); b.box('#2a1c1c', 0.09, 0.69, 0.31, 0.05, 0.06, 0.04); b.box('#2a1c1c', -0.09, 0.69, 0.31, 0.05, 0.06, 0.04); b.box(white, 0.22, 0.12, -0.2, 0.09, 0.09, 0.42, 0, 0.7, 0); g.catlo = b.geo(); }
   g.disc = new THREE.CircleGeometry(1, 14).rotateX(-Math.PI / 2);
   return g;
 }
@@ -114,10 +115,10 @@ function init(ctx) {
   grp = new THREE.Group(); ctx.scene.add(grp);
   const g = geos(), tint = new THREE.MeshLambertMaterial({ vertexColors: true }), flatTint = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
   M = {
-    torso: inst(g.torso, tint, 72, 1), head: inst(g.head, tint, 72, 1), hair: inst(g.hair, tint, 72, 1), legs: inst(g.limb, tint, 144, 1), arms: inst(g.limb, tint, 144, 1),
+    torso: inst(g.torso, tint, 96, 1), head: inst(g.head, tint, 96, 1), hair: inst(g.hair, tint, 192, 1), legs: inst(g.limb, tint, 192, 1), arms: inst(g.limb, tint, 192, 1),
     item: inst(g.item, tint, 48, 1), umb: inst(g.umbrella, flatTint, 40, 1), dog: inst(g.dog, flatTint, 12, 1), bird: inst(g.bird, MAT.flat, 40), mouse: inst(g.mouse, MAT.flat, 4),
     fly: inst(g.fly, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), 16, 1), cup: inst(g.cup, flatTint, 40, 1), yarn: inst(g.yarn, tint, 6, 1),
-    bus: inst(g.bus, flatTint, 6, 1), van: inst(g.van, flatTint, 10, 1), moto: inst(g.moto, flatTint, 10, 1), tl: inst(g.tl, MAT.flat, 40), win: inst(g.wincat, flatTint, 40, 1),
+    catlo: inst(g.catlo, flatTint, 24, 1), bus: inst(g.bus, flatTint, 6, 1), van: inst(g.van, flatTint, 10, 1), moto: inst(g.moto, flatTint, 10, 1), tl: inst(g.tl, MAT.flat, 40), win: inst(g.wincat, flatTint, 40, 1),
     puddle: inst(g.disc, new THREE.MeshBasicMaterial({ color: 0x9fc4ff, transparent: true, opacity: 0.3, depthWrite: false }), 48),
     pool: inst(g.disc, new THREE.MeshBasicMaterial({ color: 0xffe2a0, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }), 40),
     sun: inst(g.disc, sunMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, opacity: 0.4, depthWrite: false }), 12),
@@ -166,11 +167,14 @@ function human(L, p, ctx, rain) {
 // ---------- street cats (pooled parametric cats) ----------
 function catSpec(c) { if (c.spec) return c.spec; const d = c.def; return { size: c.size || 0.7, fur: d.fur, fur2: d.fur2, pattern: d.pattern, patchA: d.patchA, patchB: d.patchB, eye: d.eye, earIn: '#f4a9b8', face: 'round', fluff: 0.4, acc: c.acc || (c.friend ? { collar: '#ffd23f' } : {}) }; }
 function syncCats(L, ctx, dt, frame) {
-  const max = ctx.quality === 0 ? 5 : 9; let n = 0;
+  // close cats get the full parametric model (a few at a time); the rest are one instanced low-poly cat each
+  const max = ctx.quality === 0 ? 3 : ctx.quality === 1 ? 4 : 6, full = ctx.quality === 0 ? 420 : 560; let n = 0;
   for (const c of L.animals) {
     if (c.kind !== 'cat') continue; const d2 = U.d2(c.x, c.y, ctx.ax, ctx.ay);
-    if (d2 > 1150 * 1150 || (n >= max && !c.celeb)) continue; n++;
-    let o = cats.get(c); if (!o) { o = buildCat(catSpec(c)); o.userData.col = c.friend; cats.set(c, o); grp.add(o); }
+    if (d2 > 1300 * 1300) continue;
+    if (!c.celeb && (d2 > full * full || n >= max) && !(cats.has(c) && d2 < (full + 80) * (full + 80))) { const s = (c.size || 0.7) * 1.7 * (c.fade >= 1 ? 1 : Math.max(0.01, c.fade)); _e.set(0, Math.PI / 2 - c.a, 0); _q.setFromEuler(_e); _w.compose(_p.set(c.x * S, ctx.hAt(c.x, c.y) + (c.walk ? Math.abs(Math.sin(c.t * 12)) * 0.06 : 0), c.y * S), _q, _s.set(s, s, s)); put(M.catlo, _w, col(c.def ? c.def.fur : '#f6a94a')); continue; }
+    n++;
+    let o = cats.get(c); if (!o) { const was = GB.low; if (!c.celeb) GB.low = true; o = buildCat(catSpec(c)); GB.low = was; cats.set(c, o); grp.add(o); }
     o.userData.f = frame; o.visible = true; const k = c.fade >= 1 ? 1 : Math.max(0.01, c.fade);
     o.position.set(c.x * S, ctx.hAt(c.x, c.y) + (c.lift || 0), c.y * S); o.rotation.y = Math.PI / 2 - c.a; o.scale.setScalar(k);
     const st = o.userData.st || (o.userData.st = {}); st.t = c.t; st.walk = c.walk; st.sit = c.sit && !c.walk ? 1 : 0; st.wave = 0; st.hop = 0; st.spin = 0; st.mouth = c.bub ? 0.8 : 0;
@@ -195,7 +199,7 @@ X.sync = function (G, dt, ctx) {
   const fwx = Math.cos(ctx.yaw), fwy = Math.sin(ctx.yaw), cpx = cam.position.x / S, cpy = cam.position.z / S;
   const vis = (x, y, r) => { const dx = x - cpx, dy = y - cpy; return dx * fwx + dy * fwy > -(r || 120) && dx * dx + dy * dy < 2100 * 2100; };
   // statics: distance culling
-  for (const m of statics) { const o = m.userData.o; m.visible = Math.abs(o.x - a.x) < 2000 && Math.abs(o.y - a.y) < 2000; }
+  { const far = ctx.quality === 0 ? 1100 : 1500; for (const m of statics) { const o = m.userData.o; m.visible = Math.abs(o.x - a.x) < far && Math.abs(o.y - a.y) < far && vis(o.x, o.y, 260); } }
   for (const p of L.peds) if (vis(p.x, p.y)) human(L, p, ctx, rain);
   // dogs + leashes
   { const lp = leash.geometry.attributes.position.array; let ln = 0;

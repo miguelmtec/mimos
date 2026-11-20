@@ -120,10 +120,10 @@ function updPed(L, p, dt, a, near) {
   const spd = p.spd * (L.rain > 0.4 ? 1.18 : 1);
   switch (p.st) {
     case 'walk': {
-      if (p.leader) { // second half of a pair: keeps to the leader's side
+      if (p.leader) { // second half of a pair: walks on the leader's left, the inner side of the sidewalk
         const l = p.leader; if (l.dead || l.out) { p.leader = null; rejoin(L, p); break; }
         if (l.st === 'talk') { face(p, l, dt); break; }
-        const tx = l.x - Math.sin(l.a) * 24, ty = l.y + Math.cos(l.a) * 24, d = Math.hypot(tx - p.x, ty - p.y);
+        const tx = l.x + Math.sin(l.a) * 22, ty = l.y - Math.cos(l.a) * 22, d = Math.hypot(tx - p.x, ty - p.y);
         if (d > 5) { const s = Math.min(d, spd * (d > 40 ? 1.5 : 1.08) * dt); p.x += (tx - p.x) / d * s; p.y += (ty - p.y) / d * s; p.walk = l.walk || d > 14 ? 1 : 0; }
         turnTo(p, l.a, dt * 6); break;
       }
@@ -185,7 +185,8 @@ function updPed(L, p, dt, a, near) {
       break;
     }
     case 'chase': { // comic chase: flailing arms, slower than any of the cats, gives up quickly, never hurts
-      p.stT -= dt; p.pose = 7; const d = runTo(L, p, a.x, a.y, p.chaseSpd || 128, dt, true);
+      p.stT -= dt; p.pose = 7; if (p.shock > 0) { p.shock -= dt; face(p, a, dt); break; } // a moment of outrage first: the cat gets a head start
+      const d = runTo(L, p, a.x, a.y, p.chaseSpd || 128, dt, true);
       if (Math.random() < dt * 0.5 && near) say(p, line(p.chaseLine || 'lf_thief'), 1.8);
       if (d < 26 && !G.car) { say(p, line('lf_caught'), 2.6); a.hopT = 0.5; Game.fx.poof(a.x, a.y - 10, 5); p.st = 'scold'; p.stT = 2.2; p.pose = 3; }
       else if (p.stT <= 0 || d > 620 || G.car) { say(p, line('lf_gaveup'), 2.6); if (d > 120) points(L, 15, a.x, a.y, 'lf_escaped'); p.st = 'scold'; p.stT = 2; p.pose = 0; }
@@ -260,7 +261,7 @@ function trySteal(L, a) {
   const G = L.G, p = best, m = G.cats[2];
   Game.fx.part({ x: p.x, y: p.y - 30, k: 'fly', icon: p.snack, tx: a, life: 0.3, size: 11 });
   m.belly = Math.min(100, m.belly + 28); G.stat.eaten++; a.mouth = 1; sfx('steal', 0.1); Game.fx.text(a.x, a.y - 56, tr('stolen'), '#ffb347', 16);
-  p.snack = null; p.st = 'chase'; p.stT = 7.5; p.chaseLine = 'lf_thief'; p.waiting = false; say(p, line('lf_thief'), 2); L.stats.stolen++; points(L, 10);
+  p.snack = null; p.st = 'chase'; p.stT = 8; p.shock = 1; p.chaseLine = 'lf_thief'; p.waiting = false; say(p, line('lf_thief'), 2); L.stats.stolen++; points(L, 10);
   if (p.mate) { p.mate.leader = null; p.mate.mate = null; p.mate = null; }
   return true;
 }

@@ -2,10 +2,10 @@
   "version": 1,
   "note": "Gente e bichos da cidade. Ninguém aqui machuca nem xinga ninguém: as falas são curtas, simpáticas e ficam em life/i18n.js (chaves lf_*).",
   "caps": {
-    "peds": [14, 28, 38], "cats": [3, 5, 7], "dogs": [2, 3, 4], "birds": [8, 14, 22], "vehicles": [3, 5, 8], "flies": [3, 5, 8],
+    "peds": [16, 30, 44], "cats": [3, 5, 7], "dogs": [2, 3, 4], "birds": [8, 14, 22], "vehicles": [3, 5, 8], "flies": [3, 5, 8],
     "mobile": 0.8, "ambient": 0.55, "min": 0.4
   },
-  "radius": { "spawnMin": 420, "spawnMax": 980, "despawn": 1320, "first": 140, "lod": 760 },
+  "radius": { "spawnMin": 380, "spawnMax": 860, "despawn": 1180, "first": 140, "lod": 760 },
   "skin": ["#fbe0cb", "#f6d3b3", "#f1c9a5", "#eebf98", "#e6b58a", "#dba878", "#c98f5f", "#a9744a", "#8d5a36", "#6f4428"],
   "hair": ["#1d1412", "#3b2416", "#5a3a22", "#8a5a2b", "#c98f4b", "#e8d089", "#b03a2e", "#d9d9de", "#6b3fa0", "#ff7ac0", "#2de2e6"],
   "tops": ["#ff4fb8", "#2de2e6", "#ffd23f", "#7CFF6B", "#ff8a5c", "#b967ff", "#ffffff", "#27c4d6", "#e01e37", "#2a6bff", "#f7a6c4", "#3fc27f", "#fff3a8", "#17121d", "#ff9d6e", "#8fc4ff"],

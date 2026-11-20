@@ -38,12 +38,13 @@ _.placeStalls = function (L) {
     // real cities: one of each along the streets around the arrival point
     const net = L.net, st = W.tourStart || { x: W.pw / 2, y: W.ph / 2 }, P = D.placement.real, pool = LL.nodesInRing(net, st.x, st.y, 120, 1500, []).sort((a, b) => U.d2(net.x[a], net.y[a], st.x, st.y) - U.d2(net.x[b], net.y[b], st.x, st.y));
     let k = 0;
-    for (const i of pool) {
+    // the stall stands just off the street, facing it; dense neighbourhoods get a second, tighter pass
+    for (const [sep, off, rad] of [[P.spacing, 54, 22], [P.spacing * 0.7, 46, 18], [P.spacing * 0.5, 40, 15]]) for (const i of pool) {
       if (k >= P.order.length) break; const nx = net.x[i], ny = net.y[i];
-      if (!farFrom(L, nx, ny, P.spacing)) continue;
-      for (const out of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { // the stall stands just off the street, facing it
-        const x = nx - out[0] * 54, y = ny - out[1] * 54, gi = Math.floor(y / T) * W.W + Math.floor(x / T);
-        if (W.blocked(x, y, 22, 0) || W.gnd[gi] === 1 || W.gnd[gi] === 2 || !W.clear(x - out[0] * 30, y - out[1] * 30) || !W.los(nx, ny, x, y, 0)) continue;
+      if (!farFrom(L, nx, ny, sep)) continue;
+      for (const out of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+        const x = nx - out[0] * off, y = ny - out[1] * off, gi = Math.floor(y / T) * W.W + Math.floor(x / T);
+        if (W.blocked(x, y, rad, 0) || W.gnd[gi] === 1 || !W.clear(x - out[0] * 30, y - out[1] * 30) || !W.los(nx, ny, x, y, 0)) continue;
         addStall(L, by(P.order[k++]), x, y, out); break;
       }
     }
@@ -110,11 +111,13 @@ Life.uiRoot = ui;
 Life.panel = null;
 Life.openPanel = function (html, cls, keepRunning) {
   ui().innerHTML = '<div class="lf-back" data-life="close"></div><div class="lf-sheet ' + (cls || '') + '">' + html + '</div>';
-  root.className = 'on k-' + (cls || 'panel'); Life.panel = cls || 'panel'; if (!keepRunning) VP.UI.paused = true; I.enabled = false; I.reset();
+  root.className = 'on k-' + (cls || 'panel'); Life.openedAt = performance.now(); Life.panel = cls || 'panel'; if (!keepRunning) VP.UI.paused = true; I.enabled = false; I.reset();
 };
 Life.closePanel = function () { if (!root || !Life.panel) return; root.className = ''; root.innerHTML = ''; Life.panel = null; VP.UI.paused = false; I.enabled = true; I.reset(); };
 const ACT = Life.act = {};
-function onClick(e) { const el = e.target.closest('[data-life]'); if (!el) return; if (VP.Audio) VP.Audio.unlock(); const f = ACT[el.dataset.life]; if (f) f(el, e); }
+function onClick(e) {
+  if (performance.now() - (Life.openedAt || 0) < 320) return; // the tap that opened the panel must not also press something in it
+  const el = e.target.closest('[data-life]'); if (!el) return; if (VP.Audio) VP.Audio.unlock(); const f = ACT[el.dataset.life]; if (f) f(el, e); }
 ACT.close = () => { sfx('click'); Life.closePanel(); };
 let cur = null;
 function shopHtml(stall, msg) {

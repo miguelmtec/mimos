@@ -54,7 +54,7 @@ test('buying: coins never go negative and a failed purchase changes nothing', as
 test('npcs.json: caps, looks and lines', async () => {
   const d = await json('npcs.json'), i18n = await src('life/i18n.js');
   for (const k of ['peds', 'cats', 'dogs', 'birds', 'vehicles']) { assert.equal(d.caps[k].length, 3, k); assert.ok(d.caps[k][0] <= d.caps[k][1] && d.caps[k][1] <= d.caps[k][2], k + ' grows with quality'); }
-  assert.ok(d.caps.peds[2] <= 60, 'instanced meshes hold 72 humans (fixed vendors included)');
+  assert.ok(d.caps.peds[2] <= 60, 'instanced meshes hold 96 humans (fixed vendors included)');
   assert.ok(d.skin.length >= 6 && d.hair.length >= 6 && d.tops.length >= 10, 'variety');
   assert.ok(d.radius.spawnMin < d.radius.spawnMax && d.radius.spawnMax < d.radius.despawn, 'spawn ring inside the despawn radius');
   for (const r of ['walker', 'pair', 'jogger', 'dogwalker', 'tourist', 'kid', 'eater', 'sitter']) assert.ok(d.roles.some(x => x.id === r), 'role ' + r);

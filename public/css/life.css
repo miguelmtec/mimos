@@ -7,7 +7,7 @@
 @keyframes lfUp{from{transform:translate(-50%,40px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 .lf-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .lf-head>div:nth-child(2){flex:1;min-width:0}
-.lf-head h3{margin:0;font-size:18px;font-weight:900;line-height:1.15}
+.lf-head h3{margin:0;font-size:18px;font-weight:900;line-height:1.15;color:#2de2e6;letter-spacing:.5px}
 .lf-head p{margin:2px 0 0;font-size:12.5px;color:#d9c7ee;line-height:1.3}
 .lf-ico{width:46px;height:46px;flex:none;border-radius:14px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:27px}
 .lf-x{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(18,4,31,.6);color:#fff;font-size:17px;font-weight:900;cursor:pointer}
@@ -37,7 +37,8 @@
 .lf-chip{min-height:40px;padding:6px 14px;border-radius:20px;border:2px solid rgba(255,255,255,.6);background:rgba(18,4,31,.7);color:#fff;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
 .lf-chip.gold{border-color:#ffd23f;color:#ffd23f;display:block;margin:10px auto 0}
 .lf-mapbox{position:relative;width:100%;height:min(52vh,430px);border-radius:14px;overflow:hidden;border:2px solid rgba(255,255,255,.25);background:#17406b}
-.lf-mapbox canvas{display:block;touch-action:none;cursor:crosshair}
+.lf-mapbox canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+@media(min-width:720px){#life-ui.k-map .lf-sheet{width:min(94%,780px)}#life-ui.k-map .lf-mapbox{height:min(60vh,520px)}}
 .lf-legend{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:center;margin-top:9px;font-size:12px;color:#e6dcf2}
 .lf-legend span{display:flex;align-items:center;gap:5px}
 .lf-legend i{width:11px;height:11px;border-radius:50%;border:1.5px solid #12041f;display:inline-block}

@@ -35,7 +35,7 @@ Mm.tick = function (L, dt) { if (!L.wp) return; L.routeT = (L.routeT || 0) - dt;
 // ---------- drawing ----------
 function fit() {
   const G = Game.G, W = G.W, box = cv.parentNode.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2), w = Math.max(200, box.width), h = Math.max(200, box.height);
-  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
   const s0 = Math.min(w / W.mini.width, h / W.mini.height), s = s0 * Mm.zoom, a = VP.Life.lead(G);
   let cx = Mm.zoom > 1 ? U.clamp(Mm.cx, w / 2 / s, W.mini.width - w / 2 / s) : W.mini.width / 2, cy = Mm.zoom > 1 ? U.clamp(Mm.cy, h / 2 / s, W.mini.height - h / 2 / s) : W.mini.height / 2;
   if (W.mini.width * s < w) cx = W.mini.width / 2; if (W.mini.height * s < h) cy = W.mini.height / 2;
@@ -50,9 +50,9 @@ function draw() {
   const k = Math.max(0.9, Math.min(1.5, view.s * 0.55 + 0.5));
   if (L.route && L.route.length > 1) { c.beginPath(); c.moveTo(mx(a.x), my(a.y)); for (const p of L.route) c.lineTo(mx(p.x), my(p.y)); c.lineWidth = 3.5; c.strokeStyle = '#ff4fb8'; c.lineJoin = 'round'; c.stroke(); }
   const pin = (x, y, col, icon, r) => { const X = mx(x), Y = my(y); if (X < -10 || Y < -10 || X > view.w + 10 || Y > view.h + 10) return; c.beginPath(); c.arc(X, Y, r * k, 0, 6.283); c.fillStyle = col; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#12041f'; c.stroke(); if (icon && (view.s > 1.5 || r > 7)) { c.font = r * 1.25 * k + 'px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText(icon, X, Y + 0.5); } };
-  const big = view.s > 1.5 ? 9 : 5.5;
+  const big = view.s > 2.2 ? 9 : view.s > 1.5 ? 7 : 4.2;
   for (const p of L.props) { const A = VP.Life.ACTS[p.k]; if (A) pin(p.x, p.y, p.k === 'celeb' ? '#ffd23f' : C.fun, A[0], p.k === 'celeb' ? big + 2 : big - 1); }
-  for (const s of L.stalls) pin(s.x, s.y, s.def.id === 'petshop' ? C.shop : C.food, s.def.icon, big);
+  for (const s of L.stalls) pin(s.x, s.y, s.def.id === 'petshop' ? C.shop : C.food, s.def.icon, s.prop ? big * 0.7 : big);
   for (const e of L.animals) if (e.kind === 'cat' && e.friend && !e.celeb) pin(e.x, e.y, C.friend, '💛', big - 1);
   for (const f of G.friends) pin(f.x, f.y, C.friend, '', 3);
   if (G.markers) for (const m of G.markers) { if (/clinic|vet/.test(m.k)) pin(m.x, m.y, C.clinic, '➕', big + 1); else if (m.k === 'shop') pin(m.x, m.y, C.shop, '🛍', big + 1); else pin(m.x, m.y, m.col || C.mission, m.k === 'race' ? '🏁' : m.k === 'npc' ? '💬' : '▶', big + 1); }
@@ -65,7 +65,7 @@ function draw() {
 // ---------- panel ----------
 Mm.open = function () {
   const G = Game.G, L = G && G.life, Life = VP.Life; if (!L || !L.free || Life.panel) return;
-  const a = Life.lead(G); Mm.cx = a.x / 24; Mm.cy = a.y / 24; const C = COL();
+  const a = Life.lead(G); Mm.cx = a.x / 24; Mm.cy = a.y / 24; const C = COL(); if (!Mm.touched) Mm.zoom = innerWidth < 720 ? 2.2 : 1; // phones open on the neighbourhood, big screens on the whole city
   const leg = (col, key) => `<span><i style="background:${col}"></i>${esc(tr(key))}</span>`;
   Life.openPanel(`<div class="lf-head"><div class="lf-ico">🗺️</div><div><h3>${esc(tr('lf_map'))}</h3><p>${esc(tr('lf_setWp'))}</p></div><button class="lf-x" data-life="close">✕</button></div>
   <div class="lf-mapbox"><canvas id="lf-map"></canvas></div>
@@ -78,7 +78,7 @@ Mm.open = function () {
   cv.addEventListener('pointerup', e => { if (!last || !view) return; last = null; if (moved > 12) return; const r = cv.getBoundingClientRect(), x = (e.clientX - r.left - view.ox) / view.s * 24, y = (e.clientY - r.top - view.oy) / view.s * 24; if (Mm.setWaypoint(x, y)) setTimeout(() => { if (Life.panel === 'map') Life.closePanel(); }, 420); });
   cancelAnimationFrame(raf); draw();
 };
-VP.Life.act.mapZoom = () => { const G = Game.G, a = VP.Life.lead(G); Mm.zoom = Mm.zoom > 1 ? 1 : 2.6; Mm.cx = a.x / 24; Mm.cy = a.y / 24; };
+VP.Life.act.mapZoom = () => { const G = Game.G, a = VP.Life.lead(G); Mm.touched = true; Mm.zoom = Mm.zoom > 1 ? 1 : 2.6; Mm.cx = a.x / 24; Mm.cy = a.y / 24; };
 VP.Life.act.mapClear = () => { Mm.clearWaypoint(); };
 // keep the GPS line fresh while walking
 const upd = VP.Life._.updFocus; VP.Life._.updFocus = function (L, dt, c2) { upd(L, dt, c2); Mm.tick(L, dt); };

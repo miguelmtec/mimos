@@ -334,7 +334,7 @@ TYPES.tour = {
     if (kind === 'race') {
       const car = Game.addCar(vehicle, start.x, start.y, 0); car.hp = car.max = 260; Game.enterCar(car); G.noHeat = true;
       let cur = start; const cps = []; for (let k = 0; k < (p.n || 5); k++) { const c = onRoad(way(k, cur)); cps.push(c); cur = c; }
-      G.mtimer = Math.round(pathLen(start, cps) / 24 / (vehicle === 'pickup' ? 5 : 7) + 45);
+      G.mtimer = Math.round(pathLen(start, cps) / 24 / (vehicle === 'pickup' ? 5 : 6) + 50);
       cps.forEach((pt, k) => B.step({ txt: 'o_tourCp', args: [k + 1, cps.length, pt.name], car: true, at: () => pt, done: () => !!G.car && U.d2(G.car.x, G.car.y, pt.x, pt.y) < 130 * 130 }));
     } else if (kind === 'deliver') {
       const dest = way(0, start); G.mtimer = Math.round(Math.hypot(dest.x - start.x, dest.y - start.y) / 24 / 3.2 + 50);

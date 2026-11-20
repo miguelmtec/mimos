@@ -323,8 +323,10 @@ function updateCamera(G, dt) {
   if (G.car) { const d = U.angDiff(cam.yaw, G.car.a + (G.car.spd < -20 ? Math.PI : 0)); cam.yaw += d * Math.min(1, dt * (0.8 + Math.min(2.2, Math.abs(G.car.spd) / 120))); }
   else if (!I.rmb) { const m = Math.hypot(I.rawx || 0, I.rawy || 0); if (m > 0.3 && !I.attack) { cam.yaw += (I.rawx || 0) * dt * 1.15 * (I.rawy > 0.5 ? 0.4 : 1); } }
   if (G.over && G.won) cam.yaw += dt * 0.5;
-  const hilly = W.real && (W.real.tags || []).includes('morro'); // steep, dense maps: look from higher up so the alleys stay readable
-  const wantDist = G.over && G.won ? 6 : G.car ? 12.5 + Math.abs(G.car.spd) * 0.008 : (G.boss && !G.boss.dead ? 12 : hilly ? 10.5 : 8.6) * (R.w < R.h ? 1.06 : 1), pitch = G.car ? (hilly ? 0.5 : 0.36) : hilly ? 0.78 : 0.44;
+  const hilly = W.real && (W.real.tags || []).includes('morro') && (W.real.tags || []).includes('comunidade'); // steep, dense maps: look from higher up so the alleys stay readable
+  const wantDist = G.over && G.won ? 6 : G.car ? 12.5 + Math.abs(G.car.spd) * 0.008 : (G.boss && !G.boss.dead ? 12 : hilly ? 10.5 : 8.6) * (R.w < R.h ? 1.06 : 1), pitch0 = G.car ? (hilly ? 0.5 : 0.36) : hilly ? 0.78 : 0.44;
+  // arriving in a real city: start low, looking at the horizon (and at the skyline landmark, if the city has one), then ease up
+  if (cam.intro > 0) cam.intro -= dt; const lookUp = cam.intro > 0 ? Math.min(1, cam.intro / 1.4) : 0, lu = lookUp * lookUp * (3 - 2 * lookUp), pitch = pitch0 + (0.1 - pitch0) * lu;
   // collision-lite: pull the camera in if a building is in the way
   const fx0 = Math.cos(cam.yaw), fz0 = Math.sin(cam.yaw);
   let maxD = wantDist;
@@ -335,13 +337,15 @@ function updateCamera(G, dt) {
   const sh = G.shake * 0.012, ex = maxD < wantDist ? (wantDist - cam.dist) * 0.5 : 0;
   const cpx = cam.x - fx0 * cam.dist * Math.cos(pitch), cpz = cam.z - fz0 * cam.dist * Math.cos(pitch); let cpy = cam.by + 1.3 + cam.dist * Math.sin(pitch) + ex; if (W.real) cpy = Math.max(cpy, W.hpx(cpx / S, cpz / S) + 1.6);
   camera.position.set(cpx + (Math.random() - 0.5) * sh, cpy + (Math.random() - 0.5) * sh, cpz);
-  camera.lookAt(cam.x + fx0 * 3.2, cam.by + 1.2, cam.z + fz0 * 3.2);
+  camera.lookAt(cam.x + fx0 * 3.2, cam.by + 1.2 + lu * 2.6, cam.z + fz0 * 3.2);
   I.yaw = cam.yaw; R.yaw = cam.yaw;
   G.view = { x0: a.x - 600, x1: a.x + 600, y0: a.y - 600, y1: a.y + 600 };
   // mouse -> world point (desktop aim)
   if (I.useMouse && !I.touch) { ndc.set(I.mouse.x / R.w * 2 - 1, -(I.mouse.y / R.h) * 2 + 1); plane.constant = -0.6 - (cam.by || 0); ray.setFromCamera(ndc, camera); if (ray.ray.intersectPlane(plane, _v)) I.mw = { x: _v.x / S, y: _v.z / S }; }
 }
 R.snapCamera = function (yaw) { cam.init = false; if (yaw !== undefined) cam.yaw = yaw; };
+R._dbg = () => ({ scene, camera, cam }); // test hook
+R.arrive = function () { cam.intro = 4.2; if (city && city.skyYaw !== undefined) cam.yaw = city.skyYaw; cam.init = false; };
 R.project = function (px, py, h) {
   _v.set(px * S, (h === undefined ? 1 : h) + H0(px, py), py * S).project(camera);
   return { x: (_v.x + 1) / 2 * R.w, y: (1 - _v.y) / 2 * R.h, on: _v.z < 1 && _v.z > -1 && Math.abs(_v.x) < 1.15 && Math.abs(_v.y) < 1.15, z: _v.z };

@@ -1,9 +1,11 @@
 // VICE PAWS — real-city renderer: builds the 3D scene of an OpenStreetMap extract (data/cities/*.json)
 // Buildings are extruded footprints, roads are ribbons on the terrain, everything merged into a handful of draw calls.
 import { THREE, GB, MAT, PR } from './models.js';
-import { bldMaterial, palmGeo, palmGeoLo, treeGeo, treeGeoLo, glowPoints, skyWater, lin } from './city.js';
+import { bldMaterial, palmGeo, palmGeoLo, treeGeo, treeGeoLo, glowPoints, skyWater, lin, MOODS } from './city.js';
 import { chunkMesh, chunkInstances } from './lod.js';
 
+// Landmarks shown as a low-poly backdrop from any map within 14 km of them (height in metres above the sea)
+const SKYLINE = [{ kind: 'cristo', lat: -22.9519, lon: -43.2105, h: 710 }, { kind: 'sugarloaf', lat: -22.9492, lon: -43.1545, h: 396 }];
 const VIVID = ['#ff5a7a', '#ffb347', '#ffe066', '#5fd0c8', '#7fb4ff', '#c9a7ff', '#ff8fd0', '#7CFF6B', '#ff7043', '#40c4ff'];
 export function buildRealCity(W, scene, VP) {
   const C = W.real, meta = W.meta || {}, K = 2 / VP.World.MPT, half = C.half, U = VP.U, rng = U.rng(77 + C.id.length * 13), pal = W.pal;
@@ -218,6 +220,30 @@ export function buildRealCity(W, scene, VP) {
       else { mural.box('#f4f0ea', x, y + 0.75, z, 0.7, 0.6, 1.3); mural.box('#2b2b33', x + 0.1, y + 0.85, z + 0.2, 0.72, 0.3, 0.5); mural.box('#f4f0ea', x, y + 1.0, z + 0.8, 0.45, 0.45, 0.5); for (const sx of [-1, 1]) for (const sz of [-1, 1]) mural.box('#d8d0c4', x + sx * 0.25, y + 0.22, z + sz * 0.45, 0.14, 0.45, 0.14); mural.cone('#fff6c8', x - 0.2, y + 1.3, z + 0.85, 0.05, 0.2); mural.cone('#fff6c8', x + 0.2, y + 1.3, z + 0.85, 0.05, 0.2); }
     }
     for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283, x = fx + Math.cos(a) * 14, z = fz + Math.sin(a) * 14; neon.box(['#ffd23f', '#7CFF6B', '#2a6bff', '#ffffff'][i % 4], x, W.hpx(x * 24, z * 24) + 4.2, z, 0.5, 0.36, 0.04, 0, a, 0); }
+  }
+  // ---------- distant skyline: famous silhouettes outside the map, placed on their real bearing (never fogged out) ----------
+  {
+    const g = new GB(), hz = new THREE.Color(MOODS[meta.mood || 0].fog), _k = new THREE.Color(), tone = (c, f) => '#' + _k.set(c).lerp(hz, f === undefined ? 0.42 : f).getHexString(); let any = 0, nearSky = 1e9;
+    for (const S of SKYLINE) {
+      const mx = (S.lon - C.lon) * Math.cos(C.lat * Math.PI / 180) * 111320, mz = -(S.lat - C.lat) * 110540, real = Math.hypot(mx, mz);
+      if (real > 14000 || real < 1) continue;
+      if (Math.abs(mx) < half - 40 && Math.abs(mz) < half - 40) continue; // inside the playable map: the map itself shows it
+      // far ones peak about 7 degrees above the horizon (the top of the screen is at ~8); a hill right next to the map towers over it
+      const Dm = U.clamp(real, half + 250, half + 500), dx = mx / real, dz = mz / real, H = U.clamp(S.h * Dm / real, Dm * 0.11, Dm * (real < 1500 ? 0.3 : 0.135)) * K, x = u(dx * Dm), z = u(dz * Dm), sx = -dz, sz = dx, ry = Math.atan2(-dx, -dz);
+      if (S.kind === 'sugarloaf') {
+        g.lo(tone('#3f8a5a'), x, -2, z, H * 0.62, H * 0.3, H * 0.5, 0, ry, 0); g.lo(tone('#8a8f9a'), x, -2, z, H * 0.36, H, H * 0.33, 0, ry, 0.06);
+        const ux2 = x + sx * H * 0.78, uz2 = z + sz * H * 0.78; g.lo(tone('#3f8a5a'), ux2, -2, uz2, H * 0.5, H * 0.3, H * 0.42, 0, ry, 0); g.lo(tone('#7f8792'), ux2, -2, uz2, H * 0.4, H * 0.55, H * 0.34, 0, ry, 0);
+        // the cable car line between the two hills, with a little car on it
+        const ax = x + sx * H * 0.05, az = z + sz * H * 0.05, len = H * 0.74; g.box(tone('#2b2b33', 0.2), (ax + ux2) / 2, H * 0.76, (az + uz2) / 2, len, H * 0.006, H * 0.006, 0, ry, 0.56); g.box(tone('#ffd23f', 0.1), (ax + ux2) / 2, H * 0.735, (az + uz2) / 2, H * 0.05, H * 0.035, H * 0.03, 0, ry, 0);
+      } else if (S.kind === 'cristo') {
+        g.add(PR.cone, tone('#3f8a5a'), x, H * 0.5 - 2, z, H * 0.62, H, H * 0.62, 0, ry, 0); g.lo(tone('#357a50'), x + sx * H * 0.5, -2, z + sz * H * 0.5, H * 0.6, H * 0.55, H * 0.5, 0, ry, 0); g.lo(tone('#357a50'), x - sx * H * 0.55, -2, z - sz * H * 0.55, H * 0.55, H * 0.42, 0.5 * H, 0, ry, 0);
+        const c = H * 0.2, w = tone('#f4f1ea', 0.12); g.box(tone('#b9b4a8', 0.2), x, H - 2 + c * 0.1, z, c * 0.5, c * 0.3, c * 0.5, 0, ry, 0); g.box(w, x, H - 2 + c * 0.72, z, c * 0.26, c, c * 0.2, 0, ry, 0); g.box(w, x, H - 2 + c * 1.0, z, c * 1.08, c * 0.15, c * 0.16, 0, ry, 0); g.lo(w, x, H - 2 + c * 1.32, z, c * 0.12);
+      }
+      if (!any || real < nearSky) { nearSky = real; city.skyYaw = Math.atan2(dz, dx); }
+      any++;
+    }
+    if (any) { const m = new THREE.Mesh(g.geo(), new THREE.MeshLambertMaterial({ vertexColors: true, fog: false })); m.frustumCulled = false; m.matrixAutoUpdate = false; scene.add(m); }
+    city.skyline = any;
   }
   if (mural.p.length) chunkMesh(mural.geo(), MAT.flat, scene, city, { cell: 80, detail: 1.6 });
   if (neon.p.length) chunkMesh(neon.geo(), MAT.glow, scene, city, { cell: 80, detail: 1.8 });

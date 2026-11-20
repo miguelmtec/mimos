@@ -449,7 +449,7 @@ World.fromCity = function (C, meta) {
     for (const B of C.buildings) fillPoly(B, 1, i => { if (!occ[i]) { occ[i] = 1; built++; } });
     for (let i = 0; i < W * H; i++) if (grid[i] !== WATER) land++;
     w.builtRatio = built / Math.max(1, land);
-    const tg = C.tags || [], want = C.infill !== false && !tg.includes('noinfill') && (tg.includes('infill') || w.builtRatio < 0.1);
+    const tg = C.tags || [], want = C.infill !== false && !tg.includes('noinfill') && (tg.includes('infill') || w.builtRatio < 0.05);
     const fill = want ? World.infill(C, w, occ) : { lots: [], trees: [], style: World.styleOf(C) };
     w.infill = fill.lots; w.infillTrees = fill.trees; w.style = fill.style; }
   for (const B of C.buildings) fillPoly(B, 1, i => { if (gnd[i] !== G_ROAD && gnd[i] !== G_WALK) { grid[i] = WALL; gnd[i] = G_ROOF; } });

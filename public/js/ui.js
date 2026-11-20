@@ -275,7 +275,7 @@ UI.free = function (pos, keep, opts) {
   endGame(); begin(M.startFree(p, opts)); void keep;
   UI.songD = -1;
 };
-UI.tour = function (id) { if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; } if (!VP.CityCache[id]) return; endGame(); begin(M.startTour(id)); const meta = VP.CityCache[id].meta; VP.Audio.music(UI.citySong(id)); UI.songD = -2; Game.fx.say('✈ ' + VP.CityCache[id].real.name, '#ffd23f', 3); };
+UI.tour = function (id) { if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; } if (!VP.CityCache[id]) return; endGame(); begin(M.startTour(id)); if (VP.R3.arrive) VP.R3.arrive(); const meta = VP.CityCache[id].meta; VP.Audio.music(UI.citySong(id)); UI.songD = -2; Game.fx.say('✈ ' + VP.CityCache[id].real.name, '#ffd23f', 3); };
 UI.citySong = id => (id === 'rioverde' ? 7 : [0, 1, 2, 3, 4, 2, 6][(VP.CityCache[id] && VP.CityCache[id].meta.mood) || 0]);
 UI.startMission = function (n) {
   if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }

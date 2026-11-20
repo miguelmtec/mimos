@@ -4,7 +4,10 @@
 
 ## O que guardamos
 
-- **Seu e-mail** — o único dado pessoal. Serve para enviar o código de entrada e reconhecer a sua conta. **Ele nunca aparece para outros jogadores** e não é usado para propaganda.
+- **Seu e-mail**. Serve para enviar o código de entrada e reconhecer a sua conta. **Ele nunca aparece para outros jogadores** e não é usado para propaganda.
+- **Um identificador da conta Google**, só se você usar "Entrar com Google" (um número opaco; não guardamos nome nem foto).
+- **Mês e ano de nascimento** (sem o dia), **criptografados**, pedidos uma única vez por causa da Lei 15.211/2025 (ECA Digital) e da LGPD (art. 14).
+- **Para menores de 18 anos: o e-mail do responsável**, criptografado. Abaixo de 16 o responsável aprova a conta por um link (7 dias, uso único); até lá a criança joga só como visitante (sem ranking, online ou compras). De 16 a 17 o responsável é só avisado.
 - **Os perfis dos seus gatos** (até 5): nome, raça, aparência do modelo 3D, uma bio curta e, se você quiser, o @ do Instagram do gato.
 - **O progresso do jogo** (missões, estrelas, vidas), para você continuar em outro aparelho.
 
@@ -12,7 +15,7 @@
 
 - **Não há avatar humano**, nem nome, foto ou idade de pessoas.
 - **Não há chat livre** nem mensagens digitadas entre jogadores (na Cidade Online só existem frases prontas; veja abaixo).
-- **Não há senha**: você entra com um código de 6 dígitos enviado por e-mail, válido por 10 minutos.
+- **Não há senha nem documentos** (CPF, RG): você entra com o Google ou com um código de 6 dígitos enviado por e-mail, válido por 10 minutos.
 - **Não guardamos fotos.** Se você usar uma foto para sugerir as cores do gato, ela é analisada na hora e descartada.
 
 ## O que os outros jogadores veem
@@ -34,10 +37,10 @@ A Cidade Online é um passeio opcional em que os gatos de vários jogadores apar
 
 - Usamos um único cookie essencial (`vp_session`) para manter você conectado por até 60 dias. Não há cookies de rastreamento.
 - Códigos de entrada e sessões são guardados de forma embaralhada (hash). Para evitar abuso, guardamos por até 1 dia um identificador embaralhado do endereço IP de quem pediu um código.
-- Os dados ficam em serviços contratados para o jogo funcionar: Vercel (hospedagem), Neon (banco de dados) e Resend (envio do e-mail com o código).
+- Os dados ficam em serviços contratados para o jogo funcionar: Vercel (hospedagem), Neon (banco de dados) e Resend (envio dos e-mails). Se usar o Google, o login passa pelo Google.
 
 ## Seus direitos (LGPD)
 
-Você pode **apagar a sua conta a qualquer momento** dentro do jogo, em *Conta → Apagar minha conta*. Isso remove na hora o e-mail, os gatos, o progresso salvo e as sessões. Sem conta, o jogo continua funcionando com o progresso salvo só no aparelho.
+Você pode **apagar a sua conta a qualquer momento** dentro do jogo, em *Conta → Excluir minha conta*. Isso remove na hora o e-mail, o identificador do Google, a data de nascimento, o e-mail do responsável, os gatos, o progresso salvo e as sessões. Pedidos de acesso, correção ou exclusão: jogo@mtec.tec.br. Sem conta, o jogo continua funcionando com o progresso salvo só no aparelho.
 
 Dúvidas ou pedidos sobre os seus dados: fale com a gente pelo Instagram [@mimo.mimosa.morticia](https://www.instagram.com/mimo.mimosa.morticia/).

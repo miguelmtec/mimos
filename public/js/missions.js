@@ -360,6 +360,10 @@ M.startFree = function (pos, opts) {
   const shop = W.front(W.roles[0].plaza1, 's'); G.markers.push({ x: shop.x, y: shop.y, k: 'shop', col: '#ffd23f' });
   if (VP.Shop && VP.Shop.has('vip')) { const q = W.front(W.roles[2].plaza3, 'n'); const n = M.list.find(x => x.d === 5 && !VP.S.stars[x.n]) || M.get(51); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: n.n, col: '#ffd23f' }); }
   if (VP.Shop && VP.Shop.has('season')) { const q = W.front(W.roles[1].plaza2, 'n'); const n = M.list.find(x => x.d === 6 && !VP.S.stars[x.n]) || M.get(61); G.markers.push({ x: q.x, y: q.y, k: 'mission', n: n.n, col: '#7CFF6B' }); }
+  // the player's own cat tags along; other players' public cats stroll around ("Cidade dos Gatos")
+  if (S.avatar && !opts.trial) { const f = Game.addFriend(sp.x + 30, sp.y + 50, 'avatar'); f.spec = S.avatar; f.label = S.avatar.label || ''; }
+  const gal = (VP.Acct && VP.Acct.gallery) || [];
+  if (!opts.trial) gal.slice(0, 24).forEach((c, i) => { const d = i % 5, r = U.rng(900 + i * 31), q = W.randWalkD(d, r); const f = Game.addFriend(q.x, q.y, 'f' + (i % 4)); f.spec = VP.Acct.toSpec(c.spec); f.label = c.name + (c.instagram ? ' @' + c.instagram : ''); f.stay = true; f.wander = true; f.home = { x: q.x, y: q.y }; });
   if (opts.trial) {
     const cp = { x: sp.x + 40, y: sp.y + 60 }, car = Game.addCar('gold', cp.x, cp.y, 0); Game.enterCar(car);
     G.noHeat = true; G.noPolice = true; G.mtimer = 20; G.trial = true; G.forceVip = true; G.markers = [];
@@ -372,7 +376,7 @@ M.update = function (G, dt) {
   if (G.mtimer !== null) {
     G.mtimer -= dt;
     if (G.mtimer <= 10 && Math.floor(G.mtimer) !== Math.floor(G.mtimer + dt) && G.mtimer > 0) VP.Audio.sfx('tick');
-    if (G.mtimer <= 0) { G.mtimer = 0; if (G.trial) { G.over = true; VP.Audio.engine(0, false); VP.UI.trialEnd(); return; } return Game.fail('time'); }
+    if (G.mtimer <= 0) { G.mtimer = 0; if (G.trial) { G.over = true; VP.Audio.engine(0, false); setTimeout(() => VP.UI.trialEnd(), 0); return; } return Game.fail('time'); }
   }
   if (G.free) {
     const a = G.car || G.cats[G.active]; let on = null;

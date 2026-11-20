@@ -319,7 +319,7 @@ R.render = function (G, dt) {
   updateCamera(G, dt);
   const a = G.car || G.cats[G.active], near = 1900 * 1900, nearItem = 1300 * 1300;
   for (const c of G.cats) syncCat(c, G, dt);
-  for (const f of G.friends) { const o = obj(f, () => { const g = buildCat(CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
+  for (const f of G.friends) { const o = obj(f, () => { const g = buildCat(f.spec || CAT_SPECS[f.name] || CAT_SPECS.f0); g.userData.px = f.x; g.userData.py = f.y; return g; }); const ud = o.userData; if (Math.abs(f.x - ud.px) + Math.abs(f.y - ud.py) > 0.2) turn(o, Math.atan2(f.y - ud.py, f.x - ud.px), dt * 10); ud.px = f.x; ud.py = f.y; o.position.set(f.x * S, hAt(f.x, f.y), f.y * S); animCat(o, { t: f.t, walk: f.walk }); shadow(o.position.x, o.position.z, o.position.y, 0.3, 0.3); }
   for (const e of G.dogs) if (U.d2(e.x, e.y, a.x, a.y) < near) syncDog(e, G, dt);
   for (const c of G.cars) if (!c.dead && U.d2(c.x, c.y, a.x, a.y) < near * 1.6) syncCar(c, G);
   for (const it of G.items) if (U.d2(it.x, it.y, a.x, a.y) < nearItem) syncItem(it);

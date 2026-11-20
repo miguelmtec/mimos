@@ -201,6 +201,7 @@ function worldLabels(G, R3, k, t) {
   for (const car of G.cars) if (car.ai === 'target' && !car.dead) { const p = R3.project(car.x, car.y, 2.6); if (p.on) bar(p.x - 26 * k, p.y, 52 * k, 7 * k, car.hp / car.max, GOLD); }
   if (G.car && G.car.hp < G.car.max) { const p = R3.project(G.car.x, G.car.y, 2.2); if (p.on) bar(p.x - 24 * k, p.y, 48 * k, 6 * k, G.car.hp / G.car.max, G.car.hp / G.car.max < 0.35 ? '#ff4f5e' : '#7CFF6B'); }
   if (G.ctx && G.ctx.k === 'car' && !I.touch) { const p = R3.project(G.ctx.car.x, G.ctx.car.y, 2.2); if (p.on) txt('[E] ' + VP.t('enter'), p.x, p.y, 13 * k, TEAL); }
+  for (const f of G.friends) if (f.label && Math.abs(f.x - a.x) < 700 && Math.abs(f.y - a.y) < 700) { const p = R3.project(f.x, f.y, 1.7); if (p.on) txt(f.label, p.x, p.y, 11 * k, f.name === 'avatar' ? GOLD : '#fff'); }
   // mission beams
   if (G.markers) for (const mk of G.markers) {
     if (U.d2(mk.x, mk.y, a.x, a.y) > 1500 * 1500) continue;

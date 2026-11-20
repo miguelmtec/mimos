@@ -86,6 +86,8 @@ export function buildCat(spec) {
     b.box(A.hoodie, 0, 0.42, 0.42, 0.34, 0.16, 0.08);
   }
   if (A.collar) b.tor(A.collar, 0, 0.82, 0.05, 0.3, 0.3, 0.3, Math.PI / 2);
+  if (A.bell) b.sph(A.bell, 0, 0.74, 0.36, 0.08);
+  if (A.bowtie) { b.cone(A.bowtie, -0.1, 0.78, 0.4, 0.09, 0.2, 0.05, 0, 0, -Math.PI / 2); b.cone(A.bowtie, 0.1, 0.78, 0.4, 0.09, 0.2, 0.05, 0, 0, Math.PI / 2); b.lo(A.bowtie, 0, 0.78, 0.4, 0.05); }
   if (A.scarf) { b.tor(A.scarf, 0, 0.84, 0.06, 0.34, 0.5, 0.34, Math.PI / 2); b.box(A.scarf, 0.2, 0.62, 0.36, 0.14, 0.4, 0.07, 0, 0, -0.2); }
   if (A.pack) { b.box(A.pack, 0, 0.6, -0.5, 0.44, 0.44, 0.26); b.box('#ffffff', 0, 0.66, -0.64, 0.24, 0.14, 0.04); b.box(A.pack, -0.2, 0.7, -0.2, 0.06, 0.4, 0.5); b.box(A.pack, 0.2, 0.7, -0.2, 0.06, 0.4, 0.5); }
   if (A.cape) { b.box(A.cape, 0, 0.52, -0.5, 0.74, 0.86, 0.05, 0.42); b.tor(A.cape, 0, 0.86, 0.02, 0.32, 0.32, 0.4, Math.PI / 2); }
@@ -147,7 +149,8 @@ export function buildCat(spec) {
     tool = w.mesh(); tool.position.set(-0.4, 0.58, 0.42); inner.add(tool);
   }
   const s = (spec.size || 1) * 1.22; inner.scale.setScalar(s);
-  g.userData = { inner, body, head, tail, legsA, legsB, tool, size: s, spec };
+  const HS = { wedge: [0.9, 1, 1.06], square: [1.08, 0.94, 1], long: [0.93, 1.12, 1] }[spec.headShape] || [1, 1, 1];
+  g.userData = { inner, body, head, tail, legsA, legsB, tool, size: s, spec, hs: HS };
   return g;
 }
 // procedural animation. st: {t, walk(0/1), atk(0..1), down, sleepy, recoil, mouth, dance}
@@ -162,7 +165,7 @@ export function animCat(g, st) {
   const atk = st.atk || 0;
   u.head.position.z = 0.1 + atk * 0.22; u.head.position.y = 1.12 + (w ? Math.sin(t * 13 + 1) * 0.02 : 0) - atk * 0.05;
   u.head.rotation.set(st.sleepy ? 0.28 + Math.sin(t * 2) * 0.05 : -atk * 0.25, 0, st.sleepy ? 0.12 : Math.sin(t * 1.3) * 0.03);
-  const k = 1 + (st.mouth || 0) * 0.08; u.head.scale.set(k, k, k);
+  const k = 1 + (st.mouth || 0) * 0.08, hs = u.hs || [1, 1, 1]; u.head.scale.set(k * hs[0], k * hs[1], k * hs[2]);
   u.body.position.z = atk * 0.1;
   if (u.tool) { u.tool.position.z = 0.42 - (st.recoil || 0) * 0.16; u.tool.rotation.x = -(st.recoil || 0) * 0.5; }
   if (st.down) { u.inner.rotation.z = Math.PI / 2 * 0.92; u.inner.position.y = 0.38 * u.size; u.legsA.rotation.x = 0.4; u.legsB.rotation.x = -0.3; } else u.inner.rotation.z = 0;

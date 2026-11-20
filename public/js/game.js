@@ -1002,7 +1002,9 @@ Game.update = function (dt) {
   for (const c of G.cats) updCat(c, dt);
   // friends follow
   for (const f of G.friends) {
-    f.t += dt; f.walk = 0; if (f.stay) continue; const a = active(); const d = Math.hypot(a.x - f.x, a.y - f.y);
+    f.t += dt; f.walk = 0;
+    if (f.wander) { f.wt = (f.wt || 0) - dt; if (f.wt <= 0) { f.wt = U.rand(2, 6); const an = Math.random() * 6.283, d = U.rand(40, 160); f.gx = f.home.x + Math.cos(an) * d; f.gy = f.home.y + Math.sin(an) * d; } if (f.gx !== undefined && U.d2(f.x, f.y, f.gx, f.gy) > 20 * 20 && f.wt > 1) { const px = f.x, py = f.y; moveToward(f, f.gx, f.gy, 70, dt, null, 0); if (px === f.x && py === f.y) f.wt = 0; } continue; }
+    if (f.stay) continue; const a = active(); const d = Math.hypot(a.x - f.x, a.y - f.y);
     if (d > 70) { if (d > 620 && !onScreen(f.x, f.y, 60)) { const p = nearFree(a.x, a.y, 60, 0); if (p) { f.x = p.x; f.y = p.y; } } else moveToward(f, a.x, a.y, 185, dt, G.field, 0); }
   }
   for (const e of G.dogs) updDog(e, sdt);
@@ -1035,6 +1037,7 @@ Game.update = function (dt) {
   }
   if (G.car && G.car.dead) G.car = null;
   VP.Missions.update(G, dt);
+  if (!G) return;
   // camera
   const a = active(); let tx = a.x, ty = a.y - 10;
   if (G.car) { tx += Math.cos(G.car.a) * G.car.spd * 0.3; ty += Math.sin(G.car.a) * G.car.spd * 0.3; }

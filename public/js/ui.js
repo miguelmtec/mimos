@@ -50,7 +50,8 @@ SCREENS.title = {
       <button class="btn big" data-act="play">▶ ${VP.S.unlocked > 1 || VP.S.pos ? t('cont') : t('play')}</button>
       <div class="grid2"><button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>
       <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="rank">🏆 ${t('ranking')}</button>
-      <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('quality')}</button></div>
+      <button class="btn ghost sm" data-act="account">👤 ${VP.Acct && VP.Acct.status === 'in' ? t('ac_mycats') : t('account')}</button><button class="btn ghost sm" data-act="world">✈ ${t('world')}</button>
+      <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button></div>
       ${foot()}</div>`,
 };
 ACT.lang = () => VP.setLang(VP.lang() === 'pt' ? 'en' : 'pt');
@@ -62,6 +63,7 @@ ACT.how = () => UI.show('how');
 ACT.rank = () => UI.show('rank');
 ACT.settings = () => UI.show('settings');
 ACT.shop = () => VP.Shop.open();
+ACT.world = () => { if (VP.Tour) VP.Tour.open(); else UI.toast('✈'); };
 ACT.wardrobe = () => { if (VP.Wardrobe && VP.Wardrobe.open) VP.Wardrobe.open(); else UI.toast('🐾'); };
 ACT.back = () => { if (G && UI.state === 'play') UI.show('pause'); else UI.show('title'); };
 
@@ -138,7 +140,7 @@ SCREENS.pause = {
     ${G && !G.free ? `<p><b>${esc(VP.mname(G.m))}</b><br><span class="small">${esc(M.objective(G).txt)}</span></p>` : `<p class="small">${t('o_free')}</p>`}
     <button class="btn big" data-act="resume">▶ ${t('resume')}</button>
     <div class="grid2">${G && !G.free ? `<button class="btn ghost sm" data-act="restart">↻ ${t('restart')}</button><button class="btn ghost sm" data-act="quit">🌴 ${t('quit')}</button>` : `<button class="btn teal sm" data-act="map">🗺 ${t('map')}</button><button class="btn gold sm" data-act="shop">🛍 ${t('shop')}</button>`}
-    <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('quality')}</button>
+    <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button>
     <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="title">🏠 Menu</button></div></div>`,
 };
 ACT.resume = () => { UI.hide(); UI.paused = false; VP.Audio.pause(false); };
@@ -317,6 +319,7 @@ function boot2() {
   const startGfx = () => { if (VP.R3 && !VP.R3.ok && !UI.gfxTried) { UI.gfxTried = true; let ok = false; try { ok = VP.R3.init(document.getElementById('gl')); } catch (e) { ok = false; console.warn('gfx', e); } if (!ok) UI.noGfx = true; } };
   if (VP.R3) startGfx(); else addEventListener('vp-gfx', startGfx);
   UI.ready = true;
+  if (VP.Acct) VP.Acct.init();
   requestAnimationFrame(frame);
 }
 // ---------- test hooks ----------

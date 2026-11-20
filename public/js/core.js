@@ -33,7 +33,7 @@ let S = null;
 try { S = JSON.parse(ls.get(SKEY)); } catch (e) { S = null; }
 if (!S || typeof S !== 'object' || !S.stars) S = fresh();
 VP.S = S;
-VP.persist = () => ls.set(SKEY, JSON.stringify(VP.S));
+VP.persist = keepTs => { if (!keepTs) VP.S.ts = Date.now(); ls.set(SKEY, JSON.stringify(VP.S)); };
 VP.resetSave = () => { VP.S = S = fresh(); VP.persist(); };
 VP.totalStars = () => Object.values(VP.S.stars).reduce((a, b) => a + b, 0);
 VP.totalScore = () => Object.values(VP.S.best).reduce((a, b) => a + b, 0);

@@ -114,7 +114,7 @@ function ambientInit(G) {
   const lv = E.playerLevel(), rng = U.rng(4242 + lv * 7), a = G.cats[G.active];
   for (let d = 0; d < 5; d++) {
     const types = E.eligible(d, lv); if (!types.length) continue;
-    for (let g = 0; g < E.DATA.cap.ambientGroupsPerDistrict; g++) { const type = rng.pick(types), pt = G.W.randWalkD(d, rng); if (U.d2(pt.x, pt.y, a.x, a.y) < 520 * 520) continue; E.group(G, type, pt, { lv, ambient: true }); }
+    for (let g = 0; g < E.DATA.cap.ambientGroupsPerDistrict; g++) { const type = rng.pick(types), pt = G.W.randWalkD(d, rng); if (G.foes.length > 20 || U.d2(pt.x, pt.y, a.x, a.y) < 520 * 520) continue; E.group(G, type, pt, { lv, ambient: true }); }
   }
 }
 function ambientTick(G, St, dt) {
@@ -167,6 +167,7 @@ E.hit = function (G, e, dmg, src, fxx, fyy, kb) {
   }
   shown = Math.max(1, Math.round(shown));
   e.hp -= shown; e.flash = 0.14; e.squash = 1;
+  if (e.floor !== undefined && e.hp < e.floor) e.hp = e.floor; // bosses: a phase cannot be skipped
   if (e.state === 'patrol') e.state = 'act';
   if (kb && fxx !== undefined && !e.isBoss) { const a = Math.atan2(e.y - fyy, e.x - fxx); e.kx += Math.cos(a) * kb; e.ky += Math.sin(a) * kb; }
   FX.text(e.x, e.y - 34 - e.r - e.z, tink ? tr('tink') : '' + shown, tink ? '#c0c7d1' : src === 'bite' ? '#ff7ac0' : src === 'bolt' ? '#8ff3ff' : '#fff', tink ? 12 : 15);
@@ -663,7 +664,7 @@ function regTypes() {
   } };
   TY.foe_survive = { setup(B) {
     const p = B.p, G = B.G; state(G);
-    const A = B.R('plaza2') || B.R('arena'), pt = B.front(A, 'n'); B.begin(pt, { traffic: 4 }); quiet(G);
+    const A = B.R('plaza2') || B.R('arena'), pt = B.W.front(A, 'n'); B.begin(pt, { traffic: 4 }); quiet(G);
     const add = t => { const q = Game.spawnPoint(260, 460) || B.farPoint(200, 600); const e = E.spawn(G, t, q.x, q.y, { lv: B.m.lv, tag: 's', state: 'act', force: true }); if (e) e.aggro = 2000; };
     B.wait(1.5, 'o_ready');
     B.step({ txt: 'o_foe_survive', t: 0, rt: 0, roam: true, foeFight: true, enter() { for (const t of p.foes) add(t); sfx('alarm'); },

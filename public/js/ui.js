@@ -54,7 +54,7 @@ SCREENS.title = {
       <button class="btn ghost sm" data-act="wardrobe">👕 ${t('wardrobe')}</button><button class="btn ghost sm" data-act="rank">🏆 ${t('ranking')}</button>
       <button class="btn ghost sm" data-act="account">👤 ${VP.Acct && VP.Acct.status === 'in' ? t('ac_mycats') : t('account')}</button><button class="btn ghost sm" data-act="world">✈ ${t('world')}</button>
       <button class="btn ghost sm" data-act="how">❓ ${t('how')}</button><button class="btn ghost sm" data-act="settings">⚙ ${t('settings')}</button>
-      <button class="btn ghost sm wide" data-act="catcity">🐱 ${t('gc_title')}</button></div>
+      <button class="btn ghost sm wide" data-act="catcity">🐱 ${t('gc_title')}</button>${VP.Ext ? VP.Ext.slot('title') : '' /* [hook:ext] */}</div>
       ${foot()}</div>`,
 };
 ACT.haptic = () => { const off = VP.ls.get('vp_haptic') === '0'; VP.ls.set('vp_haptic', off ? '1' : '0'); if (off) VP.haptic(30); UI.relabel(); };

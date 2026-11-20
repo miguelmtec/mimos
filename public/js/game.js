@@ -216,6 +216,7 @@ function downCat(c) {
 function healCat(c, n) { if (c.down || c.hp >= c.max) return; c.hp = Math.min(c.max, c.hp + n); }
 function healTeam(n) { let any = false; for (const c of G.cats) if (!c.down && c.hp < c.max) { healCat(c, n); any = true; text(c.x, c.y - 46, '+' + n, '#7CFF6B', 14); part({ x: c.x, y: c.y - 20, k: 'ring', col: '#7CFF6B', size: 10, life: 0.4 }); } return any; }
 Game.healTeam = healTeam;
+Game.hurtCat = hurtCat; // [hook:ext] used by enemies.js / boss.js
 // src: 'bolt' | 'bite' | 'snatch' | 'car' | 'hair' | 'roar'
 function hurtDog(e, dmg, src, fx, fy, kb) {
   if (e.dead) return;
@@ -283,6 +284,7 @@ function autoAim(c, range, kind) {
   const consider = (o, x, y, bias) => { const d = U.d2(c.x, c.y, x, y) * (bias || 1); if (d < bd && W.los(c.x, c.y - 4, x, y - 4, kind === 'bolt' ? 2 : 0)) { bd = d; best = o; bx = x; by = y; } };
   for (const e of G.dogs) if (!e.dead) consider(e, e.x, e.y);
   if (kind === 'bolt') { for (const p of G.props) if (p.k === 'switch' && !p.done) consider(p, p.x, p.y - 28, 0.8); for (const k of G.cars) if (!k.dead && (k.ai === 'cop' || k.ai === 'target')) consider(k, k.x, k.y); }
+  if (VP.Ext) VP.Ext.aimAt(G, consider, kind, c); // [hook:ext] extra targets (enemies.js)
   if (kind === 'bite') for (const p of G.props) if (!p.done && (p.k === 'fgate' || p.k === 'crate' || (p.k === 'cage' && p.lock === 'bite'))) { const d = U.d2(c.x, c.y, p.x, p.y); if (d < 90 * 90 && d < bd) { bd = d; best = p; bx = p.x; by = p.y; } }
   return best ? Math.atan2(by - c.y, bx - c.x) : null;
 }
@@ -1137,6 +1139,7 @@ Game.update = function (dt) {
     if (d > 70) { if (d > 620 && !onScreen(f.x, f.y, 60)) { const p = nearFree(a.x, a.y, 60, 0); if (p) { f.x = p.x; f.y = p.y; } } else moveToward(f, a.x, a.y, f.spd || 185, dt, G.field, 0); }
   }
   for (const e of G.dogs) updDog(e, sdt);
+  if (VP.Ext) VP.Ext.tick(G, dt, sdt); // [hook:ext] enemies, boss, clinic, season
   // soft separation
   const all = G.dogs;
   for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {

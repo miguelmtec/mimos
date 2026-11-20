@@ -1,0 +1,11 @@
+{
+ "_doc": "Lista das temporadas (site estático não lista pasta). A primeira ativa pela data vale. Teste: ?season=natal (ou ?season=off) e ?seasondate=2026-12-10.",
+ "seasons": [
+  "natal",
+  "carnaval",
+  "pascoa",
+  "festa_junina",
+  "dia_dos_animais",
+  "halloween"
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "_doc": "Esqueleto: só datas e tema. Conteúdo (decoração, missões, trilha) entra depois, no mesmo formato de natal.json.",
+ "id": "halloween",
+ "year": 2027,
+ "icon": "🎃",
+ "name": {
+  "pt": "Noite das Abóboras",
+  "en": "Pumpkin Night"
+ },
+ "theme": {
+  "pt": "Abóboras sorridentes, fantasias e sustos de mentirinha (nada assustador de verdade).",
+  "en": "Smiling pumpkins, costumes and pretend scares (nothing truly scary)."
+ },
+ "start": "2027-10-24",
+ "end": "2027-10-31",
+ "colors": [
+  "#ff8a3d",
+  "#b967ff",
+  "#7CFF6B",
+  "#17101c"
+ ],
+ "skeleton": true,
+ "decor": {},
+ "track": null,
+ "pass": null,
+ "items": [],
+ "missions": []
+}

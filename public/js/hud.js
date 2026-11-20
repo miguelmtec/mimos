@@ -256,6 +256,7 @@ function worldLabels(G, R3, k, t) {
   if (G.W.landmarks) for (const l of G.W.landmarks) { const dl = Math.max(Math.abs(l.gx - a.x), Math.abs(l.gy - a.y)); if (dl > (l.beacon ? 3200 : 1000)) continue; const p = R3.project(l.gx, l.gy, 5); if (p.on) lab((VP.S.tour && VP.S.tour[G.tour] && VP.S.tour[G.tour].seen[l.name] ? '✓ ' : '📍 ') + l.name, p.x, p.y, 10.5 * k, GOLD); }
   // floating numbers + sim text particles
   for (const tx of G.texts) { const p = R3.project(tx.x, tx.y + 20, 1.7 + tx.t * 1.3); if (p.on) { c.globalAlpha = Math.min(1, (0.9 - tx.t) * 4); txt(tx.txt, p.x, p.y, tx.size * k * (tx.t < 0.1 ? 1 + (0.1 - tx.t) * 5 : 1), tx.col); c.globalAlpha = 1; } }
+  if (VP.Ext) VP.Ext.paint(G, { c, txt, bar, pill, lab, k, t, R3, w: H.w, h: H.h }); // [hook:ext] labels of VP.Ext modules
   for (const pt of G.parts) if (pt.k === 'txt' || pt.k === 'icon') { const p = R3.project(pt.x, pt.y + 30, 2.1 + pt.t); if (!p.on) continue; if (pt.k === 'txt') txt(pt.txt, p.x, p.y, pt.size * k, pt.col); else Art.icon(c, pt.icon, p.x, p.y, pt.size * k, t); }
 }
 })();

@@ -1,0 +1,29 @@
+{
+ "_doc": "Esqueleto: só datas e tema. Conteúdo (decoração, missões, trilha) entra depois, no mesmo formato de natal.json.",
+ "id": "carnaval",
+ "year": 2027,
+ "icon": "🎭",
+ "name": {
+  "pt": "Carnaval dos Gatos",
+  "en": "Cat Carnival"
+ },
+ "theme": {
+  "pt": "Confete, serpentina, bloco dos gatos e fantasias.",
+  "en": "Confetti, streamers, a cat street parade and costumes."
+ },
+ "start": "2027-02-01",
+ "end": "2027-02-14",
+ "colors": [
+  "#ff4fb8",
+  "#ffd23f",
+  "#2de2e6",
+  "#7CFF6B",
+  "#b967ff"
+ ],
+ "skeleton": true,
+ "decor": {},
+ "track": null,
+ "pass": null,
+ "items": [],
+ "missions": []
+}

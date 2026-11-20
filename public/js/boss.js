@@ -32,10 +32,11 @@ Boss.start = function (G, id, o) {
   return b;
 };
 function setPhase(G, b, n, first) {
-  b.phase = n; b.P = b.def.phases[n]; b.move = null; b.mi = 0; b.cd = first ? 1.2 : 2;
+  b.phase = n; b.P = b.def.phases[n]; b.move = null; b.mi = 0; b.cd = first ? 1.2 : 2; b.floor = Math.floor(b.P.until * b.max);
   b.armor = b.maxArmor = Math.round((b.P.armor || 0) * (1 + 0.02 * (E.eff(b.lv) - 1)));
   if (!first) { b.stun = 1.4; FX.burst(b.x, b.y - 30, 26, CONF, 260, 'star', 8, 0.9); FX.shake(12); sfx('boss'); for (const s of G.fshots) s.life = 0; }
   FX.say(b.P.label[VP.lang() === 'pt' ? 'pt' : 'en'], '#ffd23f', 2.6);
+  if (b.P.shieldWhileMinions) { Boss.MOVES.summon.start(G, b); b.shield = E.alive(G, 'bossMinion') > 0; } // the gadget phase opens with its shield up
   if (b.opts.onPhase) b.opts.onPhase(n, b);
 }
 function guard(G, b, dmg, src) {
@@ -102,7 +103,8 @@ MV.spray = {
 Boss.tick = function (G, St, b, c, d, dt) {
   // phases
   const frac = b.hp / b.max, P = b.P;
-  if (b.phase < b.def.phases.length - 1 && frac <= P.until) { setPhase(G, b, b.phase + 1); return; }
+  if (b.phase < b.def.phases.length - 1 && b.hp <= b.floor) { setPhase(G, b, b.phase + 1); return; }
+  void frac;
   const minions = E.alive(G, 'bossMinion'), was = b.shield;
   b.shield = !!P.shieldWhileMinions && minions > 0;
   if (was && !b.shield) { FX.say(tr('fb_open'), '#ffd23f', 2.2); b.stun = Math.max(b.stun, b.def.exposeSeconds || 5); b.cd = 0.4; sfx('break'); return; }
@@ -115,7 +117,8 @@ Boss.tick = function (G, St, b, c, d, dt) {
   if (c) { const an = Math.atan2(c.y - b.y, c.x - b.x); b.a += U.angDiff(b.a, an) * Math.min(1, dt * 3); if (d > 230) { move(G, b, Math.cos(an) * b.spd * P.speed * dt, Math.sin(an) * b.spd * P.speed * dt); b.walk = 1; } }
   if (b.cd <= 0) { let name = P.moves[b.mi++ % P.moves.length]; if (name === 'summon' && minions >= 3) name = 'netRing'; b.move = name; b.mt = 0; MV[name].start(G, b, c); }
 };
-// enemies.js runs it through AI.boss like any other enemy
+// enemies.js runs it through AI.boss like any other enemy; phases also advance while the truck is dizzy
+Ext.update.push(G => { const b = G.fboss; if (b && !b.dead && !b.gone && b.stun > 0 && b.phase < b.def.phases.length - 1 && b.hp <= b.floor) setPhase(G, b, b.phase + 1); });
 
 // ---------- 3D: the net truck ----------
 let gx = null;

@@ -47,6 +47,7 @@ R.init = function (cv) {
   R.ok = true; R.resize();
   addEventListener('resize', R.resize); addEventListener('orientationchange', () => setTimeout(R.resize, 250));
   R.three = { THREE, scene, camera, renderer }; R.SPECS = CAT_SPECS;
+  R.gfx = { THREE, GB, MAT, glow, shadow, pt, hAt, buildCat, animCat, CAT_SPECS }; // [hook:ext] drawing kit for VP.Ext modules
   return true;
 };
 R.pixelRatio = () => Math.min(window.devicePixelRatio || 1, mobile ? [1, 1.25, 1.5][R.quality] : [1, 1.5, 2][R.quality]);
@@ -401,6 +402,7 @@ R.render = function (G, dt) {
   if (m === 3) { R.flash = Math.max(0, (R.flash || 0) - dt * 3); if (Math.random() < dt * 0.09) { R.flash = 1; VP.Audio.sfx('thunder', 3); } } else R.flash = 0;
   applyMood(m, dt); setXmas(m === 6 && !W.real);
   for (; rn < fx.rings.length; rn++) fx.rings[rn].visible = false;
+  if (VP.Ext) VP.Ext.draw(G, dt, R.gfx); // [hook:ext] enemies, boss, clinic, season decoration
   if (city.chunks && (frame & 3) === 0) updateChunks(city, camera.position, R.quality, scene.fog.far);
   flush();
   city.waterTex.offset.x = G.real * 0.004; city.waterTex.offset.y = G.real * 0.006;

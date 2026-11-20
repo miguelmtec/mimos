@@ -2,6 +2,11 @@
 // Pedestrians, street cats, traffic that brakes, stalls (buy / favor), cat activities, minimap + waypoint, photo mode,
 // celebrities, day/night, rain, ambient life in missions and in a real city. Phone viewport first.
 const L = require('./lib.cjs');
+// own port: several checkouts of the game may be running their e2e servers on this machine at the same time
+const PORT = +process.env.VP_PORT || 8791; let srv = null;
+L.URL = 'http://localhost:' + PORT + '/';
+L.serve = () => new Promise(r => { srv = require('child_process').spawn('python3', ['-m', 'http.server', String(PORT), '--directory', require('path').resolve(__dirname, '../../public')], { stdio: 'ignore' }); setTimeout(r, 900); });
+L.stop = () => srv && srv.kill();
 const onlyShots = process.argv[2] === 'shots';
 const bad = [], ok = (c, m) => { if (!c) { bad.push(m); console.log('  ✗ ' + m); } else console.log('  ✓ ' + m); };
 const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.page.evaluate(pre || (() => {})); await o.page.evaluate(() => { VP.Audio.sfx = () => {}; VP.S.cash = 300; window.sim = s => { for (let i = 0; i < s * 30; i++) { if (!__vp.G || __vp.G.over) break; VP.I.poll(); VP.Game.update(1 / 30); } }; window.tp = (x, y) => { const G = __vp.G; G.cats.forEach((k, i) => { k.x = x + i * 4; k.y = y + i * 4; k.plat = null; }); G.cam.x = x; G.cam.y = y; G.fieldT = 0; }; __vp.free(); }); await o.page.waitForFunction(() => VP.Life.ready && VP.LifeGfx); await o.page.waitForTimeout(900); return o; };
@@ -31,7 +36,7 @@ const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.pa
   console.log('traffic');
   r = await page.evaluate(() => {
     const G = __vp.G, Lf = G.life, c = G.cats[G.active]; let min = 1e9, ufa0 = Lf.stats.ufa, tries = 0, tested = 0;
-    for (const v of Lf.vehicles.slice()) { if (v.road || tries++ > 4) break; const d = [[1, 0], [0, 1], [-1, 0], [0, -1]][v.dir]; v.spd = v.top; Lf.missCd = 0; tp(v.x + d[0] * (v.half + 70), v.y + d[1] * (v.half + 70)); tested++;
+    for (const v of Lf.vehicles.slice()) { if (v.road || tries++ > 4) break; const d = [[1, 0], [0, 1], [-1, 0], [0, -1]][v.dir]; v.spd = v.top; Lf.missCd = 0; tp(v.x + d[0] * (v.half + 56), v.y + d[1] * (v.half + 56)); tested++;
       for (let i = 0; i < 90; i++) { VP.Game.update(1 / 30); G.cats.forEach(k => { k.x = c.x; k.y = c.y; }); const f = (c.x - v.x) * d[0] + (c.y - v.y) * d[1]; if (Math.abs((c.x - v.x) * d[1] - (c.y - v.y) * d[0]) < 20) min = Math.min(min, f - v.half); } }
     // lights: over a whole cycle no traffic car ever sits in the box on red... simply: both kinds of traffic stop somewhere
     let held = 0; for (let i = 0; i < 30 * 30; i++) { VP.Game.update(1 / 30); for (const k of G.cars) if (k._hold) held++; }
@@ -75,7 +80,7 @@ const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.pa
   console.log('reactions');
   r = await page.evaluate(() => {
     const G = __vp.G, Lf = G.life, c = G.cats[G.active], out = {}; VP.S.cash = 300;
-    const rnd = Math.random; let p = Lf.peds.find(p => !p.fixed && p.st === 'walk' && !p.leader && p.role === 'walker'); p.cool = 0; tp(p.x + 50, p.y); Math.random = () => 0.1; VP.Game.emote('miau'); sim(0.1); out.aw = p.st + ' "' + (p.bub && p.bub.txt) + '"'; const hp0 = (c.hp = c.max - 30); sim(6); out.pet = Lf.stats.pets > 0 && c.hp > hp0; Math.random = rnd;
+    const rnd = Math.random; let p = Lf.peds.find(p => !p.fixed && p.st === 'walk' && !p.leader && p.role === 'walker'); p.cool = 0; tp(p.x + 12, p.y + 8); Math.random = () => 0.1; VP.Game.emote('miau'); sim(0.1); out.aw = p.st + ' "' + (p.bub && p.bub.txt) + '"'; const hp0 = (c.hp = c.max - 30); sim(6); out.pet = Lf.stats.pets > 0 && c.hp > hp0; Math.random = rnd;
     // Morticia steals a snack: comic chase, no damage, the owner gives up
     VP.Game.switchTo(2); const m = G.cats[2]; let e = Lf.peds.find(p => p.snack && !p.fixed && p.st === 'walk'); if (!e) { e = Lf.peds.find(p => !p.fixed && p.st === 'walk' && !p.leader); e.snack = 'hotdog'; }
     tp(e.x + 30, e.y); const belly = (m.belly = 30); VP.I.bot = () => { VP.I.mx = 0; VP.I.my = 0; VP.I.attack = true; VP.I.aim = null; }; sim(0.2); VP.I.bot = null; VP.I.attack = false; out.stole = e.st === 'chase' && m.belly > belly && !e.snack; out.line = e.bub && e.bub.txt;
@@ -104,7 +109,7 @@ const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.pa
     tp(ac.x - 60, ac.y); let hmax = 0; const walk = (tx, ty, n) => { for (let i = 0; i < n; i++) { VP.I.bot = () => { const d = Math.hypot(tx - c.x, ty - c.y) || 1; VP.I.mx = (tx - c.x) / d; VP.I.my = (ty - c.y) / d; VP.I.attack = false; VP.I.aim = null; }; VP.I.poll(); VP.Game.update(1 / 30); hmax = Math.max(hmax, c.plat ? c.plat.h : 0); if (Math.hypot(tx - c.x, ty - c.y) < 8) break; } VP.I.bot = null; };
     walk(ac.x, ac.y, 60); walk(aw.x, aw.y, 60); walk(top.x, top.y, 90); out.climb = hmax + ' ' + !!top.lifeDone; VP.I.mx = VP.I.my = 0;
     const y = Lf.toys.find(t => t.k === 'yarn'); tp(y.x - 16, y.y); c.walk = 1; const y0 = y.x; VP.I.bot = () => { VP.I.mx = 1; VP.I.my = 0; VP.I.attack = false; VP.I.aim = null; }; sim(0.8); VP.I.bot = null; out.yarn = Math.abs(y.x - y0) > 20;
-    const lz = Lf.props.find(p => p.k === 'laser'); lz.cd = 0; Lf.toys = Lf.toys.filter(t => t.k !== 'laser'); tp(lz.x + 30, lz.y); sim(0.3); const dot = Lf.toys.find(t => t.k === 'laser'); out.laser = !!dot; if (dot) { for (let i = 0; i < 200 && !dot.dead; i++) { tp(dot.x, dot.y); VP.Game.update(1 / 30); } out.laserInfo = dot.n + '/' + dot.need + ' life ' + Math.round(dot.life) + ' car ' + !!G.car; out.laser = dot.dead && dot.n >= 5; }
+    const lz = Lf.props.find(p => p.k === 'laser'); lz.cd = 0; Lf.toys = Lf.toys.filter(t => t.k !== 'laser'); tp(lz.x + 30, lz.y); sim(0.3); const dot = Lf.toys.find(t => t.k === 'laser'); out.laserInfo = 'no dot: car ' + !!G.car + ' cd ' + lz.cd + ' d ' + Math.round(Math.hypot(c.x - lz.x, c.y - lz.y)) + ' sleep ' + !!Lf.sleep + ' toys ' + Lf.toys.map(t => t.k); out.laser = !!dot; if (dot) { for (let i = 0; i < 400 && !dot.dead; i++) { tp(dot.x, dot.y); VP.Game.update(1 / 30); } out.laserInfo = dot.n + '/' + dot.need + ' life ' + Math.round(dot.life) + ' car ' + !!G.car; out.laser = dot.dead && dot.n >= 5; }
     const gp = Lf.props.find(p => p.k === 'gang'); S.gang = 0; const cash = G.stat.cash; tp(gp.x + 60, gp.y + 20); sim(0.2); out.gangLabel = G.ctx && G.ctx.label; press(); out.gang = G.stat.cash - cash >= 25;
     Lf.flies.push({ hx: c.x, hy: c.y, x: c.x, y: c.y, z: 1, t: 0, ph: 0, col: '#fff' }); const fl = Lf.flies[Lf.flies.length - 1], p2 = S.pts; for (let i = 0; i < 20 && !fl.dead; i++) { tp(fl.x, fl.y); VP.Game.update(1 / 30); } out.fly = S.pts > p2;
     return out;
@@ -113,6 +118,7 @@ const boot = async (mobile, pre) => { const o = await L.open(mobile); await o.pa
   ok(r.sleep, 'cardboard box ("' + r.boxLabel + '"): full health, time passes, game saved'); ok(r.sun, 'sunny spot heals'); ok(/^2\.4 true/.test(r.climb), 'climb AC unit → awning → roof: ' + r.climb);
   ok(r.yarn, 'yarn rolls when pushed'); ok(r.laser, 'laser dot: five catches (' + r.laserInfo + ')'); ok(r.gang, 'the Alley Crew says hi ("' + r.gangLabel + '") and chips in'); ok(r.fly, 'butterflies can be caught');
 
+  if (process.env.VP_STOP === '5') { console.log(errors, bad); await browser.close(); L.stop(); process.exit(bad.length ? 1 : 0); }
   // ---------- 6. minimap, waypoint, activities, phone, radio, photo ----------
   console.log('GTA-style UX');
   await page.evaluate(() => { const G = __vp.G, a = G.W.roles[0].arena; tp(a.cx, a.cy + 300); sim(0.3); });

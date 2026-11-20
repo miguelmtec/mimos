@@ -57,7 +57,7 @@ _.giveToy = function (L, kind, c) {
   if (kind === 'yarn') L.toys.push({ k: 'yarn', x: c.x + Math.cos(c.aim || 0) * 30, y: c.y + Math.sin(c.aim || 0) * 30, vx: 0, vy: 0, t: 0, n: 0, life: 150 });
   else startLaser(L, c.x, c.y, 70);
 };
-function startLaser(L, x, y, life) { if (L.toys.some(t => t.k === 'laser')) return; L.toys.push({ k: 'laser', x, y, hx: x, hy: y, gx: x + 60, gy: y, n: 0, need: 5, t: 0, life: life || 60, hold: 0 }); sfx('tink'); }
+function startLaser(L, x, y, life) { if (L.toys.some(t => t.k === 'laser')) return; L.toys.push({ k: 'laser', x, y, hx: x, hy: y, gx: x + 60, gy: y, n: 0, need: 5, t: 0, life: life || 60, hold: 0, safe: 0.6 }); sfx('tink'); }
 function updToys(L, dt, c) {
   const W = L.W, G = L.G;
   for (const t of L.toys) {
@@ -70,9 +70,9 @@ function updToys(L, dt, c) {
       t.roll = (t.roll || 0) + Math.hypot(t.vx, t.vy) * dt * 0.08; const f = Math.pow(0.12, dt); t.vx *= f; t.vy *= f;
     } else if (t.k === 'laser') {
       t.hold -= dt; const d = Math.hypot(t.gx - t.x, t.gy - t.y);
-      if (d < 6 || t.hold <= 0) { for (let k = 0; k < 8; k++) { const an = Math.random() * 6.283, r = U.rand(40, 150), gx = t.hx + Math.cos(an) * r, gy = t.hy + Math.sin(an) * r; if (!W.blocked(gx, gy, 8, 0)) { t.gx = gx; t.gy = gy; break; } } t.hold = U.rand(0.5, 1.3); }
+      if (d < 6 || t.hold <= 0) { for (let k = 0; k < 12; k++) { const an = Math.random() * 6.283, r = U.rand(40, 150), gx = t.hx + Math.cos(an) * r, gy = t.hy + Math.sin(an) * r; if (!W.blocked(gx, gy, 8, 0) && (k > 8 || U.d2(gx, gy, c.x, c.y) > 80 * 80)) { t.gx = gx; t.gy = gy; break; } } t.hold = U.rand(0.5, 1.3); }
       else { const s = Math.min(d, 300 * dt); t.x += (t.gx - t.x) / d * s; t.y += (t.gy - t.y) / d * s; }
-      if (!G.car && U.d2(t.x, t.y, c.x, c.y) < 24 * 24) { t.n++; t.hold = 0; sfx('pickup', 0.1); Game.fx.text(t.x, t.y - 30, tr('lf_laser', t.n, t.need), '#ff4f5e', 15); c.hopT = 0.4; if (t.n >= t.need) { t.dead = true; _.points(L, 25, c.x, c.y, 'lf_laserWin'); sfx('star'); } }
+      if (t.safe > 0) t.safe -= dt; else if (!G.car && U.d2(t.x, t.y, c.x, c.y) < 24 * 24) { t.n++; t.hold = 0; t.safe = 0.7; /* the dot darts away: no double catches */ sfx('pickup', 0.1); Game.fx.text(t.x, t.y - 30, tr('lf_laser', t.n, t.need), '#ff4f5e', 15); c.hopT = 0.4; if (t.n >= t.need) { t.dead = true; _.points(L, 25, c.x, c.y, 'lf_laserWin'); sfx('star'); } }
     }
   }
   L.toys = L.toys.filter(t => !t.dead);

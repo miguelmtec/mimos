@@ -24,10 +24,10 @@ const white = '#ffffff';
 // ---------- geometry ----------
 function geos() {
   const g = {};
-  g.torso = new GB().add(new THREE.CylinderGeometry(1, 0.78, 1, 8).toNonIndexed(), white, 0, 0, 0, 0.37, 0.92, 0.25).geo();
-  g.head = new GB().sph(white, 0, 0, 0, 0.38, 0.36, 0.37).lo('#241818', 0.14, 0.03, 0.335, 0.045, 0.06, 0.03).lo('#241818', -0.14, 0.03, 0.335, 0.045, 0.06, 0.03).lo('#e89a8a', 0, -0.07, 0.36, 0.045, 0.035, 0.03).geo();
-  g.hair = new GB().add(new THREE.SphereGeometry(1, 10, 5, 0, Math.PI * 2, 0, Math.PI * 0.56).toNonIndexed(), white, 0, 0, 0, 0.41).geo();
-  g.limb = new GB().add(new THREE.CylinderGeometry(1, 0.8, 1, 6).toNonIndexed(), white, 0, 0, 0, 1, 1, 1).geo();
+  g.torso = new GB().add(new THREE.CylinderGeometry(1, 0.78, 1, 7).toNonIndexed(), white, 0, 0, 0, 0.37, 0.92, 0.25).geo();
+  g.head = new GB().add(PR.mid, white, 0, 0, 0, 0.38, 0.36, 0.37).box('#241818', 0.14, 0.03, 0.34, 0.07, 0.1, 0.04).box('#241818', -0.14, 0.03, 0.34, 0.07, 0.1, 0.04).box('#e89a8a', 0, -0.09, 0.355, 0.1, 0.04, 0.04).geo();
+  g.hair = new GB().add(new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.56).toNonIndexed(), white, 0, 0, 0, 0.41).geo();
+  g.limb = new GB().add(new THREE.CylinderGeometry(1, 0.8, 1, 5).toNonIndexed(), white, 0, 0, 0, 1, 1, 1).geo();
   g.item = new GB().box(white, 0, 0, 0, 1, 1, 1).geo();
   g.umbrella = new GB().cone(white, 0, 0.5, 0, 0.95, 0.42, 0.95).cyl('#3a3040', 0, -0.1, 0, 0.03, 1.2, 0.03).geo();
   { const b = new GB(); b.box(white, 0, 0.5, 0, 0.42, 0.4, 0.95); b.lo(white, 0, 0.74, 0.58, 0.27); b.box(white, 0, 0.66, 0.84, 0.16, 0.14, 0.2); b.box('#2a1c1c', 0, 0.7, 0.95, 0.08, 0.07, 0.06);
@@ -38,7 +38,7 @@ function geos() {
   { const p = new Float32Array([0, 0, 0.12, 0.26, 0.1, 0.2, 0.26, 0.1, -0.16, 0, 0, 0.12, 0.26, 0.1, -0.16, 0, 0, -0.08, 0, 0, 0.12, -0.26, 0.1, -0.16, -0.26, 0.1, 0.2, 0, 0, 0.12, 0, 0, -0.08, -0.26, 0.1, -0.16]); const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.BufferAttribute(p, 3)); bg.computeVertexNormals(); g.fly = bg; }
   { const b = new GB(); b.lo('#b9b3ad', 0, 0.09, 0, 0.09, 0.08, 0.15); b.lo('#b9b3ad', 0, 0.12, 0.14, 0.065); b.lo('#f4a9b8', 0.05, 0.19, 0.12, 0.035); b.lo('#f4a9b8', -0.05, 0.19, 0.12, 0.035); b.box('#f4a9b8', 0, 0.06, -0.24, 0.02, 0.02, 0.22); g.mouse = b.geo(); }
   { const b = new GB(); b.cyl(white, 0, 0.09, 0, 0.07, 0.18, 0.06); b.cyl('#ffffff', 0, 0.19, 0, 0.075, 0.02, 0.075); g.cup = b.geo(); }
-  { const b = new GB(); b.sph(white, 0, 0, 0, 0.3); b.tor('#ffffff', 0, 0, 0, 0.27, 0.3, 0.27, 0.6, 0.3, 0); b.tor('#ffffff', 0, 0, 0, 0.27, 0.3, 0.27, -0.7, 1.2, 0); g.yarn = b.geo(); }
+  { const b = new GB(); b.add(PR.mid, white, 0, 0, 0, 0.3); b.tor('#ffffff', 0, 0, 0, 0.27, 0.3, 0.27, 0.6, 0.3, 0); b.tor('#ffffff', 0, 0, 0, 0.27, 0.3, 0.27, -0.7, 1.2, 0); g.yarn = b.geo(); }
   // vehicles: forward is +z, white panels take the instance colour
   { const b = new GB(), w = 2.1, l = 5.5; b.box(white, 0, 1.45, 0, w, 1.9, l); b.box('#f7f3ea', 0, 2.44, 0, w - 0.1, 0.1, l - 0.2); b.box('#1d2440', 0, 1.85, 0, w + 0.04, 0.72, l - 0.9); b.box('#1d2440', 0, 1.8, l / 2 - 0.02, w - 0.3, 0.86, 0.1); b.box(white, 0, 1.85, 0.05, w + 0.06, 0.74, 0.14); b.box(white, 0, 1.85, 1.5, w + 0.06, 0.74, 0.14); b.box(white, 0, 1.85, -1.5, w + 0.06, 0.74, 0.14);
     for (const sx of [-1, 1]) for (const z of [-1.7, 1.8]) b.cyl('#17121d', sx * (w / 2 - 0.05), 0.42, z, 0.42, 0.26, 0.42, 0, 0, Math.PI / 2);
@@ -49,7 +49,7 @@ function geos() {
   { const b = new GB(); b.cyl('#17121d', 0, 0.3, 0.62, 0.3, 0.12, 0.3, 0, 0, Math.PI / 2); b.cyl('#17121d', 0, 0.3, -0.62, 0.3, 0.12, 0.3, 0, 0, Math.PI / 2); b.box(white, 0, 0.6, 0, 0.26, 0.3, 1.1); b.box('#2a2a33', 0, 0.82, -0.2, 0.3, 0.12, 0.6); b.box('#c0c7d1', 0, 0.98, 0.5, 0.7, 0.05, 0.05); b.box('#fff6b0', 0, 0.78, 0.72, 0.16, 0.14, 0.06);
     b.add(PR.taper, '#3a3f55', 0, 1.3, -0.12, 0.26, 0.7, 0.2, 0.25); b.lo(white, 0, 1.83, 0.02, 0.24); b.box('#1d2440', 0, 1.84, 0.2, 0.3, 0.14, 0.12); b.box('#3a3f55', 0.22, 1.2, 0.2, 0.09, 0.09, 0.6, -0.5); b.box('#3a3f55', -0.22, 1.2, 0.2, 0.09, 0.09, 0.6, -0.5); b.box('#27285c', 0.16, 0.72, 0.02, 0.13, 0.5, 0.16, 0.5); b.box('#27285c', -0.16, 0.72, 0.02, 0.13, 0.5, 0.16, 0.5);
     b.box('#ffb300', 0, 1.05, -0.62, 0.5, 0.46, 0.46); g.moto = b.geo(); }
-  { const b = new GB(); b.cyl('#3a3f55', 0, 1.7, 0, 0.07, 3.4, 0.07); b.cyl('#3a3f55', 0, 0.08, 0, 0.2, 0.16, 0.2); b.box('#17121d', 0, 3.3, 0, 0.34, 1.0, 0.3); b.box('#17121d', 0, 3.86, 0, 0.42, 0.1, 0.4); for (let i = 0; i < 3; i++) b.lo('#2a2a33', 0, 3.6 - i * 0.3, 0.14, 0.1); g.tl = b.geo(); }
+  { const b = new GB(); b.box('#3a3f55', 0, 1.7, 0, 0.12, 3.4, 0.12); b.box('#3a3f55', 0, 0.08, 0, 0.36, 0.16, 0.36); b.box('#17121d', 0, 3.3, 0, 0.34, 1.0, 0.3); b.box('#17121d', 0, 3.86, 0, 0.42, 0.1, 0.4); for (let i = 0; i < 3; i++) b.box('#2a2a33', 0, 3.6 - i * 0.3, 0.15, 0.18, 0.18, 0.04); g.tl = b.geo(); }
   { const b = new GB(); b.box('#d9d2c4', 0, -0.2, 0.18, 0.8, 0.1, 0.36); b.box('#b5763a', 0, -0.06, 0.3, 0.74, 0.18, 0.12); b.lo(white, 0, 0.12, 0.08, 0.19, 0.22, 0.17); b.lo(white, 0, 0.42, 0.12, 0.17); b.cone(white, 0.1, 0.61, 0.12, 0.06, 0.14, 0.06); b.cone(white, -0.1, 0.61, 0.12, 0.06, 0.14, 0.06); b.box('#2a1c1c', 0.06, 0.44, 0.27, 0.04, 0.05, 0.04); b.box('#2a1c1c', -0.06, 0.44, 0.27, 0.04, 0.05, 0.04); b.box(white, 0.2, 0.0, 0.0, 0.07, 0.07, 0.3, 0, 0.6, 0);
     b.lo('#ff7ac0', -0.28, 0.06, 0.3, 0.07); b.lo('#ffd23f', 0.28, 0.06, 0.3, 0.07); b.lo('#3fc27f', 0, 0.03, 0.34, 0.08); g.wincat = b.geo(); }
   { const b = new GB(); b.lo(white, 0, 0.3, -0.05, 0.24, 0.3, 0.3); b.lo(white, 0, 0.66, 0.12, 0.23, 0.21, 0.21); b.cone(white, 0.12, 0.9, 0.1, 0.08, 0.18, 0.08); b.cone(white, -0.12, 0.9, 0.1, 0.08, 0.18, 0.08); b.box('#2a1c1c', 0.09, 0.69, 0.31, 0.05, 0.06, 0.04); b.box('#2a1c1c', -0.09, 0.69, 0.31, 0.05, 0.06, 0.04); b.box(white, 0.22, 0.12, -0.2, 0.09, 0.09, 0.42, 0, 0.7, 0); g.catlo = b.geo(); }
@@ -65,7 +65,7 @@ function stallMesh(s) {
   if (d.model === 'fair') {
     const fruit = [['#ffd23f', '#f2a03d'], ['#e01e37', '#3fc27f'], ['#7CFF6B', '#ff8a5c']];
     for (let k = -1; k <= 1; k++) { const x = k * 1.7; b.box('#c98f4b', x, 0.5, 0, 1.4, 0.1, 0.9); for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box('#8a5a2b', x + sx * 0.6, 0.25, sz * 0.36, 0.08, 0.5, 0.08); b.box('#8a5a2b', x, 0.66, 0, 1.3, 0.22, 0.8, 0.25);
-      for (let i = 0; i < 9; i++) b.lo(fruit[k + 1][i % 2], x - 0.45 + (i % 3) * 0.45, 0.9 - Math.floor(i / 3) * 0.05, 0.22 - Math.floor(i / 3) * 0.24, k === 0 ? 0.2 : 0.16);
+      for (let i = 0; i < 6; i++) b.lo(fruit[k + 1][i % 2], x - 0.45 + (i % 3) * 0.45, 0.92 - Math.floor(i / 3) * 0.05, 0.2 - Math.floor(i / 3) * 0.3, k === 0 ? 0.22 : 0.18);
       b.cyl('#59536b', x, 1.3, -0.42, 0.04, 2.6, 0.04); b.cone(k === 0 ? c2 : c1, x, 2.75, -0.2, 1.15, 0.5, 1.15); }
     b.box('#3fc27f', 0, 0.2, 0.75, 0.5, 0.4, 0.4); b.lo('#3fc27f', 0.9, 0.3, 0.8, 0.3, 0.3, 0.42); b.lo('#e01e37', 0.9, 0.3, 0.8, 0.26, 0.26, 0.44); return b.mesh(MAT.flat);
   }
@@ -217,7 +217,8 @@ X.sync = function (G, dt, ctx) {
     if (night > 0.3) { const fx = Math.cos(v.a), fy = Math.sin(v.a); ctx.glow(v.x * S + fx * (v.half * S + 0.3), y + 0.8, v.y * S + fy * (v.half * S + 0.3), '#fff6b0', 5 * night); } }
   // traffic lights around the leader
   if (L.lightsOn) { const LL = VP.LifeLogic, RX = W.RX, RY = W.RY;
-    for (let j = 0; j < RY.length; j++) { if (Math.abs(RY[j] - a.y) > 1000) continue; for (let i = 0; i < RX.length; i++) { if (Math.abs(RX[i] - a.x) > 1000) continue; const st = LL.lightState(t, i, j);
+    const tlr = ctx.quality === 0 ? 760 : 1000;
+    for (let j = 0; j < RY.length; j++) { if (Math.abs(RY[j] - a.y) > tlr) continue; for (let i = 0; i < RX.length; i++) { if (Math.abs(RX[i] - a.x) > tlr) continue; const st = LL.lightState(t, i, j);
       for (const [sx, sy, ax, rot] of [[-1, 1, st.ew, 0], [1, -1, st.ew, Math.PI], [-1, -1, st.ns, Math.PI / 2], [1, 1, st.ns, -Math.PI / 2]]) {
         const x = RX[i] + sx * 116, y = RY[j] + sy * 116; if (!vis(x, y, 60)) continue; const hy = ctx.hAt(x, y); _e.set(0, Math.PI / 2 - (rot + Math.PI), 0); _q.setFromEuler(_e); _w.compose(_p.set(x * S, hy, y * S), _q, _s.set(1, 1, 1)); put(M.tl, _w);
         ctx.glow(x * S - Math.cos(rot) * 0.2, hy + 3.6 - (2 - ax) * 0.3, y * S - Math.sin(rot) * 0.2, LIGHT[ax], 2.6); } } } }
@@ -225,7 +226,7 @@ X.sync = function (G, dt, ctx) {
   for (const w of L.windows) { if (Math.abs(w.x - a.x) > 900 || Math.abs(w.y - a.y) > 900 || !vis(w.x, w.y, 40)) continue; _q.identity(); _w.compose(_p.set(w.x * S, ctx.hAt(w.x, w.y + 20) + w.h + (w.hop > 0 ? Math.sin(w.hop / 0.5 * Math.PI) * 0.2 : 0), w.y * S), _q, _s.set(1.5, 1.5, 1.5)); put(M.win, _w, col(L.N.streetCats[w.vi].fur)); }
   // cups, toys
   for (const k of L.knock) { if (k.st === 'gone' && k.t > 6) continue; if (Math.abs(k.x - a.x) > 700 || Math.abs(k.y - a.y) > 700) continue; _e.set(k.st === 'on' ? 0 : k.st === 'gone' ? 1.57 : k.t * 9, 0, k.st === 'fall' ? k.t * 7 : 0); _q.setFromEuler(_e); _w.compose(_p.set(k.x * S, ctx.hAt(k.x, k.y) + k.z, k.y * S), _q, _s.set(1.5, 1.5, 1.5)); put(M.cup, _w, col(['#9fe0ff', '#ffd23f', '#ff7ac0'][k.kind % 3])); }
-  for (const o of L.toys) { const hy = ctx.hAt(o.x, o.y);
+  for (const o of L.toys) { if (Math.abs(o.x - a.x) > 800 || Math.abs(o.y - a.y) > 800) continue; const hy = ctx.hAt(o.x, o.y);
     if (o.k === 'yarn') { _e.set(o.roll || 0, 0, (o.roll || 0) * 0.7); _q.setFromEuler(_e); _w.compose(_p.set(o.x * S, hy + 0.3, o.y * S), _q, _s.set(1, 1, 1)); put(M.yarn, _w, col('#ff4fb8')); ctx.shadow(o.x * S, o.y * S, hy, 0.3, 0.3); }
     else if (o.k === 'laser') { ctx.glow(o.x * S, hy + 0.08, o.y * S, '#ff2040', 2.2 + Math.sin(t * 30) * 0.5); ctx.pt(o.x * S, hy + 0.1, o.y * S, '#ff2040', 1, 0.5, 0); }
     else if (o.k === 'mouse') { _e.set(0, Math.PI / 2 - o.a, 0); _q.setFromEuler(_e); _w.compose(_p.set(o.x * S, hy + (o.moving ? Math.abs(Math.sin(o.t * 26)) * 0.04 : 0), o.y * S), _q, _s.set(2.1, 2.1, 2.1)); put(M.mouse, _w); ctx.glow(o.x * S, hy + 0.9, o.y * S, '#ffd23f', 2.4); } }

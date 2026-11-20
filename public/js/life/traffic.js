@@ -67,7 +67,7 @@ Life._.ufa = ufa;
 function obstacle(L, v, ca, sa) {
   const G = L.G, reach = v.half + 74 + v.spd * 0.3, side = v.wid + 13; let best = -1;
   const see = (x, y, r) => { const f = aheadOf(v, ca, sa, x, y, reach + (r || 0), side + (r || 0)); if (f >= 0 && (best < 0 || f < best)) best = f; return f; };
-  if (!G.car) for (const c of G.cats) if (!c.down) { const f = see(c.x, c.y, 0); if (f >= 0 && c.idx === G.active && LL.nearMiss(v.x + ca * v.half * 0.6, v.y + sa * v.half * 0.6, v.a, v.spd, c.x, c.y)) ufa(L, c, v); }
+  if (!G.car) for (const c of G.cats) if (!c.down) { const f = see(c.x, c.y, 0); if (f >= 0 && c.idx === G.active && LL.nearMiss(v.x + ca * v.half, v.y + sa * v.half, v.a, v.spd, c.x, c.y)) ufa(L, c, v); }
   for (const p of L.peds) if (p.near !== false) see(p.x, p.y, 0);
   for (const c of L.animals) see(c.x, c.y, 0);
   for (const c of G.cars) if (!c.dead) see(c.x, c.y, 22);

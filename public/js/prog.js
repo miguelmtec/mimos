@@ -62,9 +62,16 @@ P.ITEMS = {
   catnip: { icon: '🌿', price: 100, col: '#7CFF6B', w: 3 }, leite: { icon: '🥛', price: 80, col: '#ffffff', w: 3 },
 };
 P.ORDER = ['racao', 'omega', 'sache', 'catnip', 'leite'];
-P.MAXLV = 25;
-// xp needed to go from level lv to lv + 1
-P.need = lv => Math.round(70 + 40 * Math.pow(lv, 1.55));
+P.MAXLV = 100;
+// xp needed to go from level lv to lv + 1 (the story ends around level 25-30; 100 is the long road)
+P.need = lv => Math.round(70 + 24 * Math.pow(lv, 1.25));
+// stats grow one step per level up to 25 and a quarter step after that: level 100 is a title to show off, not a wall for newcomers
+const effL = lv => { const L = lv - 1; return L <= 24 ? L : 24 + (L - 24) * 0.25; };
+// tiers: the frame and glow other players see
+P.TIERS = [['bronze', 1, '#c98f4b'], ['prata', 20, '#c9ced6'], ['ouro', 40, '#ffd23f'], ['diamante', 60, '#8ff3ff'], ['lenda', 80, '#ff7ac0']];
+P.tier = lv => { let r = P.TIERS[0]; for (const x of P.TIERS) if (lv >= x[1]) r = x; return { id: r[0], from: r[1], col: r[2] }; };
+// "Poder": levels + upgrades, one number to compare
+P.power = () => CATS.reduce((a, n) => a + P.level(n).lv * 10, 0) + Object.keys(P.S().up).length * 25;
 // upgrade trees: two tracks (b) of three tiers (t) per cat; eff keys are the numbers the simulation reads through P.v
 const MUL = ['boltDmg', 'energyCost', 'biteDmg', 'dashCd', 'roarR', 'stealCd', 'feastR', 'hairCd', 'hunger', 'res_mimo', 'res_mimosa', 'res_morticia', 'hp_mimo', 'hp_mimosa', 'hp_morticia'];
 const ADD = ['napT', 'roarStun', 'feastT', 'invisT', 'invCap', 'stealCoins'], SET = ['bolts', 'spin', 'lives7'];
@@ -112,12 +119,12 @@ P.addXp = function (name, n, G) {
 };
 P.nameOf = name => t(name);
 // the level bonus of a cat as two percentages (for the screens)
-P.bonus = function (name) { const L = P.level(name).lv - 1; return name === 'mimo' ? [Math.round(L * 1.5), Math.round(Math.min(30, L * 1.2))] : name === 'mimosa' ? [Math.round(L * 1.5), Math.round(L * 2)] : [Math.round(Math.min(30, L * 1.2)), Math.round(L * 1.5)]; };
+P.bonus = function (name) { const L = effL(P.level(name).lv); return name === 'mimo' ? [Math.round(L * 1.5), Math.round(Math.min(30, L * 1.2))] : name === 'mimosa' ? [Math.round(L * 1.5), Math.round(L * 2)] : [Math.round(Math.min(30, L * 1.2)), Math.round(L * 1.5)]; };
 
 // ---------- numbers the simulation reads ----------
 function calc() {
   const v = {}; for (const k of MUL) v[k] = 1; for (const k of ADD) v[k] = 0; for (const k of SET) v[k] = 0; v.bolts = 1; v.invCap = 9;
-  const s = P.S(), L = n => P.level(n).lv - 1;
+  const s = P.S(), L = n => effL(P.level(n).lv);
   v.boltDmg *= 1 + 0.015 * L('mimo'); v.energyCost *= 1 - Math.min(0.3, 0.012 * L('mimo')); v.hp_mimo *= 1 + 0.01 * L('mimo');
   v.biteDmg *= 1 + 0.015 * L('mimosa'); v.hp_mimosa *= 1 + 0.02 * L('mimosa');
   v.stealCd *= 1 - Math.min(0.3, 0.012 * L('morticia')); v.feastR *= 1 + 0.015 * L('morticia'); v.hp_morticia *= 1 + 0.01 * L('morticia');
@@ -278,6 +285,7 @@ function patrolTick(G, dt) {
       p.done = true; p.t = 80; const i = G.markers.indexOf(p.mk); if (i >= 0) G.markers.splice(i, 1);
       const coins = 70 + Math.round(G.n * 4); G.stat.cash += coins; for (const n of CATS) P.addXp(n, 30, G);
       Game.addItem('c_' + P.roll(), p.x, p.y, true); P.S().stats.patrols++; dirty = true;
+      if (VP.Long && Math.random() < 0.5) { const got = VP.Long.rescue(VP.Long.pick(Math.random, false), 'patrol'); if (got) setTimeout(() => { if (Game.G === G) Game.fx.say('🐱 ' + t('lg_rescued', got.def.name[VP.lang() === 'pt' ? 'pt' : 'en']), '#ffd23f', 3); }, 2600); }
       Game.fx.say('🚨 ' + t('pt_done', coins), '#7CFF6B', 3); VP.Audio.sfx('win'); if (G.guide && G.guide.src === p.mk) G.guide = null;
     }
   }

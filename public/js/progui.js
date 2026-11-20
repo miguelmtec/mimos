@@ -80,9 +80,11 @@ P.hudDraw = function (ctx, G, dt, h) {
   G.cats.forEach((cat, i) => {
     const pb = H.btn['c' + i], lv = P.level(cat.name), x = pb.x + pb.r * 0.74, y = pb.y + pb.r * 0.66, r = 9.5 * k;
     c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fillStyle = INK; c.fill();
-    c.beginPath(); c.arc(x, y, r - 1.2 * k, -Math.PI / 2, -Math.PI / 2 + 6.283 * (lv.max ? 1 : lv.cur / lv.need)); c.lineWidth = 2.4 * k; c.strokeStyle = GOLD; c.stroke();
+    c.beginPath(); c.arc(x, y, r - 1.2 * k, -Math.PI / 2, -Math.PI / 2 + 6.283 * (lv.max ? 1 : lv.cur / lv.need)); c.lineWidth = 2.4 * k; c.strokeStyle = P.tier(lv.lv).col; c.stroke();
     txt('' + lv.lv, x, y + 0.5, 10.5 * k, '#fff', 'center', false);
   });
+  // nameplate over the leading cat: level badge in the colour of its tier (what other players will see in the shared city)
+  if (VP.R3 && VP.R3.ok && !G.car) { const a = G.cats[G.active], lv = P.level(a.name).lv, tr = P.tier(lv), p = VP.R3.project(a.x, a.y, 2.75); if (p.on && !a.down) { const s2 = t('pg_lv') + ' ' + lv; c.font = '900 ' + 10.5 * k + 'px ' + FONT; const tw = c.measureText(s2).width + 14 * k; h.pill(p.x - tw / 2, p.y - 8 * k, tw, 16 * k, 'rgba(18,4,31,.8)', tr.col); txt(s2, p.x, p.y + 0.5, 10.5 * k, tr.col, 'center', false); } }
   // buffs running
   { const buffs = []; if (G.omega > 0) buffs.push(['🐟', G.omega, '#8ff3ff']); if (G.catnip > 0) buffs.push(['🌿', G.catnip, '#7CFF6B']); if (G.milkT > 0) buffs.push(['🥛', G.milkT, '#ffffff']);
     buffs.forEach((bf, i) => { const x = H.w / 2 + (i - (buffs.length - 1) / 2) * 62 * k, y = b.q0.y - 40 * k; h.pill(x - 27 * k, y - 11 * k, 54 * k, 22 * k, 'rgba(18,4,31,.75)', bf[2]); emoji(bf[0], x - 13 * k, y, 13 * k); txt(Math.ceil(bf[1]) + 's', x + 9 * k, y + 0.5, 11.5 * k, '#fff', 'center', false); }); }
@@ -169,7 +171,7 @@ let acts = [];
 SC.acts = {
   cls: 'glass', hideHud: true,
   html: () => {
-    const G = Game.G; acts = P.activities(G); const s = P.S(), first = !s.seen.acts; s.seen.acts = 1;
+    const G = Game.G; acts = P.lastActs = P.activities(G); const s = P.S(), first = !s.seen.acts; s.seen.acts = 1;
     const row = (a, i) => `<button class="pg-act k-${a.k}" data-act="actGo" data-i="${i}"><span class="ic">${a.icon}</span><span class="tx"><b>${esc(a.title)}</b><span>${esc(a.sub)}${a.src ? ' · ' + a.m + ' m' : ''}</span></span><span class="go">${a.open ? t('ac_open') : '➡ ' + t('ac_go')}</span></button>`;
     return head('📋 ' + t('ac_title'), 'gold') + `
       <details class="panel t" ${first ? 'open' : ''}><summary><b>❓ ${t('ac_how')}</b></summary><ol class="pg-how"><li>${t('ac_how1')}</li><li>${t('ac_how2')}</li><li>${t('ac_how3')}</li><li>${t('ac_how4')}</li></ol></details>

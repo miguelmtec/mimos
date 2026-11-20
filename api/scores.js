@@ -10,11 +10,13 @@ export default async function handler(req, res) {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (!url) return res.status(503).json({ error: 'leaderboard-offline' });
   const sql = neon(url);
-  const top = () => sql`select name, score, level, stars from vp_ranking order by score desc, updated_at asc limit 20`;
+  // vip is a cosmetic flag (crown next to the name); it grants nothing, so the client's word is enough
+  const top = () => sql`select name, score, level, stars, vip from vp_ranking order by score desc, updated_at asc limit 20`;
   try {
     ready ??= sql`create table if not exists vp_ranking (
       name text primary key, score integer not null, level smallint not null,
-      stars smallint not null default 0, updated_at timestamptz not null default now())`;
+      stars smallint not null default 0, updated_at timestamptz not null default now())`
+      .then(() => sql`alter table vp_ranking add column if not exists vip boolean not null default false`);
     await ready;
 
     if (req.method === 'GET') return res.status(200).json({ top: await top() });
@@ -25,14 +27,16 @@ export default async function handler(req, res) {
       const score = Math.floor(Number(b.score));
       const level = Math.floor(Number(b.level));
       const stars = Math.floor(Number(b.stars));
+      const vip = b.vip === true;
       // sanity: 50 missions, max 3 stars each, a single mission can't realistically pass ~25k points
       const ok = name && Number.isFinite(score) && score >= 1 && level >= 1 && level <= 50 &&
         stars >= 1 && stars <= Math.min(150, level * 3) && score <= level * 25000;
       if (!ok) return res.status(400).json({ error: 'invalid' });
       // one row per name, keeps the best total
-      await sql`insert into vp_ranking (name, score, level, stars) values (${name}, ${score}, ${level}, ${stars})
+      await sql`insert into vp_ranking (name, score, level, stars, vip) values (${name}, ${score}, ${level}, ${stars}, ${vip})
         on conflict (name) do update set score = greatest(vp_ranking.score, excluded.score),
-        level = greatest(vp_ranking.level, excluded.level), stars = greatest(vp_ranking.stars, excluded.stars), updated_at = now()`;
+        level = greatest(vp_ranking.level, excluded.level), stars = greatest(vp_ranking.stars, excluded.stars),
+        vip = vp_ranking.vip or excluded.vip, updated_at = now()`;
       return res.status(200).json({ ok: true, top: await top() });
     }
     res.setHeader('allow', 'GET, POST');

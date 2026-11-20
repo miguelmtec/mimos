@@ -2,7 +2,7 @@
   "name": "vice-paws",
   "version": "1.0.0",
   "private": true,
-  "description": "Vice Paws — a tiny neon getaway game starring Mimo, Mimosa and Morticia (@mimo.mimosa.morticia). Fan game, not affiliated with any game studio.",
+  "description": "Vice Paws — a 3D open-world neon city game starring the cats Mimo, Mimosa and Morticia (@mimo.mimosa.morticia). Fan game, not affiliated with any game studio.",
   "type": "module",
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4"

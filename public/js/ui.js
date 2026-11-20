@@ -318,7 +318,7 @@ function boot2() {
   VP.HUD.init(hud); I.bind(hud);
   VP.Audio.music(6);
   UI.show('title');
-  const startGfx = () => { if (VP.R3 && !VP.R3.ok && !UI.gfxTried) { UI.gfxTried = true; let ok = false; try { ok = VP.R3.init(document.getElementById('gl')); } catch (e) { ok = false; console.warn('gfx', e); } if (!ok) UI.noGfx = true; } };
+  const startGfx = () => { if (VP.R3 && !VP.R3.ok && !UI.gfxTried) { UI.gfxTried = true; let ok = false; try { ok = VP.R3.init(document.getElementById('gl')); } catch (e) { ok = false; console.warn('gfx', e); } if (!ok) { UI.noGfx = true; UI.show('nowebgl'); } } };
   if (VP.R3) startGfx(); else addEventListener('vp-gfx', startGfx);
   UI.ready = true;
   if (VP.Acct) VP.Acct.init();

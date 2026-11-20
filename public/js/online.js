@@ -96,7 +96,7 @@ function PollingTransport(tickMs) {
   const FAST = Math.max(1000, tickMs || 1500), ALONE = FAST * 2;
   const T = { name: 'poll', delay: FAST / 1000 + 0.45, on: {} };
   let room = '', ticket = '', renew = null, cur = null, sent = null, timer = null, closed = false, fails = 0, known = new Map(), ready = false, pawSent = 0;
-  let tickAt = 0, em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0, ts0 = 0;
+  let tickAt = 0, em = null, es = 0, ph = null, ps = 0, pawSlot = -1, pawMine = [], busyUntil = 0, others = 0;
   const post = (path, body, keep) => json('/api/online/' + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), keepalive: !!keep });
   async function tick(first) {
     const s = cur, n = performance.now();
@@ -114,7 +114,7 @@ function PollingTransport(tickMs) {
     if (closed) return null;
     if (r.status === 429) return r;                              // too fast (clock skew, a retry): just wait for the next one
     if (r.status !== 200) { fails++; if (first || fails >= 3) throw { code: r.error || 'http-' + r.status }; return r; }
-    fails = 0; room = r.room; others = r.others.length; ts0 = r.ts;
+    fails = 0; room = r.room; others = r.others.length;
     if (!idle) { sent = body.emote || body.phrase != null ? null : { x: s.x, z: s.z, ry: s.ry, a: s.a }; pawSent = pawMine.length; }
     const at = performance.now(), seen = new Set();
     for (const o of r.others) {
@@ -138,16 +138,22 @@ function PollingTransport(tickMs) {
     }
     return r;
   }
-  function loop() {
+  // one timer at a time: `gen` retires any older chain when the pace is cut short (an emote or a phrase should leave now)
+  let gen = 0, flying = false;
+  function loop(after) {
     if (closed) return;
+    const g = ++gen;
     // the pace counts from the start of the last tick, so a slow answer does not stretch it
-    const every = document.hidden ? 5000 : !others && performance.now() > busyUntil ? ALONE : FAST, wait = Math.max(250, every - (performance.now() - tickAt));
+    const every = document.hidden ? 5000 : !others && performance.now() > busyUntil ? ALONE : FAST;
+    const wait = after !== undefined ? after : Math.max(250, every - (performance.now() - tickAt));
     timer = setTimeout(async () => {
-      if (closed) return;
+      if (closed || g !== gen) return;
       tickAt = performance.now();
       if (document.hidden) return loop();                      // a hidden tab costs nothing (it drops out of the room after 10 s)
-      try { await tick(false); } catch (e) { if (!closed) { closed = true; if (T.on.down) T.on.down(e.code || 'error'); } return; }
-      loop();
+      flying = true;
+      try { await tick(false); } catch (e) { flying = false; if (!closed) { closed = true; if (T.on.down) T.on.down(e.code || 'error'); } return; }
+      flying = false;
+      if (g === gen) loop();
     }, wait);
   }
   T.connect = async o => {
@@ -159,7 +165,7 @@ function PollingTransport(tickMs) {
     return { you: r.you, room: r.room, paw: Object.assign({ taken: [] }, r.paw) };
   };
   T.state = s => { cur = s; };
-  const soon = () => { busyUntil = performance.now() + 6000; if (ready && others && timer) { clearTimeout(timer); const w = Math.max(0, 850 - (Date.now() - ts0)); timer = setTimeout(async () => { try { await tick(false); } catch (e) { /* the loop reports it */ } loop(); }, w); } };
+  const soon = () => { busyUntil = performance.now() + 6000; if (ready && !flying) { clearTimeout(timer); loop(Math.max(0, 900 - (performance.now() - tickAt))); } };
   T.emote = k => { em = { k, until: performance.now() + 5000 }; es = (es + 1) % 256; soon(); };
   T.phrase = i => { ph = { i, until: performance.now() + 5000 }; ps = (ps + 1) % 256; soon(); };
   T.paw = (i, slot) => { if (slot !== pawSlot) { pawSlot = slot; pawMine = []; } if (!pawMine.includes(i)) pawMine.push(i); if (T.on.pawOk) T.on.pawOk(i); };
@@ -216,8 +222,8 @@ O.enter = async function (base) {
     if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
     const ticket = await O.ticket();
     if (!ticket) return O.unavailable(base, false, O.lastError);     // 503 and friends: solo free roam in the same map
-    const G = build(base);
-    UI.begin(G);                                              // ends whatever was running (and any previous online session)
+    let G = null;
+    UI.begin(() => (G = build(base)));                        // ends whatever was running (and any previous online session), then builds
     if (base !== 'city') { if (VP.R3.arrive) VP.R3.arrive(); VP.Audio.music(UI.citySong(base)); UI.songD = -2; } else UI.songD = -1;
     O.G = G; O.state = 'connecting'; O.remotes = new Map(); O.got = 0; O.paw = null; O.bubble = null; O.heading = 0; O.lastEmote = null; O.activeAt = nowS(); O.lx = undefined;
     await connect(G, base, ticket);

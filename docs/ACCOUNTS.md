@@ -245,7 +245,7 @@ await api('/api/save', 'PUT', { data: progress });
 | `api/_lib/validate.js`, `profanity.js` | whitelists and moderation |
 | `api/_lib/colors.js` | PNG reader + k-means |
 | `api/online/[action].js`, `api/_lib/online.js` | Cidade Online: ticket, polling tick, report, leave |
-| `server/lib/protocol.mjs` | lists, limits and the ticket shared with the optional real-time server |
+| `api/_lib/protocol.mjs` | lists, limits and the ticket shared with the optional real-time server |
 | `db/schema.sql` | schema reference |
 | `public-docs-privacy.md` | privacy note (PT) to show in the game |
 | `tests/accounts.test.mjs` | handler tests |

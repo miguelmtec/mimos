@@ -275,7 +275,7 @@ function begin(g) {
   if (VP.R3 && VP.R3.ok) { VP.R3.attach(G); VP.R3.snapCamera(-Math.PI / 2); }
   I.reset(); I.enabled = true; VP.Audio.unlock(); VP.Audio.pause(false);
 }
-UI.begin = function (g) { endGame(); begin(g); };   // used by modes that build their own world (Cidade Online)
+UI.begin = function (make) { endGame(); begin(make()); };   // for modes that build their own world (Cidade Online): end first, then build
 UI.free = function (pos, keep, opts) {
   if (!VP.R3 || !VP.R3.ok) { UI.show('nowebgl'); return; }
   const p = pos || (G && !G.trial && G.cats && !G.W.real ? { x: G.cats[G.active].x, y: G.cats[G.active].y } : VP.S.pos);

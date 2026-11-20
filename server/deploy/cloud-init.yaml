@@ -74,8 +74,8 @@ write_files:
       id vicepaws >/dev/null 2>&1 || useradd --system --home /opt/vice-paws --shell /usr/sbin/nologin vicepaws
       mkdir -p /var/lib/vice-paws-online && chown vicepaws:vicepaws /var/lib/vice-paws-online
 
-      # The code. (No git access from the VM? Copy the repository's server/ folder to /opt/vice-paws/server
-      # with scp instead and run this script again: the clone is skipped when the folder is not a checkout.)
+      # The code. (No git access from the VM? Copy the repository's server/ and api/ folders into /opt/vice-paws
+      # with scp instead and run this script again: the clone is skipped when server/ is already there.)
       if [ -d /opt/vice-paws/.git ]; then
         git -C /opt/vice-paws fetch --depth 1 origin "$BRANCH" && git -C /opt/vice-paws reset --hard FETCH_HEAD
       elif [ ! -d /opt/vice-paws/server ]; then

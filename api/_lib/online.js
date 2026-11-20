@@ -1,6 +1,6 @@
 // "Cidade Online": what only the Vercel side needs (safe nicknames, the look of a cat, the
 // whitelist of a polling tick). Lists, limits and the ticket are shared with the real-time
-// server and live in server/lib/protocol.mjs.
+// server and live in api/_lib/protocol.mjs.
 //
 // Safety rules that live on the server, not in the client:
 //   - there is NO free text anywhere: a name is either a registered cat name (which already went
@@ -14,9 +14,9 @@ import { validateSpec } from './validate.js';
 import {
   ANIMS, CARS, EMOTES, PHRASES, PAWS_PER_ROOM, PAW_SLOT_MS, MAX_COORD, MAX_PLAYERS, MAX_PER_IP, STARS, ID_RE,
   splitRoom, chooseShard, verifyTicket,
-} from '../../server/lib/protocol.mjs';
+} from './protocol.mjs';
 
-export * from '../../server/lib/protocol.mjs';
+export * from './protocol.mjs';
 
 export const TICK_MIN_MS = 800;        // at most one tick per player in this window (server-enforced)
 export const VISIBLE_SECONDS = 10;     // others = states updated in the last 10 s

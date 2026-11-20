@@ -52,10 +52,10 @@ export async function startDevServer({ port = 0, ws = false, config = {} } = {})
   });
   await new Promise((r) => server.listen(port, '127.0.0.1', r));
   // puts `n` extra cats in a map through the real handler (to test full rooms and the global cap)
-  const fill = async (n, room = 'city') => {
+  const fill = async (n, base = 'map') => {
     for (let i = 0; i < n; i++) {
       const { ticket } = signTicket({ id: 'g' + String(1e6 + Math.floor(Math.random() * 9e6) + i).padStart(20, 'f'), name: `Gato Zen ${1 + (i % 999)}`, cat: { star: 'mimo' } });
-      const r = await call(onlineHandler, { method: 'POST', url: '/api/online/tick', ip: `10.${(i >> 8) & 255}.${i & 255}.9`, body: { ticket, room, x: 1000 + i * 3, z: 4000, ry: 0, anim: 'idle' } });
+      const r = await call(onlineHandler, { method: 'POST', url: '/api/online/tick', ip: `10.${(i >> 8) & 255}.${i & 255}.9`, body: { ticket, room: `${base}${Math.floor(i / 30)}`, x: 1000 + i * 3, z: 4000, ry: 0, anim: 'idle' } });
       if (r.status !== 200) return { stopped: i, status: r.status, body: r.body };
     }
     return { stopped: n };

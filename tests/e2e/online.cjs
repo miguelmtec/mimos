@@ -89,7 +89,8 @@ async function pair(S, label, wantTransport) {
   // --- shared golden paws: same places for both, first cat gets it, it disappears for the other
   const paws = pg => pg.evaluate(() => __vp.G.items.filter(i => i.online !== undefined && !i.dead).map(i => [i.online, Math.round(i.x), Math.round(i.y)]).sort((p, q) => p[0] - q[0]));
   const pa = await paws(A.page), pb = await paws(B.page);
-  ok(P + 'both see the same 6 paws', pa.length === 6 && JSON.stringify(pa) === JSON.stringify(pb), [pa, pb]);
+  // (a paw slides towards a cat that is about to pick it up, so a nearby one may be a few steps off)
+  ok(P + 'both see the same 6 paws in the same places', pa.length === 6 && pb.length === 6 && pa.every((q, i) => q[0] === pb[i][0] && Math.hypot(q[1] - pb[i][1], q[2] - pb[i][2]) < 90), [pa, pb]);
   const cash0 = await A.page.evaluate(() => VP.S.cash);
   await A.page.evaluate(([i, x, y]) => { const G = __vp.G; for (const c of G.cats) { c.x = x + 4; c.y = y + 4; } void i; }, pa[0]);
   ok(P + 'A collects one (+10 coins)', await until(A.page, c0 => VP.Online.got === 1 && VP.S.cash === c0 + 10, cash0, 5000), await A.page.evaluate(() => [VP.Online.got, VP.S.cash]));
@@ -268,7 +269,7 @@ async function pair(S, label, wantTransport) {
       S.state.down = false;
       // --- the city is full (hard cap on everybody online)
       if (mobile) {
-        const f = await S.fill(300, 'rio');
+        const f = await S.fill(300);
         ok('fallback the 301st player is refused by the server', f.stopped === 300, f);
         await P.page.evaluate(() => VP.Online.enter('city'));
         await until(P.page, () => /Cidade cheia/.test(document.getElementById('toast').textContent), null, 8000);

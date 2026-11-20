@@ -61,8 +61,9 @@ bash /usr/local/sbin/vice-paws-setup.sh
 ```
 
 If the repository is private, copy the code instead of cloning:
-`scp -r server ubuntu@<static-ip>:/tmp/server` then `sudo mkdir -p /opt/vice-paws && sudo mv /tmp/server /opt/vice-paws/server`
-and run the setup script (it skips the clone when the folder exists).
+`scp -r server api ubuntu@<static-ip>:/tmp/` then `sudo mkdir -p /opt/vice-paws && sudo mv /tmp/server /tmp/api /opt/vice-paws/`
+and run the setup script (it skips the clone when the folder exists). The server needs `server/` and
+the single shared file `api/_lib/protocol.mjs`, at the same relative paths as in the repository.
 
 The script prints the address, also saved in `/etc/vice-paws-online.url`:
 
@@ -98,14 +99,14 @@ to polling only, empty `wsUrl`.
 - **Update:** `sudo bash /usr/local/sbin/vice-paws-setup.sh` (pulls the branch, reinstalls, restarts; players reconnect by themselves).
 - **Turn the mode off for everybody:** `"enabled": false` in `online.json`, or `ONLINE_ENABLED=false` in Vercel (no tickets are issued, so nobody can connect).
 - **Reports:** with `DATABASE_URL` set in `/etc/vice-paws-online.env` they go to the Neon table `vp_online_reports` (`source = 'ws'`); otherwise to `/var/lib/vice-paws-online/reports.jsonl`, one JSON per line.
-- **Limits** (in `server/lib/protocol.mjs`): 30 cats per room instance, 8 instances per map, 20 rooms, 300 players, 8 connections per address, 20 messages/s per connection, movement capped at 620 px/s.
+- **Limits** (in `api/_lib/protocol.mjs`): 30 cats per room instance, 8 instances per map, 20 rooms, 300 players, 8 connections per address, 20 messages/s per connection, movement capped at 620 px/s.
 - **Capacity:** a room of 30 moving cats is about 0.4 Mbit/s out in total; 300 players fit comfortably in 1 GB of RAM and one vCPU.
 - **Cost guard:** the server makes no database query except when a player files a report.
 
 ## Local run
 
 ```bash
-cd server && npm install
+cd server && npm install        # there is no lockfile yet: commit the package-lock.json this creates
 ONLINE_TICKET_SECRET=dev-secret HOST=127.0.0.1 PORT=8080 node index.mjs
 # or the whole game + API + real-time server, in memory:
 node tests/helpers/online-dev-server.mjs 8790 --ws

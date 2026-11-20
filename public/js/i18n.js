@@ -198,7 +198,7 @@ const L = {
   packs: ['Pacotes de visual', 'Outfit packs'], packsSub: ['Só enfeite: roupas e acessórios para os três gatos. Nenhuma vantagem no jogo.', 'Looks only: clothes and accessories for the three cats. No gameplay advantage.'], packItems: ['itens', 'items'],
   p_pack_praia: ['Praia', 'Beach'], p_pack_agro: ['Agro · Rio Verde', 'Country · Rio Verde'], p_pack_festa: ['Festa', 'Party'], p_pack_natal: ['Natal', 'Christmas'],
   // Cidade Online. The quick phrases (on_p0..on_p11) are the ONLY things a player can say: the list is fixed and
-  // only its index travels (the server knows there are 12; see server/lib/protocol.mjs PHRASES).
+  // only its index travels (the server knows there are 12; see api/_lib/protocol.mjs PHRASES).
   on_title: ['Cidade Online', 'Online City'], on_new: ['novo', 'new'], on_meet: ['encontre outros gatos', 'meet other cats'],
   on_sub: ['Passeie pela cidade com os gatos de outros jogadores: andar, dirigir, emotes e patinhas douradas. As missões continuam só suas, offline.', "Stroll the city with other players' cats: walk, drive, emote and collect golden paws. Missions stay yours, offline."],
   on_home: ['Vice Paws (cidade neon)', 'Vice Paws (neon city)'], on_where: ['Onde', 'Where'], on_who: ['Quem os outros veem', 'Who the others see'],

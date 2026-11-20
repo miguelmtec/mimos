@@ -252,7 +252,7 @@ OnlineTransport {
 - **`PollingTransport` (em uso):** Vercel + Neon, sem servidor dedicado. A cada `tickMs` (1,5 s) manda o estado e recebe os outros num único `POST /api/online/tick`.
 - **`WebSocketTransport` (opcional, futuro):** fala com `server/index.mjs` quando `wsUrl` está preenchido em `data/online.json`; se a conexão falhar, cai para o polling. Trocar de transporte não toca em código de jogo: os dois entregam os mesmos eventos.
 
-`public/data/online.json` é o painel do dono: `{"enabled": true, "maxPerRoom": 30, "maxRooms": 20, "tickMs": 1500, "pollingEnabled": true, "wsUrl": ""}`. `enabled: false` desliga o modo no cliente; `ONLINE_ENABLED=false` nas variáveis da Vercel desliga no servidor na hora (503 sem tocar no banco). Os limites valem de verdade no servidor (`server/lib/protocol.mjs`; um teste garante que o JSON mostra os mesmos números).
+`public/data/online.json` é o painel do dono: `{"enabled": true, "maxPerRoom": 30, "maxRooms": 20, "tickMs": 1500, "pollingEnabled": true, "wsUrl": ""}`. `enabled: false` desliga o modo no cliente; `ONLINE_ENABLED=false` nas variáveis da Vercel desliga no servidor na hora (503 sem tocar no banco). Os limites valem de verdade no servidor (`api/_lib/protocol.mjs`; um teste garante que o JSON mostra os mesmos números).
 
 ### Identidade: o tíquete
 

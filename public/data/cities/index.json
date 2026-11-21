@@ -438,6 +438,251 @@
    "pal": 0,
    "palms": 1,
    "stars": 21
+  },
+  {
+   "id": "maceio",
+   "name": "Maceió — Pajuçara",
+   "country": "Brasil",
+   "lat": -9.6658,
+   "lon": -35.7133,
+   "file": "maceio.json",
+   "kb": 38,
+   "landmarks": 7,
+   "tags": [
+    "beach"
+   ],
+   "elev": 1,
+   "order": 23,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 18
+  },
+  {
+   "id": "joaopessoa",
+   "name": "João Pessoa — Tambaú",
+   "country": "Brasil",
+   "lat": -7.1153,
+   "lon": -34.8226,
+   "file": "joaopessoa.json",
+   "kb": 53,
+   "landmarks": 15,
+   "tags": [
+    "beach"
+   ],
+   "elev": 1,
+   "order": 24,
+   "flag": "🇧🇷",
+   "mood": 0,
+   "pal": 0,
+   "palms": 1,
+   "stars": 18
+  },
+  {
+   "id": "aracaju",
+   "name": "Aracaju — Orla de Atalaia",
+   "country": "Brasil",
+   "lat": -10.9853,
+   "lon": -37.048,
+   "file": "aracaju.json",
+   "kb": 36,
+   "landmarks": 13,
+   "tags": [
+    "beach"
+   ],
+   "elev": 1,
+   "order": 25,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 18
+  },
+  {
+   "id": "teresina",
+   "name": "Teresina — Centro",
+   "country": "Brasil",
+   "lat": -5.0892,
+   "lon": -42.8019,
+   "file": "teresina.json",
+   "kb": 44,
+   "landmarks": 9,
+   "tags": [],
+   "elev": 1,
+   "order": 26,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 0,
+   "palms": 1,
+   "stars": 21
+  },
+  {
+   "id": "cuiaba",
+   "name": "Cuiabá — Centro",
+   "country": "Brasil",
+   "lat": -15.5989,
+   "lon": -56.0949,
+   "file": "cuiaba.json",
+   "kb": 290,
+   "landmarks": 16,
+   "tags": [],
+   "elev": 1,
+   "order": 27,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 0,
+   "palms": 1,
+   "stars": 21
+  },
+  {
+   "id": "campogrande",
+   "name": "Campo Grande — Av. Afonso Pena",
+   "country": "Brasil",
+   "lat": -20.4628,
+   "lon": -54.6156,
+   "file": "campogrande.json",
+   "kb": 47,
+   "landmarks": 4,
+   "tags": [],
+   "elev": 1,
+   "order": 28,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 2,
+   "stars": 21
+  },
+  {
+   "id": "palmas",
+   "name": "Palmas — Praça dos Girassóis",
+   "country": "Brasil",
+   "lat": -10.1844,
+   "lon": -48.3336,
+   "file": "palmas.json",
+   "kb": 84,
+   "landmarks": 9,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 29,
+   "flag": "🇧🇷",
+   "mood": 0,
+   "pal": 0,
+   "palms": 1,
+   "stars": 24
+  },
+  {
+   "id": "portovelho",
+   "name": "Porto Velho — Madeira-Mamoré",
+   "country": "Brasil",
+   "lat": -8.7608,
+   "lon": -63.9119,
+   "file": "portovelho.json",
+   "kb": 16,
+   "landmarks": 4,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 30,
+   "flag": "🇧🇷",
+   "mood": 3,
+   "pal": 3,
+   "palms": 1,
+   "stars": 24
+  },
+  {
+   "id": "riobranco",
+   "name": "Rio Branco — Centro",
+   "country": "Brasil",
+   "lat": -9.9747,
+   "lon": -67.81,
+   "file": "riobranco.json",
+   "kb": 100,
+   "landmarks": 8,
+   "tags": [],
+   "elev": 1,
+   "order": 31,
+   "flag": "🇧🇷",
+   "mood": 3,
+   "pal": 3,
+   "palms": 1,
+   "stars": 24
+  },
+  {
+   "id": "newyork",
+   "name": "Nova York — Times Square",
+   "country": "EUA",
+   "lat": 40.758,
+   "lon": -73.9855,
+   "file": "newyork.json",
+   "kb": 216,
+   "landmarks": 108,
+   "tags": [],
+   "elev": 1,
+   "order": 34,
+   "flag": "🇺🇸",
+   "mood": 1,
+   "pal": 1,
+   "stars": 24
+  },
+  {
+   "id": "paris",
+   "name": "Paris — Torre Eiffel",
+   "country": "França",
+   "lat": 48.857,
+   "lon": 2.297,
+   "file": "paris.json",
+   "kb": 371,
+   "landmarks": 25,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 40,
+   "flag": "🇫🇷",
+   "mood": 4,
+   "pal": 4,
+   "stars": 33
+  },
+  {
+   "id": "londres",
+   "name": "Londres — Westminster",
+   "country": "Reino Unido",
+   "lat": 51.5007,
+   "lon": -0.1246,
+   "file": "londres.json",
+   "kb": 229,
+   "landmarks": 81,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 41,
+   "flag": "🇬🇧",
+   "mood": 3,
+   "pal": 3,
+   "stars": 33
+  },
+  {
+   "id": "toquio",
+   "name": "Tóquio — Shibuya",
+   "country": "Japão",
+   "lat": 35.6595,
+   "lon": 139.7005,
+   "file": "toquio.json",
+   "kb": 255,
+   "landmarks": 67,
+   "tags": [
+    "neon"
+   ],
+   "elev": 1,
+   "order": 46,
+   "flag": "🇯🇵",
+   "mood": 1,
+   "pal": 1,
+   "stars": 42
   }
  ],
  "soon": [
@@ -450,82 +695,10 @@
    "flag": "🇧🇷"
   },
   {
-   "id": "maceio",
-   "name": "Maceió — Pajuçara",
-   "country": "Brasil",
-   "lat": -9.6658,
-   "lon": -35.7133,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "joaopessoa",
-   "name": "João Pessoa — Tambaú",
-   "country": "Brasil",
-   "lat": -7.1153,
-   "lon": -34.8226,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "aracaju",
-   "name": "Aracaju — Orla de Atalaia",
-   "country": "Brasil",
-   "lat": -10.9853,
-   "lon": -37.048,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "teresina",
-   "name": "Teresina — Centro",
-   "country": "Brasil",
-   "lat": -5.0892,
-   "lon": -42.8019,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "cuiaba",
-   "name": "Cuiabá — Centro",
-   "country": "Brasil",
-   "lat": -15.5989,
-   "lon": -56.0949,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "campogrande",
-   "name": "Campo Grande — Av. Afonso Pena",
-   "country": "Brasil",
-   "lat": -20.4628,
-   "lon": -54.6156,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "palmas",
-   "name": "Palmas — Praça dos Girassóis",
-   "country": "Brasil",
-   "lat": -10.1844,
-   "lon": -48.3336,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "portovelho",
-   "name": "Porto Velho — Madeira-Mamoré",
-   "country": "Brasil",
-   "lat": -8.7608,
-   "lon": -63.9119,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "riobranco",
-   "name": "Rio Branco — Centro",
-   "country": "Brasil",
-   "lat": -9.9747,
-   "lon": -67.81,
-   "flag": "🇧🇷"
-  },
-  {
    "id": "macapa",
    "name": "Macapá — Fortaleza de São José",
    "country": "Brasil",
-   "lat": -0.0372,
+   "lat": 0.0372,
    "lon": -51.0498,
    "flag": "🇧🇷"
   },
@@ -536,38 +709,6 @@
    "lat": 2.8197,
    "lon": -60.6733,
    "flag": "🇧🇷"
-  },
-  {
-   "id": "newyork",
-   "name": "Nova York — Times Square",
-   "country": "EUA",
-   "lat": 40.758,
-   "lon": -73.9855,
-   "flag": "🇺🇸"
-  },
-  {
-   "id": "paris",
-   "name": "Paris — Torre Eiffel",
-   "country": "França",
-   "lat": 48.857,
-   "lon": 2.297,
-   "flag": "🇫🇷"
-  },
-  {
-   "id": "londres",
-   "name": "Londres — Westminster",
-   "country": "Reino Unido",
-   "lat": 51.5007,
-   "lon": -0.1246,
-   "flag": "🇬🇧"
-  },
-  {
-   "id": "toquio",
-   "name": "Tóquio — Shibuya",
-   "country": "Japão",
-   "lat": 35.6595,
-   "lon": 139.7005,
-   "flag": "🇯🇵"
   },
   {
    "id": "roma",

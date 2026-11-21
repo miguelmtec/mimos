@@ -40,7 +40,7 @@ const CITIES = [
   ['palmas', 'Palmas — Praça dos Girassóis', 'Brasil', -10.1844, -48.3336, 650, 'landmark'],
   ['portovelho', 'Porto Velho — Madeira-Mamoré', 'Brasil', -8.7608, -63.9119, 550, 'landmark'],
   ['riobranco', 'Rio Branco — Centro', 'Brasil', -9.9747, -67.8100, 550, ''],
-  ['macapa', 'Macapá — Fortaleza de São José', 'Brasil', -0.0372, -51.0498, 550, 'landmark'],
+  ['macapa', 'Macapá — Fortaleza de São José', 'Brasil', 0.0372, -51.0498, 550, 'landmark'],
   ['boavista', 'Boa Vista — Centro Cívico', 'Brasil', 2.8197, -60.6733, 550, ''],
   ['newyork', 'Nova York — Times Square', 'EUA', 40.7580, -73.9855, 550, ''],
   ['paris', 'Paris — Torre Eiffel', 'França', 48.8570, 2.2970, 650, 'landmark'],

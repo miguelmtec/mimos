@@ -628,6 +628,99 @@
    "stars": 24
   },
   {
+   "id": "lasvegas",
+   "name": "Las Vegas — Strip",
+   "country": "EUA",
+   "lat": 36.1147,
+   "lon": -115.1728,
+   "file": "lasvegas.json",
+   "kb": 128,
+   "landmarks": 31,
+   "tags": [
+    "neon"
+   ],
+   "elev": 1,
+   "order": 35,
+   "flag": "🇺🇸",
+   "mood": 1,
+   "pal": 1,
+   "palms": 1,
+   "stars": 24
+  },
+  {
+   "id": "cdmx",
+   "name": "Cidade do México — Zócalo",
+   "country": "México",
+   "lat": 19.4326,
+   "lon": -99.1332,
+   "file": "cdmx.json",
+   "kb": 197,
+   "landmarks": 48,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 36,
+   "flag": "🇲🇽",
+   "mood": 0,
+   "pal": 0,
+   "palms": 1,
+   "stars": 27
+  },
+  {
+   "id": "buenosaires",
+   "name": "Buenos Aires — Obelisco",
+   "country": "Argentina",
+   "lat": -34.6037,
+   "lon": -58.3816,
+   "file": "buenosaires.json",
+   "kb": 148,
+   "landmarks": 40,
+   "tags": [],
+   "elev": 1,
+   "order": 37,
+   "flag": "🇦🇷",
+   "mood": 4,
+   "pal": 4,
+   "stars": 27
+  },
+  {
+   "id": "lisboa",
+   "name": "Lisboa — Baixa",
+   "country": "Portugal",
+   "lat": 38.71,
+   "lon": -9.137,
+   "file": "lisboa.json",
+   "kb": 347,
+   "landmarks": 120,
+   "tags": [
+    "morro"
+   ],
+   "elev": 1,
+   "order": 38,
+   "flag": "🇵🇹",
+   "mood": 5,
+   "pal": 2,
+   "stars": 30
+  },
+  {
+   "id": "madri",
+   "name": "Madri — Puerta del Sol",
+   "country": "Espanha",
+   "lat": 40.4168,
+   "lon": -3.7038,
+   "file": "madri.json",
+   "kb": 325,
+   "landmarks": 104,
+   "tags": [],
+   "elev": 1,
+   "order": 39,
+   "flag": "🇪🇸",
+   "mood": 5,
+   "pal": 2,
+   "stars": 30
+  },
+  {
    "id": "paris",
    "name": "Paris — Torre Eiffel",
    "country": "França",
@@ -666,6 +759,84 @@
    "stars": 33
   },
   {
+   "id": "roma",
+   "name": "Roma — Coliseu",
+   "country": "Itália",
+   "lat": 41.8902,
+   "lon": 12.4922,
+   "file": "roma.json",
+   "kb": 307,
+   "landmarks": 47,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 42,
+   "flag": "🇮🇹",
+   "mood": 5,
+   "pal": 2,
+   "stars": 36
+  },
+  {
+   "id": "berlim",
+   "name": "Berlim — Portão de Brandemburgo",
+   "country": "Alemanha",
+   "lat": 52.5163,
+   "lon": 13.3777,
+   "file": "berlim.json",
+   "kb": 310,
+   "landmarks": 41,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 43,
+   "flag": "🇩🇪",
+   "mood": 1,
+   "pal": 1,
+   "stars": 36
+  },
+  {
+   "id": "cairo",
+   "name": "Gizé — Pirâmides",
+   "country": "Egito",
+   "lat": 29.9773,
+   "lon": 31.1325,
+   "file": "cairo.json",
+   "kb": 123,
+   "landmarks": 34,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 44,
+   "flag": "🇪🇬",
+   "mood": 5,
+   "pal": 0,
+   "palms": 1,
+   "stars": 39
+  },
+  {
+   "id": "dubai",
+   "name": "Dubai — Burj Khalifa",
+   "country": "Emirados",
+   "lat": 25.1972,
+   "lon": 55.2744,
+   "file": "dubai.json",
+   "kb": 152,
+   "landmarks": 46,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 45,
+   "flag": "🇦🇪",
+   "mood": 5,
+   "pal": 2,
+   "palms": 1,
+   "stars": 39
+  },
+  {
    "id": "toquio",
    "name": "Tóquio — Shibuya",
    "country": "Japão",
@@ -683,6 +854,45 @@
    "mood": 1,
    "pal": 1,
    "stars": 42
+  },
+  {
+   "id": "seul",
+   "name": "Seul — Myeongdong",
+   "country": "Coreia do Sul",
+   "lat": 37.5636,
+   "lon": 126.985,
+   "file": "seul.json",
+   "kb": 192,
+   "landmarks": 88,
+   "tags": [
+    "neon"
+   ],
+   "elev": 1,
+   "order": 47,
+   "flag": "🇰🇷",
+   "mood": 1,
+   "pal": 1,
+   "stars": 42
+  },
+  {
+   "id": "sydney",
+   "name": "Sydney — Opera House",
+   "country": "Austrália",
+   "lat": -33.859,
+   "lon": 151.21,
+   "file": "sydney.json",
+   "kb": 253,
+   "landmarks": 107,
+   "tags": [
+    "beach",
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 48,
+   "flag": "🇦🇺",
+   "mood": 2,
+   "pal": 2,
+   "stars": 45
   }
  ],
  "soon": [
@@ -709,94 +919,6 @@
    "lat": 2.8197,
    "lon": -60.6733,
    "flag": "🇧🇷"
-  },
-  {
-   "id": "roma",
-   "name": "Roma — Coliseu",
-   "country": "Itália",
-   "lat": 41.8902,
-   "lon": 12.4922,
-   "flag": "🇮🇹"
-  },
-  {
-   "id": "buenosaires",
-   "name": "Buenos Aires — Obelisco",
-   "country": "Argentina",
-   "lat": -34.6037,
-   "lon": -58.3816,
-   "flag": "🇦🇷"
-  },
-  {
-   "id": "lisboa",
-   "name": "Lisboa — Baixa",
-   "country": "Portugal",
-   "lat": 38.71,
-   "lon": -9.137,
-   "flag": "🇵🇹"
-  },
-  {
-   "id": "cdmx",
-   "name": "Cidade do México — Zócalo",
-   "country": "México",
-   "lat": 19.4326,
-   "lon": -99.1332,
-   "flag": "🇲🇽"
-  },
-  {
-   "id": "dubai",
-   "name": "Dubai — Burj Khalifa",
-   "country": "Emirados",
-   "lat": 25.1972,
-   "lon": 55.2744,
-   "flag": "🇦🇪"
-  },
-  {
-   "id": "madri",
-   "name": "Madri — Puerta del Sol",
-   "country": "Espanha",
-   "lat": 40.4168,
-   "lon": -3.7038,
-   "flag": "🇪🇸"
-  },
-  {
-   "id": "berlim",
-   "name": "Berlim — Portão de Brandemburgo",
-   "country": "Alemanha",
-   "lat": 52.5163,
-   "lon": 13.3777,
-   "flag": "🇩🇪"
-  },
-  {
-   "id": "cairo",
-   "name": "Gizé — Pirâmides",
-   "country": "Egito",
-   "lat": 29.9773,
-   "lon": 31.1325,
-   "flag": "🇪🇬"
-  },
-  {
-   "id": "sydney",
-   "name": "Sydney — Opera House",
-   "country": "Austrália",
-   "lat": -33.859,
-   "lon": 151.21,
-   "flag": "🇦🇺"
-  },
-  {
-   "id": "seul",
-   "name": "Seul — Myeongdong",
-   "country": "Coreia do Sul",
-   "lat": 37.5636,
-   "lon": 126.985,
-   "flag": "🇰🇷"
-  },
-  {
-   "id": "lasvegas",
-   "name": "Las Vegas — Strip",
-   "country": "EUA",
-   "lat": 36.1147,
-   "lon": -115.1728,
-   "flag": "🇺🇸"
   }
  ]
 }

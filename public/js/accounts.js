@@ -31,7 +31,7 @@ A.toSpec = function (s) {
   const tortie = s.pattern === 'tortie', fur = s.furBase || '#d9a066', pat = { bicolor: 'tuxedo', pointed: 'points', tortie: 'calico' }[s.pattern] || s.pattern || 'solid';
   const fl = typeof s.furLength === 'number' ? s.furLength * 1.4 : (s.faceShape === 'flat' ? 1 : 0.6);
   return { size: Math.max(0.6, Math.min(1.2, (s.size || 1) * 0.92)), fur, fur2: pat === 'tuxedo' ? (pc[0] || '#ffffff') : tortie ? fur : light(fur), pattern: pat, patchA: pc[0] || (pat === 'points' ? '#5a4030' : pat === 'spotted' || pat === 'tabby' ? shade(fur) : '#f28a2e'), patchB: pc[1] || pc[0] || '#2b1f24',
-    eye: s.eyeColor || '#7bc86c', eye2: s.eyeColor2 || undefined, earIn: '#f4a9b8', face: s.faceShape === 'flat' ? 'flat' : 'round', headShape: s.faceShape || 'round', fluff: fl, ears: s.ears || 'pointy', tail: s.tail || (fl > 1 ? 'fluffy' : 'long'), acc };
+    eye: s.eyeColor || '#7bc86c', eye2: s.eyeColor2 || undefined, earIn: '#f4a9b8', face: s.faceShape === 'flat' ? 'flat' : 'round', headShape: s.faceShape || 'round', fluff: fl, ears: s.ears || 'pointy', tail: s.tail || (fl > 1 ? 'fluffy' : 'long'), acc, personality: s.personality, attack: s.attack, powers: s.powers };
 };
 const shade = hex => { const n = parseInt(hex.slice(1), 16), f = v => Math.round(v * 0.62).toString(16).padStart(2, '0'); return '#' + f(n >> 16) + f((n >> 8) & 255) + f(n & 255); };
 const blank = () => ({ name: '', breed: 'vira-lata', bio: '', instagram: '', isPublic: true, spec: { size: 1, faceShape: 'round', furBase: '#d9a066', pattern: 'solid', patchColors: ['#ffffff', '#2b1f24'], eyeColor: '#7bc86c', accessories: [] } });
@@ -242,11 +242,37 @@ let ed = null, edIdx = null, crScroll = 0;
 const lab = (pre, v) => (t(pre + v) === pre + v ? v : t(pre + v));
 const sw = (key, val, on) => `<button class="tab ${on ? 'on' : ''}" data-act="crSet" data-k="${key}" data-v="${val}">${lab('cr_', val)}</button>`;
 const dots = (key, list, cur) => `<div class="cr-dots">${list.map(c => `<button class="${(cur || '').toLowerCase() === c ? 'on' : ''}" style="background:${c}" data-act="crCol" data-k="${key}" data-v="${c}" aria-label="${c}"></button>`).join('')}<label class="cr-pick" title="+"><input type="color" data-c="${key}" value="${cur || '#ffffff'}">🎨</label></div>`;
+// ---- personality, main attack and powers (public/data/powers.json) ----
+let crSlot = null; // which power slot (0..3) is open for swapping
+const PD = () => (VP.Powers && VP.Powers.D) || null, L2 = () => (VP.lang() === 'pt' ? 'pt' : 'en');
+const ROLE_PERS = { shooter: 'dorminhoco', biter: 'nervosinho', glutton: 'comilao' };
+// a spec always carries a personality, an attack and 4 distinct powers (the suggestion of its personality when nothing was picked)
+function ensurePowers(sp) {
+  const D = PD(); if (!D) return;
+  if (!D.personalities[sp.personality]) sp.personality = ROLE_PERS[sp.role || 'shooter'];
+  const q = D.personalities[sp.personality];
+  if (!D.attacks[sp.attack]) sp.attack = q.attack;
+  if (!Array.isArray(sp.powers) || sp.powers.length !== 4 || new Set(sp.powers).size !== 4 || sp.powers.some(p => !D.powers[p])) sp.powers = q.powers.slice();
+}
+function applyPersonality(sp, id) { const q = PD().personalities[id]; sp.personality = id; sp.role = q.role; sp.attack = q.attack; sp.powers = q.powers.slice(); }
+function persHtml(s) {
+  const D = PD(), l = L2(); if (!D) return '';
+  ensurePowers(s); const q = D.personalities[s.personality], sug = new Set(q.powers);
+  const pbtn = (i, id) => `<button class="tab pw-slot ${crSlot === i ? 'on' : ''}" data-act="crSlot" data-i="${i}"><b>${'ZXCV'[i]}</b> ${D.powers[id].emoji} ${esc(D.powers[id].name[l])}</button>`;
+  return `<h3>🎭 ${t('cr_pers')}</h3><div class="row" id="crpers">${Object.keys(D.personalities).map(id => `<button class="tab ${s.personality === id ? 'on' : ''}" data-act="crPers" data-v="${id}">${D.personalities[id].emoji} ${esc(D.personalities[id].name[l])}</button>`).join('')}</div>
+      <p class="small" style="margin:4px 0">${esc(q.desc[l])} · ${t('cr_persSug', esc(q.name[l]))}</p>
+      <h3>⚔️ ${t('cr_attack')}</h3><div class="row">${Object.keys(D.attacks).map(id => `<button class="tab ${s.attack === id ? 'on' : ''}" data-act="crAttack" data-v="${id}">${D.attacks[id].emoji} ${esc(D.attacks[id].name[l])}${q.attack === id ? ' ⭐' : ''}</button>`).join('')}</div>
+      <p class="small" style="margin:4px 0">${esc(D.attacks[s.attack].desc[l])}${D.attacks[s.attack].ranged ? ' 🎯 ' + t('cr_ranged') : ''}</p>
+      <h3>✨ ${t('cr_powers')}</h3><div class="row">${s.powers.map((id, i) => pbtn(i, id)).join('')}</div>
+      ${crSlot !== null ? `<div class="panel t" style="padding:8px 10px;margin-top:6px"><p class="small" style="margin:0 0 6px">${t('cr_pickFor', 'ZXCV'[crSlot])}</p><div class="row">${Object.keys(D.powers).map(id => `<button class="tab ${s.powers[crSlot] === id ? 'on' : ''}" data-act="crPower" data-v="${id}" title="${esc(D.powers[id].desc[l])}">${D.powers[id].emoji} ${esc(D.powers[id].name[l])}${sug.has(id) ? ' ⭐' : ''}</button>`).join('')}</div></div>` : `<p class="small" style="margin:4px 0">${t('cr_tapSlot')}</p>`}
+      <div class="row"><button class="tab" data-act="crSuggest">↺ ${t('cr_reset')}</button></div>`;
+}
 UI.SCREENS.creator = {
   cls: 'clear', hideHud: true, stage: true,
   html: () => { const s = ed.spec, role = s.role || 'shooter', needs2 = ['calico', 'tortie'].includes(s.pattern), needs1 = s.pattern !== 'solid'; return `<div class="corner l"><button class="chip" data-act="account">‹ ${t('back')}</button></div><div class="corner"><button class="chip" data-act="crRandom">🎲 ${t('cr_random')}</button></div>
     <div class="wrap narrow" style="margin-top:auto"><div class="panel cr-sheet" id="crsheet" style="max-height:50vh;overflow-y:auto">
       <div class="row" style="flex-wrap:nowrap;gap:6px"><input class="txt" id="cname" maxlength="20" placeholder="${t('cr_name')}" value="${esc(ed.name)}"><select class="txt" id="cbreed" style="max-width:42%">${BREEDS.map(b => `<option ${b === ed.breed ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
+      ${persHtml(s)}
       <h3>✨ ${t('cr_looks')}</h3><div class="row">${Object.keys(LOOKS).map(k => `<button class="tab" data-act="crLook" data-v="${k}">${lab('cl_', k)}</button>`).join('')}${A.status === 'in' ? `<label class="tab" style="margin:0;cursor:pointer">📷 ${t('cr_photo')}<input type="file" accept="image/*" id="cphoto" style="display:none"></label>` : ''}</div>
       <h3>${t('cr_pattern')}</h3><div class="row">${PATTERNS.map(f => sw('pattern', f, s.pattern === f)).join('')}</div>
       <h3>${t('cr_fur')}</h3>${dots('furBase', FURS, s.furBase)}
@@ -275,6 +301,8 @@ function setCol(k, v) { const s = ed.spec; if (k === 'p0') s.patchColors[0] = v;
 .cr-range{display:flex;gap:8px;align-items:center;font-size:12px}.cr-range input{flex:1;min-height:30px}`; document.head.appendChild(css); }
 Object.assign(VP.L, {
   cr_looks: ['Parece com…', 'Looks like…'], cr_random: ['Sortear', 'Random'], cr_odd: ['Um olho de cada cor', 'Odd eyes'], cr_furLen: ['Comprimento do pelo', 'Fur length'], cr_short: ['curto', 'short'], cr_longf: ['bem peludo', 'very fluffy'], cr_small: ['pequeno', 'small'], cr_bigc: ['grandão', 'big'],
+  cr_pers: ['Personalidade', 'Personality'], cr_persSug: ['sugestão do jogo para {0}', 'game suggestion for {0}'], cr_attack: ['Ataque principal (Espaço)', 'Main attack (Space)'], cr_powers: ['Poderes (Z X C V)', 'Powers (Z X C V)'],
+  cr_ranged: ['Ataque de longe: tem mira.', 'Ranged: comes with aiming.'], cr_pickFor: ['Escolha o poder da tecla {0}  (⭐ = combina com a personalidade)', 'Pick the power for key {0}  (⭐ = fits the personality)'], cr_tapSlot: ['Toque numa tecla para trocar o poder.', 'Tap a key to swap its power.'], cr_reset: ['Voltar à sugestão', 'Back to the suggestion'],
   cr_ears: ['Orelhas', 'Ears'], cr_tail: ['Rabo', 'Tail'], cr_role: ['No jogo, seu gato é…', 'In the game, your cat is the…'], cr_savePlay: ['Salvar e jogar', 'Save and play'],
   cr_pointy: ['pontudas', 'pointy'], cr_big: ['grandes', 'big'], cr_fold: ['dobradas', 'folded'], cr_tuft: ['com tufos', 'tufted'], cr_fluffy: ['peludo', 'fluffy'], cr_short2: ['curto', 'short'], cr_bob: ['cotoco', 'bobtail'], cr_curl: ['enrolado', 'curled'], cr_spotted: ['pintado', 'spotted'], cr_tortie: ['escaminha', 'tortie'],
   cl_frajola: ['Frajola', 'Tuxedo'], cl_laranja: ['Laranja', 'Ginger'], cl_tigrado: ['Tigrado cinza', 'Grey tabby'], cl_siames: ['Siamês', 'Siamese'], cl_tricolor: ['Tricolor', 'Calico'], cl_escaminha: ['Escaminha', 'Tortie'], cl_preto: ['Preto', 'Black'], cl_branco: ['Branco', 'White'], cl_persa: ['Persa creme', 'Cream Persian'], cl_bengal: ['Bengal', 'Bengal'],
@@ -286,10 +314,16 @@ function preview() { const R3 = VP.R3; if (R3 && R3.ok) R3.showcase([{ spec: A.t
 UI.act.creator = el => {
   const i = el.dataset.i; edIdx = i === 'new' || i === 'local' ? i : +i;
   if (edIdx === 'local') ed = VP.S.avatarLocal ? JSON.parse(JSON.stringify(VP.S.avatarLocal)) : blank(); else if (edIdx === 'new') ed = blank(); else ed = JSON.parse(JSON.stringify(A.cats[edIdx]));
-  ed.spec = Object.assign(blank().spec, ed.spec); ed.spec.patchColors = (ed.spec.patchColors || []).slice(0, 4); ed.spec.accessories = (ed.spec.accessories || []).slice();
+  crSlot = null; ed.spec = Object.assign(blank().spec, ed.spec); ensurePowers(ed.spec); ed.spec.patchColors = (ed.spec.patchColors || []).slice(0, 4); ed.spec.accessories = (ed.spec.accessories || []).slice();
   UI.show('creator');
 };
 UI.act.crSet = el => { keep(); ed.spec[el.dataset.k] = el.dataset.v; UI.show('creator'); };
+UI.act.crPers = el => { keep(); applyPersonality(ed.spec, el.dataset.v); crSlot = null; UI.show('creator'); };
+UI.act.crAttack = el => { keep(); ed.spec.attack = el.dataset.v; UI.show('creator'); };
+UI.act.crSlot = el => { keep(); const i = +el.dataset.i; crSlot = crSlot === i ? null : i; UI.show('creator'); };
+// choosing a power already sitting in another slot swaps the two, so the four always stay different
+UI.act.crPower = el => { keep(); const s = ed.spec, id = el.dataset.v, j = s.powers.indexOf(id); if (crSlot === null) return; if (j >= 0 && j !== crSlot) s.powers[j] = s.powers[crSlot]; s.powers[crSlot] = id; crSlot = null; UI.show('creator'); };
+UI.act.crSuggest = () => { keep(); applyPersonality(ed.spec, ed.spec.personality); crSlot = null; UI.show('creator'); };
 A.LOOKS = LOOKS;
 UI.act.crAcc = el => { keep(); const a = ed.spec.accessories, v = el.dataset.v, i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else if (a.length < 4) a.push(v); UI.show('creator'); };
 UI.act.crPub = () => { keep(); ed.isPublic = !ed.isPublic; UI.show('creator'); };

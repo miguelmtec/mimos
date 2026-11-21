@@ -67,7 +67,8 @@ const A = VP.Assets = {
 const I = VP.I = {
   keys: {}, touch: false, useMouse: false,
   mx: 0, my: 0, attack: false, aim: null, yaw: -Math.PI / 2, mw: null, look: 0, bot: null,
-  pressed: { special: false, dash: false, ctx: false, pause: false, sw: -1, cycle: false, emote: false },
+  pressed: { jump: false, lock: false, p0: false, p1: false, p2: false, p3: false, ctx: false, pause: false, sw: -1, cycle: false, emote: false },
+  run: false, runT: false, aimStick: false, shotEv: null, rmbMoved: false,
   ctxHeld: false,
   mouse: { x: 0, y: 0, down: false },
   stick: { id: -1, ox: 0, oy: 0, x: 0, y: 0 },
@@ -76,22 +77,26 @@ const I = VP.I = {
   enabled: false,
 };
 try { I.touch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window; } catch (e) { I.touch = false; }
-const KEYMAP = { ' ': 'special', shift: 'dash', e: 'ctx', r: 'ctx', f: 'ctx' };
-const EMOTE_KEYS = { z: 'miau', x: 'dance', c: 'sit', v: 'wave' };
+// Space = attack (held) · Shift = jump · Ctrl / Alt = run (held) · Z X C V = the four powers · Tab or right click = lock-on (shooters)
+// 1 2 3 or Q = switch cats · E F R = action · 7 8 9 0 = emotes · P / Esc = pause · M = mute. Arrows and WASD walk.
+const KEYMAP = { shift: 'jump', e: 'ctx', r: 'ctx', f: 'ctx', z: 'p0', x: 'p1', c: 'p2', v: 'p3', tab: 'lock' };
+const EMOTE_KEYS = { 7: 'miau', 8: 'dance', 9: 'sit', 0: 'wave' };
+// the key as a name that does not change with Shift (Shift+1 is "!"): digits come from the physical key
+const keyName = e => { const c = e.code || ''; if (/^Digit\d$/.test(c)) return c.slice(5); return (e.key || '').toLowerCase(); };
 addEventListener('keydown', e => {
-  const k = e.key.toLowerCase();
+  const k = keyName(e);
   if (e.target && e.target.tagName === 'INPUT') return;
   if (I.enabled && [' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'tab'].includes(k)) e.preventDefault();
   if (e.repeat) return;
   I.keys[k] = true;
   if (KEYMAP[k]) I.pressed[KEYMAP[k]] = true;
   if (k === '1' || k === '2' || k === '3') I.pressed.sw = +k - 1;
-  if (k === 'q' || k === 'tab') I.pressed.cycle = true;
+  if (k === 'q') I.pressed.cycle = true;
   if (EMOTE_KEYS[k]) I.pressed.emote = EMOTE_KEYS[k];
   if (k === 'p' || k === 'escape') I.pressed.pause = true;
   if (k === 'm' && VP.Audio) VP.Audio.toggleMute();
 });
-addEventListener('keyup', e => { I.keys[e.key.toLowerCase()] = false; });
+addEventListener('keyup', e => { I.keys[keyName(e)] = false; });
 addEventListener('blur', () => { I.keys = {}; I.mouse.down = false; });
 
 I.bind = function (cv) {
@@ -106,8 +111,9 @@ I.bind = function (cv) {
     try { cv.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
     const hit = VP.HUD ? VP.HUD.hit(p.x, p.y) : null;
     if (hit) {
-      if (hit === 'atk') { I.atk.id = e.pointerId; I.atk.ox = I.atk.x = p.x; I.atk.oy = I.atk.y = p.y; }
+      if (hit === 'atk') { I.atk.id = e.pointerId; I.atk.t0 = performance.now(); I.atk.ox = I.atk.x = p.x; I.atk.oy = I.atk.y = p.y; }
       else if (hit === 'pause') I.pressed.pause = true;
+      else if (hit === 'run') I.runT = !I.runT;
       else if (hit === 'emo') { VP.HUD.emoOpen = VP.HUD.emoOpen > 0 ? 0 : 4.5; }
       else if (hit.slice(0, 3) === 'em_') { I.pressed.emote = hit.slice(3); VP.HUD.emoOpen = 0; }
       else if (hit.slice(0, 3) === 'on_') { if (VP.Online) VP.Online.hudTap(hit); }
@@ -116,29 +122,29 @@ I.bind = function (cv) {
       return;
     }
     if (!isTouch) {
-      if (e.button === 2) { I.rmb = true; I.lastX = p.x; } else I.mouse.down = true;
+      if (e.button === 2) { I.rmb = true; I.lastX = p.x; I.rmbMoved = false; I.rmbX0 = p.x; } else I.mouse.down = true;
       I.mouse.x = p.x; I.mouse.y = p.y; return;
     }
     if (p.x < cv.clientWidth * 0.55 && I.stick.id < 0) { I.stick.id = e.pointerId; I.stick.ox = I.stick.x = p.x; I.stick.oy = I.stick.y = p.y; }
-    else if (I.atk.id < 0) { I.atk.id = e.pointerId; I.atk.ox = I.atk.x = p.x; I.atk.oy = I.atk.y = p.y; }
+    else if (I.atk.id < 0) { I.atk.id = e.pointerId; I.atk.t0 = performance.now(); I.atk.ox = I.atk.x = p.x; I.atk.oy = I.atk.y = p.y; }
   });
   cv.addEventListener('pointermove', e => {
     const p = pos(e);
-    if (e.pointerType === 'mouse') { I.mouse.x = p.x; I.mouse.y = p.y; I.useMouse = true; if (I.rmb) { I.look += (p.x - I.lastX) * 0.008; I.lastX = p.x; } }
+    if (e.pointerType === 'mouse') { I.mouse.x = p.x; I.mouse.y = p.y; I.useMouse = true; if (I.rmb) { I.look += (p.x - I.lastX) * 0.008; I.lastX = p.x; if (Math.abs(p.x - I.rmbX0) > 6) I.rmbMoved = true; } }
     if (e.pointerId === I.stick.id) { I.stick.x = p.x; I.stick.y = p.y; }
     if (e.pointerId === I.atk.id) { I.atk.x = p.x; I.atk.y = p.y; }
   });
   const up = e => {
     if (e.pointerId === I.stick.id) I.stick.id = -1;
-    if (e.pointerId === I.atk.id) I.atk.id = -1;
+    if (e.pointerId === I.atk.id) { if (I.aimStick && I.touch && !I.atk.auto) { const dr = Math.hypot(I.atk.x - I.atk.ox, I.atk.y - I.atk.oy) > 16; I.shotEv = { aim: dr ? I.aim : null }; } I.atk.id = -1; I.atk.auto = false; } // shooters on touch: release fires
     for (const k in I.held) if (I.held[k] === e.pointerId) delete I.held[k];
-    if (e.pointerType === 'mouse') { I.mouse.down = false; I.rmb = false; }
+    if (e.pointerType === 'mouse') { if (I.rmb && !I.rmbMoved && e.button === 2) I.pressed.lock = true; I.mouse.down = false; I.rmb = false; }
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 };
 I.reset = function () {
   I.stick.id = I.atk.id = -1; I.held = {}; I.mouse.down = false; I.keys = {};
-  const p = I.pressed; p.special = p.dash = p.ctx = p.pause = p.cycle = p.emote = false; p.sw = -1;
+  const p = I.pressed; p.jump = p.lock = p.p0 = p.p1 = p.p2 = p.p3 = p.ctx = p.pause = p.cycle = p.emote = false; p.sw = -1; I.run = I.runT = false; I.shotEv = null;
 };
 // Called once per frame: resolves all devices into one state.
 I.poll = function () {
@@ -156,7 +162,9 @@ I.poll = function () {
   // camera-relative -> world (yaw = angle the camera looks along, in world x/y)
   const yaw = I.yaw, fx = Math.cos(yaw), fy = Math.sin(yaw);
   I.mx = fx * -my - fy * mx; I.my = fy * -my + fx * mx;
-  I.attack = I.atk.id >= 0 || I.mouse.down || !!k.j || !!k.k;
+  I.run = !!(k.control || k.alt);
+  { const a = I.atk, drag = a.id >= 0 && Math.hypot(a.x - a.ox, a.y - a.oy) > 16; a.auto = !!(a.id >= 0 && I.aimStick && I.touch && !drag && performance.now() - (a.t0 || 0) > 350); // shooters on touch: a long press without dragging keeps shooting at the auto-target
+  I.attack = (a.id >= 0 && !(I.aimStick && I.touch)) || a.auto || I.mouse.down || !!k[' '] || !!k.j || !!k.k; }
   I.aim = null;
   if (I.atk.id >= 0) {
     const dx = I.atk.x - I.atk.ox, dy = I.atk.y - I.atk.oy;

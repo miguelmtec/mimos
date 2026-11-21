@@ -406,23 +406,25 @@ function catMoves(G, St, dt) {
   const active = G.cats[G.active];
   for (const c of G.cats) {
     const p = St.prev[c.idx] || (St.prev[c.idx] = { atk: 0, cdS: c.cdS, dash: 0, recoil: 0 });
-    const atk = !c.down && c.atk > p.atk + 0.3, roar = c.name === 'mimosa' && c.cdS > p.cdS + 5, dashing = c.dashT > 0, shotNow = c.recoil > p.recoil + 0.3;
+    const atk = !c.down && c.atk > p.atk + 0.3, roar = !!c.roarEv, dashing = c.dashT > 0, shotNow = c.recoil > p.recoil + 0.3;
     if (dashing && !p.dash) St.dashId++;
     p.atk = c.atk; p.cdS = c.cdS; p.dash = dashing; p.recoil = c.recoil;
     // where the cat is heading (the cucumber cares): movement first, then the last attack
     if (c === active && Math.hypot(I.mx, I.my) > 0.25) St.head[c.idx] = Math.atan2(I.my, I.mx); else if (atk || shotNow) St.head[c.idx] = c.aim; else if (St.head[c.idx] === undefined) St.head[c.idx] = c.aim;
     const wet = deb(c).wet > 0;
     if (wet && (atk || shotNow) && c.cd > 0) c.cd *= E.DATA.debuffs.wet.attackSlow;
+    c.roarEv = false;
     if (c.down) continue;
     if (roar) { // Mimosa's ROAR: stuns, scatters fleas, breaks the vacuum, clears enemy shots
       for (const e of G.foes) if (!e.dead && !e.gone && U.d2(e.x, e.y, c.x, c.y) < 215 * 215) { if (e.type === 'aspirador') breakVac(G, e); E.hit(G, e, 16, 'roar', c.x, c.y, 260); if (!e.dead && !e.gone) { e.stun = Math.max(e.stun, e.isBoss ? 0.8 : 3); if (!e.isBoss) { e.wind = 0; e.spray = 0; } if (e.state === 'swoop') e.state = 'act'; } }
       for (const s of G.fshots) if (U.d2(s.x, s.y, c.x, c.y) < 215 * 215) s.life = 0;
       for (const k of G.cats) { const d = deb(k); if (U.d2(k.x, k.y, c.x, c.y) < 215 * 215) d.itch = 0; }
     }
-    if (c.name === 'mimosa') {
+    const ak = VP.Game.atkOf ? VP.Game.atkOf(c) : null;
+    if (ak === 'bite' || ak === 'swipe') {
       if (atk && !roar) { const third = c.combo === 0, hx = c.x + Math.cos(c.aim) * 30, hy = c.y + Math.sin(c.aim) * 30, rad = third ? 34 : 28; for (const e of G.foes) if (!e.dead && !e.gone && e.z < 30 && U.d2(e.x, e.y, hx, hy) < (rad + e.r) * (rad + e.r)) E.hit(G, e, (third ? 34 : 21) * (c === active ? 1 : 0.7), 'bite', c.x, c.y, third ? 330 : 120); }
       if (dashing) for (const e of G.foes) if (!e.dead && !e.gone && e.z < 30 && e.dashMark !== St.dashId && U.d2(e.x, e.y, c.x, c.y) < (34 + e.r) * (34 + e.r)) { e.dashMark = St.dashId; E.hit(G, e, 38, 'bite', c.x, c.y, 380); }
-    } else if (c.name === 'morticia' && atk) { // steal first, scratch otherwise
+    } else if (ak === 'pounce' && atk) { // steal first, scratch otherwise
       let best = null, bd = 1e12, high = false;
       for (const e of G.foes) { if (e.dead || e.gone) continue; const dd = U.d2(e.x, e.y, c.x, c.y), rr = 54 + e.r; if (dd > rr * rr) continue; if (e.z >= 30) { high = true; continue; } const s = dd * (e.carry ? 0.3 : 1); if (s < bd) { bd = s; best = e; } }
       if (best) { if (!steal(G, St, best, c)) E.hit(G, best, 9, 'snatch', c.x, c.y, 90); } else if (high && c === active) FX.text(c.x, c.y - 52, tr('f_high'), '#c0c7d1', 12);

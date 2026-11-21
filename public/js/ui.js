@@ -382,10 +382,10 @@ function frame(ts) {
 
 VP.DATA = {};
 UI.boot = function () {
-  const files = ['missions', 'items', 'outfits', 'activities', 'cities/index', 'citypacks', 'events'];
+  const files = ['missions', 'items', 'outfits', 'activities', 'cities/index', 'citypacks', 'events', 'powers'];
   Promise.all(files.map(f => fetch('data/' + f + '.json').then(r => r.json()))).then(d => {
     files.forEach((f, i) => { VP.DATA[f] = d[i]; });
-    M.load(d[0], d[3]); M.loadCities(d[4]); M.loadPacks(d[5]); M.loadEvents(d[6]); if (VP.Wardrobe) VP.Wardrobe.load(d[2]);
+    VP.Powers.load(d[7]); M.load(d[0], d[3]); M.loadCities(d[4]); M.loadPacks(d[5]); M.loadEvents(d[6]); if (VP.Wardrobe) VP.Wardrobe.load(d[2]);
     boot2();
   }).catch(e => { console.error('data', e); document.getElementById('ui').innerHTML = '<div class="screen on center"><p>😿 Não deu para carregar o jogo. Recarregue a página.<br>Could not load the game. Please reload.</p></div>'; });
 };

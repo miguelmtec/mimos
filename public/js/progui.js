@@ -49,8 +49,10 @@ document.head.appendChild(css);
 const QK = ['4', '5', '6'];
 function layout(G) {
   const k = H.k, w = H.w, by = H.h - H.bot, touch = I.touch, b = {};
-  const lift = (!touch && G.boss && !G.boss.dead ? 62 : 0) * k, y = by - 32 * k - lift, r = 21 * k, gap = 49 * k, free = G.free && !G.trial;
-  const n = free ? 5 : 4, x0 = w / 2 - (n - 1) * gap / 2;
+  // the bottom row now belongs to the powers (keyboard) and to jump / run (phone, portrait): the items move beside the powers, or up on portrait phones
+  const r = 21 * k, gap = 49 * k, free = G.free && !G.trial;
+  const n = free ? 5 : 4, portrait = touch && H.h > H.w;
+  const y = portrait ? by - 262 * k : by - (touch ? 32 : 48) * k, x0 = !touch ? w / 2 + 205 * k : portrait ? w / 2 - 12 * k - (n - 1) * gap / 2 : w / 2 - (n - 1) * gap / 2;
   b.inv = { x: x0, y, r: r * 0.92 };
   for (let i = 0; i < 3; i++) b['q' + i] = { x: x0 + (i + 1) * gap, y, r };
   if (free) b.acts = { x: x0 + 4 * gap, y, r: r * 0.92 };
@@ -87,7 +89,7 @@ P.hudDraw = function (ctx, G, dt, h) {
   if (VP.R3 && VP.R3.ok && !G.car) { const a = G.cats[G.active], lv = P.level(a.name).lv, tr = P.tier(lv), p = VP.R3.project(a.x, a.y, 2.75); if (p.on && !a.down) { const s2 = t('pg_lv') + ' ' + lv; c.font = '900 ' + 10.5 * k + 'px ' + FONT; const tw = c.measureText(s2).width + 14 * k; h.pill(p.x - tw / 2, p.y - 8 * k, tw, 16 * k, 'rgba(18,4,31,.8)', tr.col); txt(s2, p.x, p.y + 0.5, 10.5 * k, tr.col, 'center', false); } }
   // buffs running
   { const buffs = []; if (G.omega > 0) buffs.push(['🐟', G.omega, '#8ff3ff']); if (G.catnip > 0) buffs.push(['🌿', G.catnip, '#7CFF6B']); if (G.milkT > 0) buffs.push(['🥛', G.milkT, '#ffffff']);
-    buffs.forEach((bf, i) => { const x = H.w / 2 + (i - (buffs.length - 1) / 2) * 62 * k, y = b.q0.y - 40 * k; h.pill(x - 27 * k, y - 11 * k, 54 * k, 22 * k, 'rgba(18,4,31,.75)', bf[2]); emoji(bf[0], x - 13 * k, y, 13 * k); txt(Math.ceil(bf[1]) + 's', x + 9 * k, y + 0.5, 11.5 * k, '#fff', 'center', false); }); }
+    buffs.forEach((bf, i) => { const x = H.w / 2 + (i - (buffs.length - 1) / 2) * 62 * k, y = touch ? b.q0.y - 40 * k : H.h - H.bot - 148 * k; h.pill(x - 27 * k, y - 11 * k, 54 * k, 22 * k, 'rgba(18,4,31,.75)', bf[2]); emoji(bf[0], x - 13 * k, y, 13 * k); txt(Math.ceil(bf[1]) + 's', x + 9 * k, y + 0.5, 11.5 * k, '#fff', 'center', false); }); }
   // quick-use slots
   for (let i = 0; i < 3; i++) {
     const q = b['q' + i], id = s.quick[i], it = P.ITEMS[id], n = id ? P.count(id) : 0, used = P.usedT > 0 && P.usedId === id;

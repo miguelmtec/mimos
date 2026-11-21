@@ -8,7 +8,7 @@ const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 const PINK = '#ff4fb8', TEAL = '#2de2e6', GOLD = '#ffd23f', INK = '#12041f';
 const NAMES = ['mimo', 'mimosa', 'morticia'], CATCOL = { mimo: '#8ff3ff', mimosa: '#ff7ac0', morticia: '#ffb347' };
 
-H.EMO = [['miau', '😺', 'Z'], ['dance', '💃', 'X'], ['sit', '🪑', 'C'], ['wave', '👋', 'V']]; H.emoOpen = 0;
+H.EMO = [['miau', '😺', '7'], ['dance', '💃', '8'], ['sit', '🪑', '9'], ['wave', '👋', '0']]; H.emoOpen = 0;
 // emote buttons live in the calm moments: free roam and city visits, on foot, outside the tutorial
 H.emoOn = G => !!G && G.free && !G.car && !G.tutorial && !G.over && !G.trial;
 // phones: above the stick area; mouse and keyboard: tucked in the bottom-left corner
@@ -25,11 +25,29 @@ H.resize = function () {
   for (let i = 0; i < 3; i++) b['c' + i] = { x: (38 + i * 62) * k, y: st + 40 * k, r: 27 * k };
   b.pause = { x: w - 126 * k, y: st + 24 * k, r: 17 * k };
   const by = h - sb;
-  b.special = { x: w - 60 * k, y: by - 236 * k, r: 31 * k }; b.dash = { x: w - 132 * k, y: by - 206 * k, r: 26 * k }; b.ctx = { x: w - 60 * k, y: by - 318 * k, r: 31 * k };
   H.map = { x: w - 56 * k, y: st + 56 * k, r: 46 * k };
   // emotes: a small toggle on the left edge (above the stick area) that opens four big buttons
   H.layoutEmo();
   H.atkHint = { x: w - 92 * k, y: by - 112 * k }; H.stickHint = { x: 88 * k, y: by - 112 * k };
+  H.layoutCtl();
+};
+// Controls. Touch: big ATTACK button bottom-right, the 4 powers in an arc above-left of it, JUMP and RUN along the bottom edge.
+// Keyboard: the 4 powers as a bar at the bottom centre with their letters. Every touch target is at least 44 px (r >= 22).
+H.layoutCtl = function () {
+  const k = H.k, b = H.btn, w = H.w, h = H.h, by = h - H.bot, t = I.touch; H.ctlTouch = t;
+  b.ctx = h < 520 ? { x: w - 236 * k, y: by - 120 * k, r: 31 * k } : { x: w - 60 * k, y: by - 318 * k, r: 31 * k };
+  if (t) {
+    const ax = w - 66 * k, ay = by - 86 * k, R = 98 * k;
+    b.atk = { x: ax, y: ay, r: 46 * k }; H.atkHint = { x: ax, y: ay };
+    [185, 217, 249, 281].forEach((deg, i) => { const a = deg * Math.PI / 180; b['p' + i] = { x: ax + Math.cos(a) * R, y: ay + Math.sin(a) * R, r: 25 * k }; });
+    b.jump = { x: w - 160 * k, y: by - 34 * k, r: 25 * k }; b.run = { x: w - 216 * k, y: by - 34 * k, r: 25 * k };
+    b.energy = { x: w - 150 * k, y: by - 224 * k, w: 130 * k }; delete b.stam;
+  } else {
+    const gap = 86 * k, cx = w / 2, y = by - 48 * k;
+    for (let i = 0; i < 4; i++) b['p' + i] = { x: cx + (i - 1.5) * gap, y, r: 26 * k };
+    delete b.atk; delete b.jump; delete b.run;
+    b.energy = { x: cx - 2 * gap + 12 * k, y: by - 112 * k, w: 4 * gap - 24 * k }; b.stam = { x: cx - 2 * gap + 12 * k, y: by - 102 * k, w: 4 * gap - 24 * k };
+  }
 };
 H.hit = function (x, y) {
   const G = VP.Game.G; if (!G) return null;
@@ -37,8 +55,9 @@ H.hit = function (x, y) {
   if (H.emoOn(G)) { if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; if (U.d2(x, y, b.x, b.y) < (b.r + 4) * (b.r + 4)) return 'em_' + e[0]; } const b = H.btn.emo; if (U.d2(x, y, b.x, b.y) < (b.r + 8) * (b.r + 8)) return 'emo'; }
   if (G.online && VP.Online) { const o = VP.Online.hudHit(x, y); if (o) return o; }
   if (VP.Prog) { const ph = VP.Prog.hudHit(G, x, y); if (ph) return ph; }
-  for (const id of ['c0', 'c1', 'c2', 'pause', 'special', 'dash', 'ctx']) {
-    const b = H.btn[id]; if (id === 'ctx' && !G.ctx) continue; if (id === 'dash' && G.car) continue;
+  if (H.ctlTouch !== I.touch) H.layoutCtl();
+  for (const id of ['c0', 'c1', 'c2', 'pause', 'ctx', 'p0', 'p1', 'p2', 'p3', 'jump', 'run', 'atk']) {
+    const b = H.btn[id]; if (!b) continue; if (id === 'ctx' && !G.ctx) continue; if (G.car && (id === 'p1' || id === 'p2' || id === 'p3' || id === 'jump' || id === 'run')) continue;
     if (U.d2(x, y, b.x, b.y) < (b.r + 7) * (b.r + 7)) return id;
   }
   if (U.d2(x, y, H.map.x, H.map.y) < H.map.r * H.map.r) return 'pause';
@@ -95,7 +114,7 @@ H.draw = function (G, dt) {
     if (need) { c.beginPath(); c.arc(b.x, b.y, b.r + 5 + Math.sin(t * 8) * 2.5, 0, 6.283); c.lineWidth = 3; c.strokeStyle = GOLD; c.stroke(); }
     bar(b.x - b.r, b.y + b.r + 3, b.r * 2, 7 * k, cat.hp / cat.max, cat.hp / cat.max < 0.3 ? '#ff4f5e' : '#7CFF6B');
     let f = 0, mc = col;
-    if (cat.name === 'mimo') { f = cat.energy / 100; mc = cat.exhausted ? '#7f8ab0' : '#8ff3ff'; } else if (cat.name === 'mimosa') f = 1 - Math.max(0, cat.cdS) / 12; else { f = cat.feastReady ? 1 : cat.belly / 100; mc = cat.feastReady ? GOLD : '#ffb347'; }
+    if (cat.name === 'mimo') { f = cat.energy / 100; mc = cat.exhausted ? '#7f8ab0' : '#8ff3ff'; } else if (cat.name === 'mimosa') { f = cat.pe / 100; mc = '#ff7ac0'; } else { f = cat.feastReady ? 1 : cat.belly / 100; mc = cat.feastReady ? GOLD : '#ffb347'; }
     bar(b.x - b.r, b.y + b.r + 11 * k, b.r * 2, 5 * k, f, mc);
     if (!touch) txt('' + (i + 1), b.x - b.r + 5, b.y - b.r + 6, 11 * k, '#fff');
   });
@@ -122,7 +141,7 @@ H.draw = function (G, dt) {
   if (G.mtimer !== null && G.mtimer !== undefined) { const low = G.mtimer < 10; txt(U.fmtTime(G.mtimer), w / 2, oy + oh + 22 * k, (low ? 30 + Math.sin(t * 10) * 3 : 24) * k, low ? '#ff4f5e' : '#fff'); }
   // ---- boss bar ----
   if (G.boss && !G.boss.dead) {
-    const e = G.boss, bw = Math.min(w - 40 * k, 360 * k), bx = w / 2 - bw / 2, by = touch ? oy + oh + (G.mtimer != null ? 44 : 10) * k : h - 54 * k;
+    const e = G.boss, bw = Math.min(w - 40 * k, 360 * k), bx = w / 2 - bw / 2, by = oy + oh + (G.mtimer != null ? 44 : 10) * k;
     txt(VP.t('boss_' + e.type).replace(/^(o|a|the) /i, '').toUpperCase(), w / 2, by + 6 * k, 13 * k, e.exposed ? GOLD : '#fff');
     bar(bx, by + 15 * k, bw, 11 * k, e.hp / e.max, '#ff4f5e'); if (e.maxArmor) bar(bx, by + 28 * k, bw, 6 * k, e.armor / e.maxArmor, e.exposed ? GOLD : '#c0c7d1');
   }
@@ -146,7 +165,8 @@ H.draw = function (G, dt) {
   // ---- banner ----
   if (G.banner) { const b = G.banner, al = Math.min(1, b.t * 6, (b.dur - b.t) * 3); c.globalAlpha = Math.max(0, al); const bl = wrap(b.txt, w - 40, 20 * k); bl.forEach((l, i) => txt(l, w / 2, h * 0.3 + i * 26 * k, 20 * k, b.col)); c.globalAlpha = 1; }
   if (VP.Prog) VP.Prog.hudDraw(c, G, dt, { txt, pill, bar });
-  // ---- controls ----
+  // ---- aim reticle (shooters) + controls ----
+  reticle(G, a, k, t);
   controls(G, k, t, touch, a);
   if (H.emoOn(G)) {
     if (H.emoTouch !== touch) H.layoutEmo();
@@ -154,7 +174,7 @@ H.draw = function (G, dt) {
     const eb = H.btn.emo; c.save(); c.globalAlpha = 0.9; c.beginPath(); c.arc(eb.x, eb.y, eb.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = H.emoOpen > 0 ? GOLD : 'rgba(255,255,255,.7)'; c.stroke(); c.restore();
     c.font = 20 * k + 'px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText('😺', eb.x, eb.y + 1);
     if (H.emoOpen > 0) for (const e of H.EMO) { const b = H.btn['em_' + e[0]]; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.78)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = TEAL; c.stroke(); c.font = 22 * k + 'px ' + FONT; c.fillStyle = '#fff'; c.fillText(e[1], b.x, b.y - 3 * k); txt(VP.t('em_' + e[0]), b.x, b.y + b.r * 0.62, 9 * k, '#fff', 'center', INK); if (!touch) txt(e[2], b.x - b.r * 0.8, b.y - b.r * 0.8, 11 * k, GOLD); }
-    else if (!touch) txt('Z X C V', eb.x + eb.r + 30 * k, eb.y, 10 * k, 'rgba(255,255,255,.8)');
+    else if (!touch) txt('7 8 9 0', eb.x + eb.r + 30 * k, eb.y, 10 * k, 'rgba(255,255,255,.8)');
   }
   if (G.online && VP.Online && VP.Online.state === 'on') { // quick phrases (fixed list): the only way to talk
     const sb = H.btn.say, open = VP.Online.sheet === 'say'; c.save(); c.globalAlpha = 0.92; c.beginPath(); c.arc(sb.x, sb.y, sb.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = open ? GOLD : TEAL; c.stroke(); c.restore();
@@ -167,32 +187,86 @@ H.draw = function (G, dt) {
   if ((VP.debug || VP.ls.get('vp_fps') === '1') && R3) txt(R3.fps + 'fps q' + R3.quality + ' dc' + R3.draws + ' tri' + Math.round((R3.tris || 0) / 1000) + 'k', w / 2, h - 12, 11, '#fff');
 };
 
+// emoji icon inside a round button
+function emo(s, x, y, size) { c.font = size + 'px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText(s, x, y); }
+function roundBtn(b, col, em, label, k) { c.save(); c.globalAlpha = 0.92; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 3; c.strokeStyle = col; c.stroke(); c.restore(); emo(em, b.x, b.y - 4 * k, b.r * 0.9); txt(label, b.x, b.y + b.r * 0.62, 8.5 * k, '#fff', 'center', INK); }
+// one of the four power buttons (Z X C V): emoji, name, cooldown ring + pie, key letter on desktop
+function powerBtn(G, cat, i, touch, k, t) {
+  const b = H.btn['p' + i], P = VP.Powers; if (!b) return;
+  const col = CATCOL[cat.name];
+  if (G.car) { if (i === 0) { button(b, GOLD, 'car', VP.t('honk'), 0); if (!touch) txt('Z', b.x - b.r * 0.75, b.y - b.r * 0.75, 12 * k, GOLD); } return; }
+  const id = P && P.ready ? P.slot(cat, i) : null; if (!id) return;
+  const cd = P.cdOf(cat, i), mx = P.cdMax(id), frac = cd > 0 ? U.clamp(cd / mx, 0, 1) : 0, cost = P.cost(id), ready = cd <= 0 && cat.pe >= cost;
+  const live = (id === 'feast' && cat.bigT > 0) ? cat.bigT / 8 : (id === 'pillow' && cat.shieldT > 0) ? cat.shieldT / 3 : (id === 'spiky' && cat.spikeT > 0) ? cat.spikeT / 8 : (id === 'zoomies' && cat.zoomT > 0) ? cat.zoomT / 4 : (id === 'magnet' && cat.magT > 0) ? cat.magT / 6 : 0;
+  c.save(); c.globalAlpha = ready || live ? 0.96 : 0.62;
+  c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.7)'; c.fill();
+  if (frac > 0.005) { c.beginPath(); c.moveTo(b.x, b.y); c.arc(b.x, b.y, b.r - 2, -Math.PI / 2, -Math.PI / 2 + frac * 6.283); c.closePath(); c.fillStyle = 'rgba(0,0,0,.55)'; c.fill(); }
+  c.lineWidth = 3.5; c.strokeStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.arc(b.x, b.y, b.r - 1, 0, 6.283); c.stroke();
+  c.lineWidth = 3.5; c.strokeStyle = live ? GOLD : ready ? col : '#8b84a8'; c.beginPath(); c.arc(b.x, b.y, b.r - 1, -Math.PI / 2, -Math.PI / 2 + (live ? live : 1 - frac) * 6.283); c.stroke(); // the ring fills up as the power recharges
+  emo(P.emoji(id), b.x, b.y + 1, b.r * 0.95);
+  if (cd > 0.05) txt(cd >= 10 ? '' + Math.ceil(cd) : cd.toFixed(1), b.x, b.y, Math.max(12, b.r * 0.62), '#fff');
+  c.restore();
+  if (!touch) { const nm = P.nameOf(id); txt(nm.length > 17 ? nm.slice(0, 16) + '…' : nm, b.x, b.y + b.r + 10 * k, 9.5 * k, ready ? '#fff' : 'rgba(255,255,255,.65)'); pill(b.x - 9 * k, b.y - b.r - 9 * k, 18 * k, 17 * k, 'rgba(18,4,31,.88)', GOLD); txt('ZXCV'[i], b.x, b.y - b.r - 0.5 * k, 11.5 * k, GOLD, 'center', false); }
+}
 function controls(G, k, t, touch, a) {
   const b = H.btn;
-  // ability buttons
-  if (G.car) button(b.special, GOLD, 'car', VP.t('honk'), 0);
-  else {
-    const n = a.name;
-    if (n === 'mimo') button(b.special, '#8ff3ff', 'zzz', VP.t('nap'), Math.max(0, a.cdS) / 18, a.cdS <= 0);
-    else if (n === 'mimosa') button(b.special, '#ff7ac0', 'roar', VP.t('roar'), Math.max(0, a.cdS) / 12, a.cdS <= 0);
-    else button(b.special, a.feastReady ? GOLD : '#ffb347', 'steak', VP.t('feast'), a.feastReady ? 0 : 1 - a.belly / 100, !!a.feastReady);
-    button(b.dash, '#fff', n === 'mimo' ? 'ball' : n === 'mimosa' ? 'dash' : 'smoke', VP.t(n === 'mimo' ? 'hairLbl' : n === 'mimosa' ? 'dashLbl' : 'smokeLbl'), Math.max(0, a.cd2) / (n === 'mimo' ? 5 : n === 'mimosa' ? 2.4 : 4), a.cd2 <= 0);
-  }
+  if (H.ctlTouch !== touch) H.layoutCtl();
+  // context action (revive / enter / exit)
   if (G.ctx && G.ctx.k === 'life' && VP.LifeHUD) VP.LifeHUD.ctxButton(c, b.ctx, G.ctx, H); // HOOK city-life
   else if (G.ctx) {
     const x = G.ctx.k; button(b.ctx, x === 'revive' ? '#ff7ac0' : TEAL, x === 'revive' ? 'heart' : 'car', VP.t(x === 'revive' ? 'revive' : x === 'car' ? 'enter' : 'exit'), 0);
     if (x === 'revive') { c.beginPath(); c.arc(b.ctx.x, b.ctx.y, b.ctx.r + 5, -Math.PI / 2, -Math.PI / 2 + G.revive * 6.283); c.strokeStyle = '#7CFF6B'; c.lineWidth = 5; c.stroke(); if (G.revive <= 0) txt(VP.t('hold'), b.ctx.x, b.ctx.y - b.ctx.r - 12 * k, 11 * k, '#fff'); }
     if (!touch) txt('E', b.ctx.x - b.ctx.r, b.ctx.y - b.ctx.r, 12 * k, GOLD);
   }
-  if (!touch) { txt('Space', b.special.x, b.special.y - b.special.r - 8, 10 * k, '#fff'); if (!G.car) txt('Shift', b.dash.x, b.dash.y - b.dash.r - 8, 10 * k, '#fff'); return; }
-  // sticks
-  const st = I.stick, at = I.atk;
+  for (let i = 0; i < 4; i++) powerBtn(G, a, i, touch, k, t);
+  const P = VP.Powers, pcol = CATCOL[a.name], atk = P && P.ready ? P.attacks()[Game_atk(a)] : null;
+  // power energy
+  const eb = H.btn.energy;
+  if (eb) { bar(eb.x, eb.y, eb.w, 7 * k, a.pe / 100, '#8ff3ff'); txt('⚡', eb.x - 9 * k, eb.y + 3.5 * k, 11 * k, '#fff', 'center', false); }
+  if (!touch) {
+    const hy = H.btn.p0.y - 78 * k, rng = !G.car && VP.Game.isRanged(a);
+    const parts = ['[' + VP.t('k_space') + '] ' + VP.t('k_atk'), '[Shift] ' + VP.t('k_jump'), '[Ctrl] ' + VP.t('k_run')]; if (rng) parts.push(VP.t('k_lock'));
+    txt(parts.join('   ·   '), H.w / 2, hy, 11.5 * k, 'rgba(255,255,255,.92)');
+    const sb = H.btn.stam; bar(sb.x, sb.y, sb.w, 6 * k, a.sta / 100, a.staLocked ? '#ff6b6b' : a.running ? '#ffd23f' : '#7CFF6B'); txt('Ctrl', sb.x - 15 * k, sb.y + 3 * k, 9.5 * k, '#fff', 'center', false);
+    return;
+  }
+  // ---- touch: big ATTACK button (an aim stick for shooters), JUMP, RUN toggle ----
+  const ab = b.atk, aim = !G.car && VP.Game.isRanged(a), at = I.atk, st = I.stick;
   const ring = (x, y, r, col, al) => { c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fillStyle = 'rgba(255,255,255,' + al * 0.25 + ')'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = col; c.globalAlpha = al; c.stroke(); c.globalAlpha = 1; };
   if (st.id >= 0) { ring(st.ox, st.oy, 52, '#fff', 0.5); const dx = st.x - st.ox, dy = st.y - st.oy, d = Math.hypot(dx, dy) || 1, m = Math.min(52, d); c.beginPath(); c.arc(st.ox + dx / d * m, st.oy + dy / d * m, 24, 0, 6.283); c.fillStyle = 'rgba(45,226,230,.75)'; c.fill(); }
   else { ring(H.stickHint.x, H.stickHint.y, 46 * k, '#fff', 0.28); c.beginPath(); c.arc(H.stickHint.x, H.stickHint.y, 20 * k, 0, 6.283); c.fillStyle = 'rgba(255,255,255,.2)'; c.fill(); }
-  const ac = G.car ? '#8ff3ff' : CATCOL[a.name];
-  if (at.id >= 0) { ring(at.ox, at.oy, 52, ac, 0.6); const dx = at.x - at.ox, dy = at.y - at.oy, d = Math.hypot(dx, dy) || 1, m = Math.min(52, d); c.beginPath(); c.arc(at.ox + dx / d * m, at.oy + dy / d * m, 24, 0, 6.283); c.fillStyle = ac; c.globalAlpha = 0.8; c.fill(); c.globalAlpha = 1; }
-  else { const p = H.atkHint; ring(p.x, p.y, 46 * k, ac, 0.5); Art.icon(c, G.car || a.name === 'mimo' ? 'bolt' : a.name === 'mimosa' ? 'fang' : 'hand', p.x, p.y - 5 * k, 15 * k); txt(VP.t(G.car || a.name === 'mimo' ? 'atkShoot' : a.name === 'mimosa' ? 'atkBite' : 'atkSteal'), p.x, p.y + 22 * k, 10 * k, '#fff'); }
+  const ac = G.car ? '#8ff3ff' : pcol, pressed = at.id >= 0;
+  c.save(); c.globalAlpha = 0.95; c.beginPath(); c.arc(ab.x, ab.y, ab.r, 0, 6.283); c.fillStyle = pressed ? 'rgba(255,255,255,.28)' : 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 4; c.strokeStyle = ac; c.stroke(); c.restore();
+  emo(G.car ? '🫧' : atk ? atk.emoji : '🐾', ab.x, ab.y - 6 * k, ab.r * 0.82);
+  txt(VP.t('k_atk'), ab.x, ab.y + ab.r * 0.62, 11 * k, '#fff');
+  if (aim && pressed) { const dx = at.x - at.ox, dy = at.y - at.oy, d = Math.hypot(dx, dy) || 1, m = Math.min(52, d); ring(at.ox, at.oy, 52, ac, 0.6); c.beginPath(); c.arc(at.ox + dx / d * m, at.oy + dy / d * m, 24, 0, 6.283); c.fillStyle = ac; c.globalAlpha = 0.8; c.fill(); c.globalAlpha = 1; }
+  else if (pressed) { const dx = at.x - at.ox, dy = at.y - at.oy, d = Math.hypot(dx, dy) || 1, m = Math.min(52, d); ring(at.ox, at.oy, 52, ac, 0.6); c.beginPath(); c.arc(at.ox + dx / d * m, at.oy + dy / d * m, 24, 0, 6.283); c.fillStyle = ac; c.globalAlpha = 0.8; c.fill(); c.globalAlpha = 1; }
+  if (!G.car) {
+    const jb = b.jump, rb = b.run;
+    roundBtn(jb, '#fff', '🦘', VP.t('k_jump'), k);
+    const on = I.runT, run = a.running;
+    roundBtn(rb, on ? TEAL : '#fff', '💨', VP.t('k_run'), k);
+    c.beginPath(); c.arc(rb.x, rb.y, rb.r + 4, -Math.PI / 2, -Math.PI / 2 + U.clamp(a.sta / 100, 0, 1) * 6.283); c.lineWidth = 3.5; c.strokeStyle = a.staLocked ? '#ff6b6b' : run ? GOLD : on ? TEAL : 'rgba(124,255,107,.85)'; c.stroke();
+  }
+}
+const Game_atk = a => (VP.Game.atkOf ? VP.Game.atkOf(a) : 'bubbles');
+
+// aim reticle (shooters only): on the ground, soft snap on enemies, ring on the enemy it will hit
+function reticle(G, a, k, t) {
+  const r = G.ret, R3 = VP.R3; if (!r || !R3 || !R3.ok || G.car || a.down) { H.retOn = false; return; }
+  const p = R3.project(r.x, r.y, 0.6); if (!p.on) { if (r.mode === 'stick' && p.z < 1) { p.x = Math.max(26, Math.min(H.w - 26, p.x)); p.y = Math.max(H.top + 26, Math.min(H.h - H.bot - 26, p.y)); } else { H.retOn = false; return; } }
+  const q = R3.project(a.x, a.y, 0.6), tg = r.tgt, col = tg ? '#ff4f5e' : CATCOL[a.name];
+  if (!H.ret || !H.retOn) H.ret = { x: p.x, y: p.y }; H.retOn = true;
+  const sp = r.mode === 'stick' ? 1 : tg ? 0.5 : 0.85; H.ret.x += (p.x - H.ret.x) * sp; H.ret.y += (p.y - H.ret.y) * sp;
+  H.retInfo = { x: H.ret.x, y: H.ret.y, mode: r.mode, snapped: !!tg, locked: r.mode === 'lock' };
+  // aim line along the ground
+  c.save(); c.setLineDash([5 * k, 7 * k]); c.lineWidth = 2.2 * k; c.strokeStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.moveTo(q.x, q.y + 6 * k); c.lineTo(H.ret.x, H.ret.y); c.stroke(); c.setLineDash([]); c.restore();
+  // highlight on the enemy under the reticle
+  if (tg) { const e = R3.project(tg.x, tg.y, 1.1); if (e.on) { c.beginPath(); c.arc(e.x, e.y, (22 + Math.sin(t * 9) * 2) * k, 0, 6.283); c.lineWidth = 3.5; c.strokeStyle = '#ff4f5e'; c.stroke(); c.beginPath(); c.arc(e.x, e.y, 28 * k, 0, 6.283); c.lineWidth = 1.5; c.strokeStyle = 'rgba(255,255,255,.8)'; c.stroke(); if (r.mode === 'lock') txt('🔒', e.x, e.y - 36 * k, 14 * k, '#fff'); } }
+  const x = H.ret.x, y = H.ret.y, rr = (tg ? 15 : 18) * k, spin = tg ? t * 2.2 : 0;
+  c.save(); c.translate(x, y); c.rotate(spin); c.lineWidth = 3.4; c.strokeStyle = INK; c.beginPath(); c.arc(0, 0, rr, 0, 6.283); c.stroke(); c.lineWidth = 2.2; c.strokeStyle = col; c.beginPath(); c.arc(0, 0, rr, 0, 6.283); c.stroke();
+  for (let i = 0; i < 4; i++) { c.rotate(Math.PI / 2); c.lineWidth = 3.4; c.strokeStyle = INK; c.beginPath(); c.moveTo(rr + 2 * k, 0); c.lineTo(rr + 9 * k, 0); c.stroke(); c.lineWidth = 2.2; c.strokeStyle = col; c.beginPath(); c.moveTo(rr + 2 * k, 0); c.lineTo(rr + 9 * k, 0); c.stroke(); }
+  c.restore(); c.beginPath(); c.arc(x, y, 2.6 * k, 0, 6.283); c.fillStyle = col; c.fill();
 }
 
 // first-play hints: a pulsing ring on the control the current step asks for, plus a short caption

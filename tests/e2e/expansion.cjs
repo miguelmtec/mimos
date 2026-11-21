@@ -59,7 +59,8 @@ const run = (page, n) => page.evaluate(n => { try { return __bot.run(n, 400); } 
     ok('step 2 asks to attack', await page.evaluate(() => __vp.G.steps[__vp.G.step].hint === 'attack'));
     // walk next to the crate, then hold the right side to attack
     await page.waitForTimeout(200);
-    ok('touch: holding the attack side beats the practice mutt', await hold(() => __vp.G.steps[__vp.G.step].hint === 'switch', [[300, 720]], 12000));
+    const ab = await page.evaluate(() => [VP.HUD.btn.atk.x, VP.HUD.btn.atk.y]);
+    ok('touch: holding the attack button beats the practice mutt', await hold(() => __vp.G.steps[__vp.G.step].hint === 'switch', [ab], 12000));
     const b = await page.evaluate(() => { const b = VP.HUD.btn; const i = (__vp.G.active + 1) % 3; return [b['c' + i].x, b['c' + i].y]; });
     await page.touchscreen.tap(b[0], b[1]);
     ok('touch: tapping a portrait switches cat', await until(page, () => __vp.G.steps[__vp.G.step].hint === 'revive'));

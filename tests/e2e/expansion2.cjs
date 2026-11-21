@@ -127,13 +127,13 @@ const SECTIONS = {
       // --- emotes ---
       const b = await page.evaluate(() => { VP.Audio.sfx = () => {}; __vp.free(); return { emo: VP.HUD.btn.emo, sit: VP.HUD.btn.em_sit, dash: VP.HUD.btn.dash, special: VP.HUD.btn.special, wave: VP.HUD.btn.em_wave }; });
       await page.waitForTimeout(500);
-      if (mobile) { await page.touchscreen.tap(b.emo.x, b.emo.y); await page.waitForTimeout(250); await L.shot(page, 'x2-emotes'); await page.touchscreen.tap(b.sit.x, b.sit.y); } else await page.keyboard.press('c');
+      if (mobile) { await page.touchscreen.tap(b.emo.x, b.emo.y); await page.waitForTimeout(250); await L.shot(page, 'x2-emotes'); await page.touchscreen.tap(b.sit.x, b.sit.y); } else await page.keyboard.press('9');
       await page.waitForTimeout(300);
       const e1 = await page.evaluate(() => ({ e: (__vp.G.cats[__vp.G.active].emote || {}).k, snap: VP.Game.snapshot().cats[__vp.G.active].e, open: VP.HUD.emoOpen > 0 }));
       ok(tag + ': ' + (mobile ? 'two taps' : 'one key') + ' make the cat sit', e1.e === 'sit' && e1.snap === 'sit' && !e1.open, e1);
       const e2 = await page.evaluate(() => { const G = __vp.G, out = {}; for (const k of ['miau', 'dance', 'wave']) { out[k] = VP.Game.emote(k) && G.cats[G.active].emote.k === k; } const a = G.cats[G.active]; VP.I.bot = () => { VP.I.mx = 1; VP.I.my = 0; VP.I.attack = false; }; for (let i = 0; i < 12; i++) { VP.I.poll(); VP.Game.update(1 / 30); } VP.I.bot = null; out.cancel = !a.emote; out.keys = Object.keys(VP.Game.EMOTES).join(); return out; });
       ok(tag + ': miau, dance, sit and wave all work; walking ends the gesture', e2.miau && e2.dance && e2.wave && e2.cancel && e2.keys === 'miau,dance,sit,wave', e2);
-      const big = Math.min(b.sit.r, b.wave.r) * 2 >= 44, clear = Math.hypot(b.wave.x - b.dash.x, b.wave.y - b.dash.y) > b.wave.r + b.dash.r && Math.hypot(b.wave.x - b.special.x, b.wave.y - b.special.y) > b.wave.r + b.special.r;
+      const big = Math.min(b.sit.r, b.wave.r) * 2 >= 44, clear = ['p0', 'p1', 'p2', 'p3', 'atk', 'jump', 'run'].filter(q => b[q]).every(q => Math.hypot(b.wave.x - b[q].x, b.wave.y - b[q].y) > b.wave.r + b[q].r);
       ok(tag + ': emote buttons are finger-sized and clear of the action buttons', big && clear, b);
       const e3 = await page.evaluate(() => { __vp.start(1); return { on: VP.HUD.emoOn(__vp.G), hit: VP.HUD.hit(VP.HUD.btn.emo.x, VP.HUD.btn.emo.y) }; });
       ok(tag + ': emote buttons stay out of the way during missions', !e3.on && e3.hit !== 'emo', e3);
@@ -188,7 +188,7 @@ const SECTIONS = {
   // ---------- 6. phone HUD + first-load budget ----------
   async polish() {
     const { browser, page, errors } = await L.open(true, { routes: async page => { await F.agroRoutes(page); } });
-    const a = await page.evaluate(() => { VP.Audio.sfx = () => {}; __vp.free(); const H = VP.HUD, b = H.btn, k = H.k; return { pause: b.pause.r * 2 + 14, portrait: b.c0.r * 2, dash: b.dash.r * 2, special: b.special.r * 2, emo: b.emo.r * 2 + 16, k }; });
+    const a = await page.evaluate(() => { VP.Audio.sfx = () => {}; __vp.free(); const H = VP.HUD, b = H.btn, k = H.k; return { pause: b.pause.r * 2 + 14, portrait: b.c0.r * 2, dash: Math.min(b.p0.r, b.p1.r, b.p2.r, b.p3.r, b.jump.r, b.run.r) * 2, special: b.atk.r * 2, emo: b.emo.r * 2 + 16, k }; });
     ok('touch targets are at least 44 px (pause, portraits, abilities, emotes)', a.pause >= 44 && a.portrait >= 44 && a.dash >= 44 && a.special >= 44 && a.emo >= 44, a);
     await page.waitForTimeout(1600);
     // the objective pill sits below the minimap and its label: sample the HUD canvas in the old overlap zone

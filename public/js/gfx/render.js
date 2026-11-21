@@ -101,6 +101,7 @@ function initFx() {
   fx.bubbleMat = new THREE.MeshBasicMaterial({ color: 0x8ff3ff, transparent: true, opacity: 0.5, depthWrite: false });
   fx.perfMat = new THREE.MeshBasicMaterial({ color: 0xff9fd6, transparent: true, opacity: 0.7, depthWrite: false });
   fx.netMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+  fx.shieldMat = new THREE.MeshBasicMaterial({ color: 0xbfe9ff, transparent: true, opacity: 0.38, depthWrite: false });
   const bone = new GB(); bone.cyl('#ffffff', 0, 0, 0, 0.1, 0.9, 0.1, Math.PI / 2); for (let i = -1; i <= 1; i++) bone.box('#ffffff', 0, 0, i * 0.24, 0.5 - Math.abs(i) * 0.1, 0.08, 0.08); bone.cone('#ffffff', 0, 0, 0.6, 0.26, 0.36, 0.1, Math.PI / 2);
   fx.boneGeo = bone.geo();
   const beam = new THREE.CylinderGeometry(1, 1, 1, 14, 1, true); beam.translate(0, 0.5, 0);
@@ -159,10 +160,12 @@ function syncCat(c, G, dt, near) {
   let h = ud.h === undefined ? c.aim : ud.h;
   if (c.atk > 0.05 || c.recoil > 0.05 || (c.idx === G.active && I.attack) || c.dashT > 0) h = c.aim; else if (moving) h = Math.atan2(mvy, mvx);
   turn(o, h, dt * 14);
-  o.position.set(c.x * S, catY(c) + (c.hopT > 0 ? Math.sin((1 - c.hopT / 0.5) * Math.PI) * 0.9 : 0), c.y * S);
+  const gs = c.gs || 1, zUp = c.z > 0 ? c.z : 0;
+  o.scale.setScalar(gs);
+  o.position.set(c.x * S, catY(c) + zUp + (c.hopT > 0 ? Math.sin((1 - c.hopT / 0.5) * Math.PI) * 0.9 : 0), c.y * S);
   const dance = G.over && G.won ? G.real : 0;
   const st = ud.st || (ud.st = {});
-  st.t = c.t; st.walk = c.walk && !c.down; st.atk = c.atk; st.down = c.down; st.sleepy = c.exhausted || (c.name === 'mimo' && G.nap > 0); st.recoil = c.recoil; st.mouth = c.mouth; st.hop = 0; st.spin = 0;
+  st.t = c.t; st.walk = c.walk && !c.down; st.atk = c.atk; st.down = c.down; st.sleepy = c.exhausted || (c.name === 'mimo' && G.nap > 0); st.recoil = c.recoil; st.mouth = c.mouth; st.hop = 0; st.spin = c.spinT > 0 ? c.t * 18 : 0;
   if (dance && !c.down) { const vip = ud.spec && ud.spec.shiny, t = G.real * (vip ? 7 : 5) + c.idx * 1.2; st.hop = Math.abs(Math.sin(t)) * (vip ? 0.5 : 0.3); st.walk = 1; if (vip) st.spin = c.name === 'morticia' ? G.real * 7 : Math.sin(G.real * 3.5 + c.idx) * 0.9; }
   // a follower standing right in front of the lens would hide the leader (it happens a lot on phones): step out of the shot
   if (c.idx !== G.active) { const dx = o.position.x - camera.position.x, dz = o.position.z - camera.position.z; o.visible = dx * dx + dz * dz > 4.4; if (!o.visible) return; } else o.visible = true;
@@ -171,7 +174,8 @@ function syncCat(c, G, dt, near) {
   if (c.emote && !c.down) { const k = c.emote.k, et = c.t; if (k === 'dance') { st.walk = 1; st.hop = Math.abs(Math.sin(et * 8)) * 0.38; st.spin = Math.sin(et * 4.5) * 1.1; } else if (k === 'sit') st.sit = 1; else if (k === 'wave') { st.wave = 1; st.hop = Math.abs(Math.sin(et * 6)) * 0.08; } else st.mouth = Math.max(st.mouth || 0, 0.8); }
   animCat(o, st);
   setMat(o, c.flash > 0 ? MAT.white : c.invis > 0 ? MAT.ghost : null);
-  if (!c.down) shadow(o.position.x, o.position.z, o.position.y, 0.5 * ud.size, 0.5 * ud.size);
+  if (!c.down) shadow(o.position.x, o.position.z, o.position.y - zUp, 0.5 * ud.size * gs * (1 - Math.min(0.4, zUp * 0.2)), 0.5 * ud.size * gs * (1 - Math.min(0.4, zUp * 0.2)));
+  if (c.shieldT > 0) { const n = obj(c.shKey || (c.shKey = { kind: 'shield' }), () => new THREE.Mesh(fx.bubbleGeo, fx.shieldMat || fx.netMat)); n.position.set(o.position.x, o.position.y + 0.7 * gs, o.position.z); n.scale.setScalar(1.25 * gs); n.rotation.y = G.real * 1.5; }
   if (c.root > 0) { const n = obj(c.netKey || (c.netKey = { kind: 'net' }), () => new THREE.Mesh(fx.bubbleGeo, fx.netMat)); n.position.set(o.position.x, o.position.y + 0.7, o.position.z); n.scale.setScalar(0.95); n.rotation.y = G.real * 2; }
   const tr = ud.spec && ud.spec.trail; if (tr && c.walk && !c.down && Math.random() < dt * 14) VP.Game.fx.part({ x: c.x + U.rand(-8, 8), y: c.y + U.rand(-8, 8), k: tr.shape || 'star', col: tr.col || '#ffd23f', size: 5, life: 0.5, vy: -10 });
   void near;
@@ -255,6 +259,7 @@ function syncProp(p, G) {
 }
 function syncBullet(b) {
   const o = obj(b, () => {
+    if (b.k === 'bolt' && b.yarn) { const g = new GB(); g.lo('#ff7ac0', 0, 0, 0, 0.34); g.lo('#ffd0ea', 0.08, 0.1, 0.1, 0.14); return g.mesh(); }
     if (b.k === 'bolt') { const m = new THREE.Mesh(fx.bubbleGeo, fx.bubbleMat); m.scale.setScalar(0.34); const bn = new THREE.Mesh(fx.boneGeo, MAT.white); bn.scale.setScalar(0.75); m.add(bn); return m; }
     if (b.k === 'net') { const m = new THREE.Mesh(fx.bubbleGeo, fx.netMat); m.scale.setScalar(0.6); return m; }
     if (b.k === 'perf') { const m = new THREE.Mesh(fx.bubbleGeo, fx.perfMat); m.scale.setScalar(0.36); return m; }
@@ -263,7 +268,7 @@ function syncBullet(b) {
   });
   const yy = (b.k === 'hair' ? 0.5 + (b.z || 0) * S : 0.75) + H0(b.x, b.y);
   o.position.set(b.x * S, yy, (b.y + (b.k === 'hair' ? 0 : 12)) * S);
-  if (b.k === 'bolt') { o.rotation.y = Math.PI / 2 - Math.atan2(b.vy, b.vx) - Math.PI / 2; glow(o.position.x, yy, o.position.z, '#8ff3ff', 2.2); } else o.rotation.y += 0.2;
+  if (b.k === 'bolt') { o.rotation.y = Math.PI / 2 - Math.atan2(b.vy, b.vx) - Math.PI / 2; glow(o.position.x, yy, o.position.z, b.yarn ? '#ff7ac0' : '#8ff3ff', 2.2); } else o.rotation.y += 0.2;
 }
 function syncTele(t) {
   const o = obj(t, () => {
@@ -408,7 +413,7 @@ R.render = function (G, dt) {
   for (const b of G.bullets) syncBullet(b);
   for (const t of G.teles) syncTele(t);
   if (G.markers) for (const mk of G.markers) if (U.d2(mk.x, mk.y, a.x, a.y) < 5200 * 5200) syncMarker(mk, G);
-  for (const [e, o] of ents) if (o.userData.f !== frame) { if (e.dead || e.life <= 0 || !o.userData.keep && (e.kind === 'net' || e.t > e.dur || !alive(G, e))) { dyn.remove(o); ents.delete(e); } else o.visible = false; }
+  for (const [e, o] of ents) if (o.userData.f !== frame) { if (e.dead || e.life <= 0 || !o.userData.keep && (e.kind === 'net' || e.kind === 'shield' || e.t > e.dur || !alive(G, e))) { dyn.remove(o); ents.delete(e); } else o.visible = false; }
   // active ring + objective beam
   const ac = G.cats[G.active];
   fx.activeRing.visible = !G.car && !ac.down; fx.activeRing.position.set(ac.x * S, (ac.jump ? hAt(ac.x, ac.y) : platY(ac.plat, ac.x, ac.y)) + (ac.plat && !ac.jump ? 0.1 : 0.05), ac.y * S); fx.activeRing.scale.setScalar(1 + Math.sin(G.real * 5) * 0.06);

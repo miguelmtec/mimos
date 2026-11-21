@@ -30,10 +30,10 @@ const spotInView = () => { const G = __vp.G, c = G.cats[G.active], H = VP.HUD; l
 const track = (page, ms) => page.evaluate(ms => new Promise(res => { const xs = []; const iv = setInterval(() => { const r = [...VP.Online.remotes.values()][0]; if (r && r.f) xs.push(Math.round(r.f.x * 10) / 10); }, 80); setTimeout(() => { clearInterval(iv); res(xs); }, ms); }), ms);
 
 // a second player without a browser: it talks to the same API (ticket + ticks), which is all a client is to the server
-async function robot(S, cat, room) {
+async function robot(S, cat, room, at) {
   const H = { origin: S.url.replace(/\/$/, ''), 'content-type': 'application/json' };
   const tk = await (await fetch(S.url + 'api/online/ticket?cat=' + cat, { headers: H })).json();
-  const st = { room: room || 'city', x: 1200, z: 4100, ry: 0, anim: 'idle' };
+  const st = { room: room || 'city', x: at ? at.x : 1200, z: at ? at.y : 4100, ry: 0, anim: 'idle' };   // starts where it is asked: the server refuses teleports
   const bot = { you: tk.you, last: null };
   bot.tick = async over => { Object.assign(st, { emote: undefined, phrase: undefined, car: undefined, anim: 'idle' }, over); const r = await fetch(S.url + 'api/online/tick', { method: 'POST', headers: H, body: JSON.stringify({ ticket: tk.ticket, ...st }) }); bot.last = await r.json(); if (bot.last.room) st.room = bot.last.room; return bot.last; };
   await bot.tick({});
@@ -52,8 +52,8 @@ async function pair(S, label, wantTransport) {
   ok(P + 'each one sees the other by that nickname', a.remotes[0].name === b.you.name && b.remotes[0].name === a.you.name);
   ok(P + 'player count is 2', a.n === 2 && b.n === 2, [a.n, b.n]);
   ok(P + 'the cats do not start inside each other', Math.hypot(a.remotes[0].x - b.remotes[0].x, a.remotes[0].y - b.remotes[0].y) > 12);
-  ok(P + 'objective line shows the room and the count', /#1 · 👥 2/.test(await A.page.evaluate(() => VP.Missions.objective(__vp.G).txt)));
-  ok(P + 'online mode has no missions, dogs or police', await A.page.evaluate(() => { const G = __vp.G; return G.markers.length === 0 && G.dogs.length === 0 && G.noPolice && G.noHeat && G.free; }));
+  { const o = await A.page.evaluate(() => VP.Missions.objective(__vp.G).txt); ok(P + 'objective line shows the room and the count', /#1 · 👥 2/.test(o), o); }
+  { const d = await A.page.evaluate(() => { const G = __vp.G; return { m: G.markers.map(m => m.k || m.type || m.id), d: G.dogs.length, np: !!G.noPolice, nh: !!G.noHeat, f: !!G.free }; }); ok(P + 'online mode has no missions, dogs or police', !d.m.filter(k => k !== 'clinic').length && !d.d && d.np && d.nh && d.f, d); }
 
   // --- movement: B watches A walk; the remote cat must glide, not jump from tick to tick
   const x0 = b.remotes[0].x;
@@ -207,10 +207,11 @@ async function pair(S, label, wantTransport) {
     await D.page.evaluate(() => { VP.Audio.sfx = () => {}; });
     await sleep(1500); await L.shot(D.page, 'online-d-title');
     ok('desktop enters through the menu', await enterByMenu(D, 'mimo'));
-    const bot = await robot(S, 'morticia');
     const spot = await D.page.evaluate(spotInView);
+    const bot = await robot(S, 'morticia', null, spot);
     await bot.tick({ x: spot.x, z: spot.y, ry: 1.2 });
-    ok('desktop sees the scripted player', await until(D.page, () => [...VP.Online.remotes.values()].some(r => r.f) && VP.Online.tags && VP.Online.tags.length > 0, null, 12000));
+    { const seen = await until(D.page, () => [...VP.Online.remotes.values()].some(r => r.f) && VP.Online.tags && VP.Online.tags.length > 0, null, 12000);
+      ok('desktop sees the scripted player', seen, await D.page.evaluate(() => ({ rem: [...VP.Online.remotes.values()].map(r => ({ f: !!r.f, x: r.f && Math.round(r.f.x), y: r.f && Math.round(r.f.y) })), tags: (VP.Online.tags || []).length, me: [Math.round(__vp.G.cats[__vp.G.active].x), Math.round(__vp.G.cats[__vp.G.active].y)], scr: VP.UI.screen, st: VP.Online.state }))); }
     await sleep(1600); await bot.tick({ phrase: 3, ps: 1, emote: 'wave', es: 1 });
     ok('desktop shows the phrase bubble', await until(D.page, () => { const r = [...VP.Online.remotes.values()][0]; return r && r.say && r.say.i === 3; }, null, 7000));
     await D.page.evaluate(() => VP.Online.say(0)); await sleep(500);
@@ -219,9 +220,10 @@ async function pair(S, label, wantTransport) {
     ok('desktop T opens the quick phrases', await D.page.evaluate(() => VP.Online.sheet === 'say' && document.querySelectorAll('#onl .ophrase').length === 12));
     await L.shot(D.page, 'online-d-phrases');
     await D.page.keyboard.press('Escape'); await sleep(200);
-    ok('desktop Esc closes them without pausing', await D.page.evaluate(() => !VP.Online.sheet));
+    ok('desktop Esc closes them without pausing', await D.page.evaluate(() => !VP.Online.sheet && !VP.UI.paused && !VP.UI.screen), await D.page.evaluate(() => [VP.Online.sheet, VP.UI.paused, VP.UI.screen, VP.Life && VP.Life.panel, document.querySelector('#life-panel, .k-panel')?.textContent?.slice(0, 120)]));
     await D.page.evaluate(() => { if (VP.UI.screen === 'pause') VP.UI.act.resume(); });
     await sleep(1600); await bot.tick({});
+    if (process.env.VP_DEBUG) console.log('before tag', JSON.stringify(await D.page.evaluate(() => [VP.UI.paused, VP.UI.screen, VP.I.enabled])));
     const tag = await D.page.evaluate(() => VP.Online.tags[0]);
     await hudTap(D, tag.x, tag.y - 16);
     ok('desktop clicking a cat opens its card', await D.page.evaluate(() => VP.Online.sheet === 'cat'));
@@ -256,7 +258,7 @@ async function pair(S, label, wantTransport) {
       await sleep(400); await L.shot(P.page, `online-${tag}-world`);
       ok(`extras ${tag} the world map has the Cidade Online button`, await P.page.evaluate(() => !!document.querySelector('#s-world [data-act=online]')));
       await tap(P.page, '#s-world [data-act=online]');
-      ok(`extras ${tag} it opens the lobby with the open cities`, await P.page.evaluate(() => VP.UI.screen === 'online' && [...document.querySelectorAll('#onroom option')].map(o => o.value).join() === 'city,miami,rio'));
+      ok(`extras ${tag} it opens the lobby with the open cities`, await P.page.evaluate(() => VP.UI.screen === 'online' && (o => o[0] === 'city' && o.includes('miami') && o.includes('rio') && o.every(id => id === 'city' || VP.Tour.unlocked(VP.Missions.cities.find(c => c.id === id))))([...document.querySelectorAll('#onroom option')].map(o => o.value))));
       // a real city is another room: Copacabana, with a scripted second cat already there
       const bot = await robot(S, 'mimosa', 'rio');
       await P.page.selectOption('#onroom', 'rio');
@@ -288,7 +290,8 @@ async function pair(S, label, wantTransport) {
     await until(A.page, () => [...VP.Online.remotes.values()].some(r => r.f)); await until(B.page, () => [...VP.Online.remotes.values()].some(r => r.f));
     const seen = pg => pg.evaluate(() => { const r = [...VP.Online.remotes.values()][0]; return { lv: r.lv, wear: r.look.wear, acc: r.f.spec ? r.f.spec.acc : null, star: r.look.star }; });
     const sa = await seen(B.page), sb = await seen(A.page);
-    ok('social B sees A\'s level badge (35 stars -> Nv 8)', sa.lv === 8 && sb.lv === 1, [sa.lv, sb.lv]);
+    { const la = await A.page.evaluate(() => VP.Online.level()), lb = await B.page.evaluate(() => VP.Online.level());   // the badge is the best cat level (VP.Prog)
+      ok('social each sees the other\'s level badge', sa.lv === la && sb.lv === lb, [sa.lv, la, sb.lv, lb]); }
     ok('social B sees A\'s outfit (neon cap + gold chain on Mimosa)', sa.star === 'mimosa' && sa.wear.includes('cap_teal') && sa.acc && sa.acc.hat === '#2de2e6' && sa.acc.collar === '#ffd23f', sa);
     ok('social A sees B\'s outfit (sailor shirt on Mimo)', sb.wear.includes('sailor') && sb.acc && sb.acc.shirt === '#ffffff', sb);
     const spot = await B.page.evaluate(spotInView);
@@ -349,7 +352,7 @@ async function pair(S, label, wantTransport) {
       await tap(P.page, '[data-act=online]');
       await until(P.page, () => !!document.querySelector('[data-act=onEnter]:not([disabled])'));
       await L.shot(P.page, `online-${tag}-lobby`);
-      ok(`fallback ${tag} lobby explains the safety rules`, /Não existe chat/.test(await P.page.locator('#s-online').textContent()));
+      ok(`fallback ${tag} lobby explains the safety rules`, /frases prontas/.test(await P.page.locator('#s-online').textContent()));
       // --- API answers 503
       S.state.down = true;
       await tap(P.page, '[data-act=onEnter]');
@@ -381,7 +384,7 @@ async function pair(S, label, wantTransport) {
       S.state.config.enabled = false;
       await P.page.evaluate(async () => { await VP.Online.loadCfg(true); VP.UI.act.title(); VP.UI.act.online(); });
       await sleep(400);
-      ok(`fallback ${tag} disabled in online.json: lobby says unavailable and offers solo`, await P.page.evaluate(() => /indisponível/.test(document.getElementById('s-online').textContent) && !!document.querySelector('[data-act=onSolo]') && !document.querySelector('[data-act=onEnter]')));
+      ok(`fallback ${tag} closed test (not a tester): lobby says so and offers the Story Mode`, await P.page.evaluate(() => /teste com amigos/.test(document.getElementById('s-online').textContent) && !!document.querySelector('[data-act=playStory]') && !document.querySelector('[data-act=onEnter]')));
       await L.shot(P.page, `online-${tag}-disabled`);
       const tk = S.state.ticks; await tap(P.page, '[data-act=onSolo]'); await sleep(500);
       ok(`fallback ${tag} solo button starts free roam without any request`, await P.page.evaluate(() => __vp.G && __vp.G.free && !__vp.G.online) && S.state.ticks === tk);

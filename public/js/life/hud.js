@@ -142,6 +142,6 @@ addEventListener('keydown', e => {
   if (!free(G) || VP.UI.state !== 'play' || VP.UI.screen) return;
   if (Life.panel) { if (k === 't' || k === 'n') Life.closePanel(); return; }
   if (VP.UI.paused) return;
-  if (k === 't') LH.menu(); else if (k === 'n' && VP.Minimap) VP.Minimap.open(); else if (k === 'o') Life.radio(); else if (k === 'u' && Life.photo) Life.photo.open();
+  if (k === 't' && !(G.online && VP.Online && VP.Online.state === 'on')) LH.menu(); else if (k === 'n' && VP.Minimap) VP.Minimap.open(); else if (k === 'o') Life.radio(); else if (k === 'u' && Life.photo) Life.photo.open();
 });
 })();

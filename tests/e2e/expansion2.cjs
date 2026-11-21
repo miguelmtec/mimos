@@ -71,7 +71,7 @@ const SECTIONS = {
       ok(tag + ': one pin and one card per Brazilian city', a.pins === a.br && a.cards === a.br && a.br >= 5, a);
       ok(tag + ': Miami and Rio are free from the start', a.miamiFree && a.rioFree);
       ok(tag + ': city card shows stars, paws and postcards', /⭐ 5\/30/.test(a.rio) && /🐾 2\/5/.test(a.rio) && /📸 0\//.test(a.rio), a.rio);
-      ok(tag + ': upcoming destinations are announced as "em breve" dots', a.soon >= 5, a.soon);
+      ok(tag + ': every announced destination not delivered yet is an "em breve" dot', a.soon === (JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../public/data/cities/index.json'), 'utf8')).soon || []).length, a.soon);
       ok(tag + ': comfortable touch targets, no sideways scroll', a.cardH >= 60 && a.segH >= 40 && a.scrollX, a);
       if (mobile) await L.shot(page, 'x2-world-br');
       await page.locator('.seg button[data-v=world]').click(); await page.waitForTimeout(200);

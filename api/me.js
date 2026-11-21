@@ -1,7 +1,7 @@
 // GET    /api/me -> {user, cats} (401 when not logged in). user.needsAge: the age step is still due.
 // DELETE /api/me -> deletes the account and every piece of personal data attached to it (LGPD)
 import { endpoint } from './_lib/http.js';
-import { requireUser, clearCookie, isAdminEmail } from './_lib/auth.js';
+import { requireUser, clearCookie, isAdminEmail, isTesterEmail, onlinePublic } from './_lib/auth.js';
 import { listCats } from './_lib/cats.js';
 import { sendNotice } from './_lib/mail.js';
 import { randomBytes } from 'node:crypto';
@@ -11,7 +11,9 @@ export default endpoint({
     const user = await requireUser(sql, req, { allowIncomplete: true });
     // the owner's account (ADMIN_EMAILS, comma separated) carries the "Edição dos Mimos": the full wardrobe on the three official cats
     const admin = isAdminEmail(user.email);
-    return { user: admin ? { ...user, admin: true } : user, cats: user.needsAge ? [] : await listCats(sql, user.id) };
+    // tester: may enter the Cidade Online while it is a closed test (onlineOpen tells the client it is public)
+    const extra = { ...(admin ? { admin: true } : {}), ...(isTesterEmail(user.email) ? { tester: true } : {}), ...(onlinePublic() ? { onlineOpen: true } : {}) };
+    return { user: { ...user, ...extra }, cats: user.needsAge ? [] : await listCats(sql, user.id) };
   },
   DELETE: async ({ req, res, sql }) => {
     const user = await requireUser(sql, req, { allowIncomplete: true });

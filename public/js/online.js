@@ -40,7 +40,8 @@ O.loadCfg = function (force) {
     return (O.cfg = { enabled: j.enabled === true, wsUrl: ws, pollingEnabled: j.pollingEnabled !== false, tickMs: num(j.tickMs, 1000, 10000, 1500), maxPerRoom: num(j.maxPerRoom, 2, 30, 30), maxRooms: num(j.maxRooms, 1, 20, 20) });
   });
 };
-O.available = () => !!(O.cfg && O.cfg.enabled && (O.cfg.wsUrl || O.cfg.pollingEnabled));
+O.tester = () => { const u = VP.Acct && VP.Acct.status === 'in' && VP.Acct.user; return !!(u && (u.admin || u.tester || u.onlineOpen)); };
+O.available = () => !!(O.cfg && (O.cfg.enabled || O.tester()) && (O.cfg.wsUrl || O.cfg.pollingEnabled));
 
 // ---------- transports ----------
 function WebSocketTransport(url) {
@@ -247,7 +248,7 @@ async function connect(G, base, ticket) {
     try {
       const w = await tr.connect({ room: G.online.room || base, ticket, renew: O.ticket, state });
       if (O.G !== G) { tr.close(); return; }                 // the player left while we were connecting
-      O.tr = tr; O.state = 'on'; O.activeAt = nowS(); O.room = w.room; G.online.room = w.room; if (w.you && w.you.name) O.you = Object.assign({}, O.you, w.you);
+      O.tr = tr; O.state = 'on'; O.activeAt = nowS(); setTimeout(() => UI.toast(t('on_chatHint'), 4200), 2500); O.room = w.room; G.online.room = w.room; if (w.you && w.you.name) O.you = Object.assign({}, O.you, w.you);
       setPaws(G, w.paw);
       Game.fx.say('🌐 ' + t('on_hello', O.roomLabel(), O.you.name), '#2de2e6', 4);
       return;
@@ -464,7 +465,7 @@ O.hudHit = function (x, y) {
   return null;
 };
 O.hudTap = function (hit) { if (hit === 'on_say') sheet(O.sheet === 'say' ? null : 'say'); else if (hit === 'on_list') sheet('list'); else if (hit === 'on_cat') sheet('cat', O.tapId); };
-addEventListener('keydown', e => { if (!O.G || O.state !== 'on' || UI.screen || (e.target && e.target.tagName === 'INPUT')) return; const k = e.key.toLowerCase(); if (k === 't' || k === 'enter') sheet(O.sheet === 'say' ? null : 'say'); else if (k === 'escape' && O.sheet) { closeSheet(); e.stopPropagation(); } });
+addEventListener('keydown', e => { if (!O.G || O.state !== 'on' || UI.screen || (e.target && e.target.tagName === 'INPUT')) return; const k = e.key.toLowerCase(); if (k === 't' || k === 'enter') sheet(O.sheet === 'say' ? null : 'say'); else if (k === 'escape' && O.sheet) { closeSheet(); e.stopImmediatePropagation(); e.preventDefault(); } }, true);   // capture: Esc closes the chat before it can pause the game
 
 // ---------- sheets over the game (phrases, who is here, one cat) ----------
 function closeSheet() { const el = document.getElementById('onl'); if (el) el.remove(); O.sheet = null; clearTimeout(O.sheetT); }
@@ -577,7 +578,8 @@ UI.SCREENS.online = {
     const look = looks.find(l => l.k === O.sel.cat), ok = O.cfg ? O.available() : null, guest = !(VP.Acct && VP.Acct.status === 'in');
     return `<div class="corner l"><button class="chip" data-act="back">‹ ${t('back')}</button></div><div class="wrap narrow" style="margin-top:46px"><h2 class="teal">🌐 ${t('on_title')}</h2>
       <p class="small">${t('on_sub')}</p>
-      ${ok === false ? `<div class="panel t"><p><b>😿 ${t('on_unavail')}</b></p><p class="small">${t('on_unavailSub')}</p></div><button class="btn" data-act="onSolo">🐾 ${t('on_solo')}</button>` : `
+      <div class="panel"><p class="small">${t('on_what')}</p></div>
+      ${ok === false ? `<div class="panel t"><p><b>🔒 ${t('on_closed')}</b></p><p class="small">${t('on_closedSub')}</p></div><button class="btn" data-act="playStory">🎬 ${t('md_story')}</button>` : `${O.tester() && !(O.cfg && O.cfg.enabled) ? `<p class="small">🧪 ${t('on_testerNote')}</p>` : ''}
       <div class="panel"><div class="sw col"><span>🗺 ${t('on_where')}</span><select class="txt osel" id="onroom">${rooms.map(r => `<option value="${esc(r.id)}" ${r.id === O.sel.room ? 'selected' : ''}>${r.flag} ${esc(r.name)}</option>`).join('')}</select></div>
         <div class="sw col" style="border:0"><span>🐱 ${t('on_who')}</span><span class="row">${looks.map(l => `<button class="tab ${l.k === O.sel.cat ? 'on' : ''}" data-act="onCat" data-k="${l.k}">${l.k === 'mine' ? '💛 ' : ''}${esc(l.label)}</button>`).join('')}</span></div>
         <p class="small">${look.named ? t('on_nameCat', esc(look.label)) : t('on_nameNick')}${guest ? '' : ''}</p></div>
@@ -599,5 +601,6 @@ UI.act.online = () => { if (VP.Acct && VP.Acct.minorBlock && VP.Acct.minorBlock(
 UI.act.onCat = el => { O.sel.cat = el.dataset.k; const s = document.getElementById('onroom'); if (s) O.sel.room = s.value; UI.show('online'); };
 UI.act.onEnter = el => { const s = document.getElementById('onroom'); if (s) O.sel.room = s.value; el.disabled = true; el.textContent = '… ' + t('on_connecting'); O.enter(O.sel.room).then(() => { if (UI.screen === 'online' && !O.G) UI.show('online'); }); };
 UI.act.onSolo = () => UI.free();
+UI.act.playStory = () => UI.show('title');
 UI.act.onLeave = () => O.leave();
 })();

@@ -18,7 +18,7 @@ import { call } from './helpers/http.mjs';
 
 let db, mails = [];
 const realFetch = globalThis.fetch, realError = console.error;
-const envKeys = ['DATABASE_URL', 'POSTGRES_URL', 'RESEND_API_KEY', 'AUTH_SECRET', 'ONLINE_TICKET_SECRET', 'ONLINE_ENABLED', 'ALLOWED_ORIGINS'];
+const envKeys = ['DATABASE_URL', 'POSTGRES_URL', 'RESEND_API_KEY', 'AUTH_SECRET', 'ONLINE_TICKET_SECRET', 'ONLINE_ENABLED', 'ALLOWED_ORIGINS', 'ONLINE_PUBLIC', 'ONLINE_TESTERS', 'ADMIN_EMAILS'];
 const savedEnv = Object.fromEntries(envKeys.map((k) => [k, process.env[k]]));
 
 before(async () => {
@@ -33,6 +33,7 @@ beforeEach(async () => {
   for (const k of envKeys) delete process.env[k];
   process.env.RESEND_API_KEY = 're_test_key';
   process.env.ONLINE_TICKET_SECRET = 'test-secret';
+  process.env.ONLINE_PUBLIC = 'true';   // most tests exercise the open city; the closed test has its own case
   mails = [];
   await db.reset();
   __setSqlForTests(db.sql);
@@ -164,6 +165,18 @@ test('ticket: signed with the shared key, so another key (or a tampered payload)
   process.env.ONLINE_TICKET_SECRET = 'another';
   assert.equal(verifyTicket(t.ticket), null);
   for (const junk of [undefined, null, '', 'a.b', 42, 'x'.repeat(2000)]) assert.equal(verifyTicket(junk), null);
+});
+
+test('ticket: closed test (no ONLINE_PUBLIC): guests and strangers are refused, the owner and invited testers get in', async () => {
+  delete process.env.ONLINE_PUBLIC;
+  process.env.ADMIN_EMAILS = 'dono@example.com'; process.env.ONLINE_TESTERS = 'Amiga@Example.com, outro@example.com';
+  assert.deepEqual((await ticketReq()).body, { error: 'testers-only' });
+  const stranger = await login('estranho@example.com');
+  assert.equal((await ticketReq('', { cookie: stranger.cookie })).status, 403);
+  const owner = await login('dono@example.com');
+  assert.equal((await ticketReq('', { cookie: owner.cookie })).status, 200);
+  const friend = await login('amiga@example.com');
+  assert.equal((await ticketReq('', { cookie: friend.cookie })).status, 200);
 });
 
 // ---------- tick ----------

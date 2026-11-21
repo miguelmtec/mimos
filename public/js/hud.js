@@ -179,6 +179,7 @@ H.draw = function (G, dt) {
   if (G.online && VP.Online && VP.Online.state === 'on') { // quick phrases (fixed list): the only way to talk
     const sb = H.btn.say, open = VP.Online.sheet === 'say'; c.save(); c.globalAlpha = 0.92; c.beginPath(); c.arc(sb.x, sb.y, sb.r, 0, 6.283); c.fillStyle = 'rgba(18,4,31,.62)'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = open ? GOLD : TEAL; c.stroke(); c.restore();
     c.font = 19 * k + 'px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.fillText('💬', sb.x, sb.y + 1);
+    txt(VP.t('on_chat'), sb.x, sb.y + sb.r + 8 * k, 9 * k, '#fff', 'center', INK);
     if (!touch) txt('T', sb.x + sb.r + 9 * k, sb.y, 10 * k, 'rgba(255,255,255,.8)');
   }
   if (G.tutorial) tutorial(G, k, t, touch, ob);

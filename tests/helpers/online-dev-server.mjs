@@ -17,6 +17,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 
 export async function startDevServer({ port = 0, ws = false, config = {} } = {}) {
   process.env.ONLINE_TICKET_SECRET ||= 'dev-secret';
+  process.env.ONLINE_PUBLIC ||= 'true';   // the e2e city is open; the closed test is covered in tests/online.test.mjs
   const db = createFakeBackend();
   __setSqlForTests(db.sql); __resetOnlineForTests();
   const state = { down: false, ticks: 0, idleTicks: 0, bodies: [], config: { enabled: true, maxPerRoom: 30, maxRooms: 20, tickMs: 1500, pollingEnabled: true, wsUrl: '', ...config } };

@@ -56,6 +56,11 @@ export const publicUser = (u) => ({
   id: u.id, email: u.email, lang: u.lang, createdAt: new Date(u.created_at).toISOString(),
 });
 
+/** ONLINE_TESTERS (comma separated): friends allowed into the Cidade Online while it is still a closed test. */
+export const isTesterEmail = (email) =>
+  isAdminEmail(email) || (process.env.ONLINE_TESTERS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean).includes(String(email).toLowerCase());
+/** ONLINE_PUBLIC=true opens the Cidade Online to everybody; until then only the owner and the testers get in. */
+export const onlinePublic = () => String(process.env.ONLINE_PUBLIC ?? '').trim().toLowerCase() === 'true';
 /** ADMIN_EMAILS (comma separated). */
 export const isAdminEmail = (email) =>
   (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean).includes(String(email).toLowerCase());

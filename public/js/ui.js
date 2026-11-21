@@ -74,9 +74,10 @@ SCREENS.title = {
     <div class="top"><h1 class="logo">VICE<span>PAWS</span></h1><p class="tag">${t('tagline')}</p></div>
     <div class="art"></div>
     <div class="in"><!--vp:toast--><!--vp:look-->
-      <button class="btn big play" data-act="play">▶ ${VP.S.unlocked > 1 || VP.S.pos ? t('cont') : t('play')}</button>
+      <div class="tmodes"><button class="tmode tstory" data-act="play"><span class="mi">🎬</span><span class="mt"><b>${t('md_story')}${VP.S.unlocked > 1 || VP.S.pos ? ` <i>▶ ${t('cont')}</i>` : ''}</b><small>${t('md_storySub')}</small></span></button>
+        <button class="tmode tonl" data-act="online"><span class="mi">🌐</span><span class="mt"><b>${t('on_title').toUpperCase()}</b><small>${t('md_onlineSub')}</small></span></button></div>
       <div class="chips">${UI.challenge ? `<button class="dailybar chal" data-act="chalPlay">⚔️ <span><b>${esc(UI.challenge.name || t('ch_friend'))}</b> ${t('ch_dares', UI.challenge.score)}<small>${esc(VP.mname(M.get(UI.challenge.n)))}</small></span><i>▶</i></button>` : ''}${dailyBar()}</div>
-      <nav class="dock">${dock('map', '🗺', t('tl_missions'))}${dock('shop', '🛍', t('tl_shop'), { cls: 'gold' })}${dock('sheetCat', '🐱', t('tl_mycat'))}${dock('online', '🌐', t('tl_online'), { badge: t('on_new') })}${dock('sheetMore', '☰', t('tl_more'))}</nav></div>
+      <nav class="dock">${dock('map', '🗺', t('tl_missions'))}${dock('shop', '🛍', t('tl_shop'), { cls: 'gold' })}${dock('sheetCat', '🐱', t('tl_mycat'))}${dock('sheetMore', '☰', t('tl_more'))}</nav></div>
     ${catSheet()}${moreSheet()}${loginSheet()}`,
   after: () => { const el = $('#s-title'); if (el && UI.sheet) el.dataset.open = UI.sheet; },
 };

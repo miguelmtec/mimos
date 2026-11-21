@@ -73,7 +73,7 @@ ACT.syEasy = el => { const n = +el.dataset.n; St.easy[n] = 1; UI.startMission(n)
 St.nextStory = () => M.list.find(m => !m.bonus && m.n <= VP.S.unlocked && !VP.S.stars[m.n]) || null;
 { const ob0 = M.objective; M.objective = function (G) {
     const ob = ob0(G);
-    if (G.free && !G.tour && !G.guide && !G.quest && !G.trial && St.data.chapters.length) {
+    if (G.free && !G.online && !G.tour && !G.guide && !G.quest && !G.trial && St.data.chapters.length) {
       const m = St.nextStory(), ch = St.data.chapters[St.chapter() - 1];
       if (m && ch) { const mk = G.markers.find(k => k.k === 'mission' && k.n === m.n); ob.txt = t('sy_free', ch.goal[L()], m.n); if (mk) ob.at = mk; }
       else if (!m) ob.txt = t('sy_all');

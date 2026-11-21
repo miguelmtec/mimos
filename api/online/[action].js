@@ -15,7 +15,7 @@
 import { createHash } from 'node:crypto';
 import { endpoint, fail, HttpError, actionOf, clientIp, readQuery } from '../_lib/http.js';
 import { getSql, ensureSchema, ensureOnlineSchema } from '../_lib/db.js';
-import { getUser, readToken, ipHash } from '../_lib/auth.js';
+import { getUser, readToken, ipHash, isTesterEmail, onlinePublic } from '../_lib/auth.js';
 import { isUuid, validateSpec } from '../_lib/validate.js';
 import {
   TICK_MIN_MS, MAX_BODY, MAX_OTHERS, MAX_REPORTS_HOUR, REPORT_REASONS, PAW_SLOT_MS, PAWS_PER_ROOM, ROOM_CAP,
@@ -46,6 +46,8 @@ async function ticket(req) {
     sql = await getSql();
     if (sql) { await ensureSchema(sql); user = await getUser(sql, req); if (user && user.needsAge) user = null; }   // no age given yet: treated as a guest
   }
+  // closed test: until the owner opens it (ONLINE_PUBLIC=true) only his account and the invited friends get a ticket
+  if (!onlinePublic() && !(user && isTesterEmail(user.email))) throw fail(403, 'testers-only');
 
   let look, catName = null;
   if (q.catId != null) {

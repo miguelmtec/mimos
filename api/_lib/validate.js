@@ -11,6 +11,11 @@ export const PATTERNS = ['solid', 'calico', 'tuxedo', 'tabby', 'bicolor', 'point
 export const EARS = ['pointy', 'big', 'round', 'fold', 'tuft'];
 export const TAILS = ['long', 'fluffy', 'short', 'bob', 'curl'];
 export const ROLES = ['shooter', 'biter', 'glutton'];
+// Personality, main attack (Space) and the four powers (Z X C V). These lists mirror public/data/powers.json (a unit test keeps them in sync).
+export const PERSONALITIES = ['dorminhoco', 'nervosinho', 'comilao', 'brincalhao', 'curioso', 'carinhoso', 'aventureiro', 'elegante'];
+export const ATTACKS = ['bubbles', 'bite', 'swipe', 'pounce', 'yarn'];
+export const POWERS = ['nap', 'yawn', 'pillow', 'snore', 'tantrum', 'lightning', 'spiky', 'glare', 'feast', 'magnet', 'pilfer', 'burp',
+  'charm', 'furball', 'doublejump', 'spin', 'catnap', 'catleap', 'hide', 'zoomies'];
 export const ACCESSORIES = ['collar', 'bell', 'bow', 'bowtie', 'bandana', 'scarf', 'sunglasses', 'glasses',
   'hat', 'cap', 'crown', 'flower', 'chain'];
 export const MAX_PATCH_COLORS = 4;
@@ -61,11 +66,17 @@ export function validateSpec(input) {
     if (typeof input.furLength !== 'number' || !Number.isFinite(n) || n < 0 || n > 1) throw invalid('spec.furLength');
     out.furLength = Math.round(n * 100) / 100;
   }
-  for (const [key, list] of [['ears', EARS], ['tail', TAILS], ['role', ROLES]]) {
+  for (const [key, list] of [['ears', EARS], ['tail', TAILS], ['role', ROLES], ['personality', PERSONALITIES], ['attack', ATTACKS]]) {
     if (input[key] != null) {
       if (!list.includes(input[key])) throw invalid(`spec.${key}`);
       out[key] = input[key];
     }
+  }
+  if (input.powers != null) {
+    if (!Array.isArray(input.powers) || input.powers.length !== 4) throw invalid('spec.powers');
+    if (input.powers.some((p) => typeof p !== 'string' || !POWERS.includes(p))) throw invalid('spec.powers');
+    if (new Set(input.powers).size !== 4) throw invalid('spec.powers');
+    out.powers = [...input.powers];
   }
   if (input.eyeColor2 != null) {
     const h = hex(input.eyeColor2);

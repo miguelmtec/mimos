@@ -58,7 +58,7 @@
       const d0 = go(G, c, at.x, at.y, 1); void d0; let danger = false, inside = false, chased = false;
       const nx = c.x + I.mx * 46, ny = c.y + I.my * 46;
       for (const e of G.dogs) { if (e.dead) continue; if (e.sleep) { if (Math.hypot(nx - e.x, ny - e.y) < e.wake + 10) danger = true; if (Math.hypot(c.x - e.x, c.y - e.y) < e.wake + 12) inside = true; } else if (Math.hypot(c.x - e.x, c.y - e.y) < 170) chased = true; }
-      if ((danger || chased) && c.invis < 0.5) { if (c.cd2 <= 0) I.pressed.dash = true; else if (!inside && !chased) { I.mx = I.my = 0; B.still = 0; } }
+      if ((danger || chased) && c.invis < 0.5) { if ((c.pcd[3] || 0) <= 0) I.pressed.p3 = true; else if (!inside && !chased) { I.mx = I.my = 0; B.still = 0; } }
       return;
     }
     // --- tap mini-games (fishing): stand on the spot, press only when the bite is on ---
@@ -67,7 +67,7 @@
     // --- dodge telegraphed attacks ---
     for (const tl of G.teles) {
       if (tl.safe) continue;
-      if (tl.k === 'circle') { const d = Math.hypot(c.x - tl.x, c.y - tl.y); if (d < tl.r + 40) { const an = d > 1 ? Math.atan2(c.y - tl.y, c.x - tl.x) : 0; I.mx = Math.cos(an); I.my = Math.sin(an); I.attack = true; if (c.cd2 <= 0 && c.name !== 'mimo') I.pressed.dash = true; return; } }
+      if (tl.k === 'circle') { const d = Math.hypot(c.x - tl.x, c.y - tl.y); if (d < tl.r + 40) { const an = d > 1 ? Math.atan2(c.y - tl.y, c.x - tl.x) : 0; I.mx = Math.cos(an); I.my = Math.sin(an); I.attack = true; if (c.name === 'mimosa' && c.pcd[1] <= 0) I.pressed.p1 = true; else if (c.name === 'morticia' && c.z <= 0) I.pressed.jump = true; return; } }
       else { const dx = c.x - tl.x, dy = c.y - tl.y, along = dx * Math.cos(tl.a) + dy * Math.sin(tl.a), perp = -dx * Math.sin(tl.a) + dy * Math.cos(tl.a); if (along > -40 && along < tl.len + 40 && Math.abs(perp) < tl.w / 2 + 50) { const sg = perp >= 0 ? 1 : -1; I.mx = -Math.sin(tl.a) * sg; I.my = Math.cos(tl.a) * sg; I.attack = true; return; } }
     }
     // --- pick the right cat ---
@@ -78,9 +78,9 @@
     // --- specials ---
     const dog = nearestDog(G, c, 330);
     if (dog) {
-      if (c.name === 'mimo' && c.cdS <= 0 && (c.exhausted || c.hp < c.max * 0.5)) I.pressed.special = true;
-      if (c.name === 'mimosa' && c.cdS <= 0 && U.d2(dog.x, dog.y, c.x, c.y) < 170 * 170) I.pressed.special = true;
-      if (c.name === 'morticia' && c.feastReady) I.pressed.special = true;
+      if (c.name === 'mimo' && c.cdS <= 0 && (c.exhausted || c.hp < c.max * 0.5)) I.pressed.p0 = true;
+      if (c.name === 'mimosa' && c.cdS <= 0 && U.d2(dog.x, dog.y, c.x, c.y) < 170 * 170) I.pressed.p0 = true;
+      if (c.name === 'morticia' && c.feastReady) I.pressed.p0 = true;
     }
     // --- objective-specific ---
     if (at && at.shoot) {
@@ -98,7 +98,7 @@
       const d = Math.hypot(dog.x - c.x, dog.y - c.y);
       I.attack = true;
       if (c.name === 'mimo') { if (d < 170) { const a = Math.atan2(c.y - dog.y, c.x - dog.x) + Math.sin(B.tick * 0.05) * 0.9; I.mx = Math.cos(a); I.my = Math.sin(a); } else if (d > 330 || !G.W.los(c.x, c.y, dog.x, dog.y, 2)) go(G, c, dog.x, dog.y, mode); }
-      else { let unreach = false; if (d > 34 + dog.r) unreach = go(G, c, dog.x, dog.y, mode) < 0; if (unreach) { I.attack = false; B.skipFight = true; } I.aim = Math.atan2(dog.y - c.y, dog.x - c.x); if (c.name === 'mimosa' && d > 90 && d < 230 && c.cd2 <= 0) I.pressed.dash = true; }
+      else { let unreach = false; if (d > 34 + dog.r) unreach = go(G, c, dog.x, dog.y, mode) < 0; if (unreach) { I.attack = false; B.skipFight = true; } I.aim = Math.atan2(dog.y - c.y, dog.x - c.x); if (c.name === 'mimosa' && d > 90 && d < 230 && c.pcd[1] <= 0) I.pressed.p1 = true; }
       if (B.skipFight) { B.skipFight = false; } else if (st.smash && at && at.k === 'crate' && d > 200) { /* fallthrough to target below */ } else return;
     }
     if (!at) { if (st.roam && dog) { I.attack = true; } return; }

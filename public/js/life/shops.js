@@ -73,7 +73,7 @@ Life.applyItem = function (L, item, opts) {
     case 'heal': Game.healTeam(b.amount); break;
     case 'life': VP.S.lives = Math.max(VP.S.lives, Math.min(9, VP.S.lives + b.amount)); Game.fx.burst(c.x, c.y - 20, 12, ['#ff4f5e', '#fff'], 160, 'heart', 7, 0.8); sfx('paw'); break;
     case 'speed': timed('speed', b.amount, b.dur); break;
-    case 'cooldown': for (const k of G.cats) { k.cd2 = 0; k.cdS = Math.min(k.cdS, 0); } if (b.dur) timed('cooldown', 1, b.dur); sfx('switch'); break;
+    case 'cooldown': for (const k of G.cats) { k.cd2 = 0; k.cdS = Math.min(k.cdS, 0); if (k.pcd) k.pcd.fill(0); } if (b.dur) timed('cooldown', 1, b.dur); sfx('switch'); break;
     case 'belly': mort.belly = Math.min(100, mort.belly + b.amount); if (b.heal) Game.healTeam(b.heal); break;
     case 'regen': timed('regen', b.amount, b.dur); break;
     case 'catnip': G.catnip = Math.max(G.catnip, b.dur); for (const k of G.cats) k.root = 0; timed('catnip', 1, b.dur); break;
@@ -87,7 +87,7 @@ function tickBuffs(L, dt) {
   for (const k in B) { B[k].t -= dt; if (B[k].t <= 0) delete B[k]; }
   if (B.energy) { const m = G.cats[0]; m.energy = Math.max(m.energy, 92); m.exhausted = false; }
   if (B.regen) for (const c of G.cats) if (!c.down && c.hp < c.max) c.hp = Math.min(c.max, c.hp + B.regen.amount * dt);
-  if (B.cooldown) for (const c of G.cats) { if (c.cd2 > 0) c.cd2 -= dt; if (c.cdS > 0) c.cdS -= dt; }
+  if (B.cooldown) for (const c of G.cats) { if (c.cd2 > 0) c.cd2 -= dt; if (c.cdS > 0) c.cdS -= dt; if (c.pcd) for (let i = 1; i < 4; i++) if (c.pcd[i] > 0) c.pcd[i] -= dt; }
   // speed: multiply the cat's own speed while the buff lasts and undo exactly that afterwards
   const want = B.speed ? B.speed.amount : 1;
   for (const c of G.cats) { const cur = c._lifeSpd || 1; if (cur !== want) { c.spd = c.spd / cur * want; c._lifeSpd = want; } }

@@ -74,9 +74,10 @@ Game.addCats = function (x, y) {
     G.cats.push({
       kind: 'cat', name, idx, x: x + (idx - 1) * 34, y: y + (idx === 0 ? 0 : 22), r: name === 'morticia' ? 11 : 13, hp: st.hp, max: st.hp, spd: st.spd,
       face: 1, aim: 0, t: idx * 1.3, walk: 0, kx: 0, ky: 0, cd: 0, cd2: 0, cdS: 1.5, flash: 0, inv: 1, down: false, root: 0, atk: 0, mouth: 0,
-      energy: 100, belly: 70, exhausted: false, combo: 0, comboT: 0, dashT: 0, dx: 0, dy: 0, invis: 0, recoil: 0, idle: 0, hitSet: null, aiT: 0, stuck: 0,
+      energy: 100, belly: 70, exhausted: false, pe: 100, pcd: [0, 0, 0, 0], z: 0, vz: 0, gs: 1, sta: 100, staLock: 0, bigT: 0, shieldT: 0, spikeT: 0, zoomT: 0, magT: 0, combo: 0, comboT: 0, dashT: 0, dx: 0, dy: 0, invis: 0, recoil: 0, idle: 0, hitSet: null, aiT: 0, stuck: 0,
     });
   });
+  if (VP.Powers) VP.Powers.assign(G);
   // never spawn inside a wall (narrow real-world streets)
   const used = [];
   for (const c of G.cats) {
@@ -199,15 +200,18 @@ function moveToward(e, tx, ty, spd, dt, field, mode) {
 }
 
 // ---------- damage ----------
-function hurtCat(c, dmg, fx, fy) {
+function hurtCat(c, dmg, fx, fy, proj) {
   if (c.down || c.inv > 0 || G.over) return false;
   if (G.car) { if (c.idx === G.active) damageCar(G.car, dmg * 0.6); return true; }
+  if (c.z > 0.7 && !proj) return false; // airborne: ground slams, bites and charges pass underneath
+  if (c.shieldT > 0) { c.shieldT = Math.max(0, c.shieldT - 0.6); c.inv = 0.25; text(c.x, c.y - 48, tr('pw_blocked'), '#bfe9ff', 15); part({ x: c.x, y: c.y - 16, k: 'ring', col: '#bfe9ff', size: 14, life: 0.3, grow: 160 }); sfx('tink', 0.1); return false; }
+  if (c.spikeT > 0) { c.spikeT = 0; c.inv = 0.4; if (VP.Powers) VP.Powers.reflect(c, dmg, fx, fy); return false; }
   if (c.name === 'mimosa') dmg *= 0.72;
   if (c.idx !== G.active) dmg *= 0.55;
   dmg *= pv('res_' + c.name, 1) * (G.omega > 0 ? 0.65 : 1);
   dmg = Math.max(1, Math.round(dmg));
   c.hp -= dmg; c.flash = 0.14; c.inv = 0.35; G.stat.dmg += dmg;
-  const a = Math.atan2(c.y - fy, c.x - fx); c.kx += Math.cos(a) * 180; c.ky += Math.sin(a) * 180;
+  const a = Math.atan2(c.y - fy, c.x - fx); if (!(c.bigT > 0)) { c.kx += Math.cos(a) * 180; c.ky += Math.sin(a) * 180; }
   text(c.x, c.y - 44, '-' + dmg, '#ff6b6b', 17); burst(c.x, c.y - 16, 5, '#ffd23f', 110, 'star', 6);
   if (c.idx === G.active) { shake(6); sfx('hurt'); }
   if (c.hp <= 0 && !(VP.Prog && VP.Prog.lastStand(G, c))) downCat(c);
@@ -283,7 +287,7 @@ function switchTo(i, silent) {
   if (!c || c.down || i === G.active) { if (c && c.down && !silent) say(tr('isDown'), '#ff6b6b', 1.5); return; }
   if (G.solo !== null) { if (!silent) say(tr('soloOnly'), '#ffd23f', 1.6); return; }
   if (G.car) { G.active = i; return; }
-  G.active = i; G.fieldT = 0; refreshFields(true);
+  G.active = i; G.lock = null; G.fieldT = 0; refreshFields(true);
   if (!silent) sfx('sw');
   part({ x: c.x, y: c.y - 4, k: 'ring', col: '#2de2e6', size: 14, life: 0.35 });
 }
@@ -297,9 +301,9 @@ function autoAim(c, range, kind) {
   if (kind === 'bite') for (const p of G.props) if (!p.done && (p.k === 'fgate' || p.k === 'crate' || (p.k === 'cage' && p.lock === 'bite'))) { const d = U.d2(c.x, c.y, p.x, p.y); if (d < 90 * 90 && d < bd) { bd = d; best = p; bx = p.x; by = p.y; } }
   return best ? Math.atan2(by - c.y, bx - c.x) : null;
 }
-function shoot(c, ang, ai) {
-  const sp = ang + U.rand(-0.045, 0.045), mx = c.x + Math.cos(ang) * 22, my = c.y - 12 + Math.sin(ang) * 22;
-  G.bullets.push({ k: 'bolt', x: mx, y: my, vx: Math.cos(sp) * 640, vy: Math.sin(sp) * 640, life: 0.8, dmg: (ai ? 9 : 13) * (c.exhausted ? 0.8 : 1) * pv('boltDmg', 1), from: 'cat', r: 6, t: 0 });
+function shoot(c, ang, ai, yarn) {
+  const sp = ang + U.rand(-0.045, 0.045), mx = c.x + Math.cos(ang) * 22, my = c.y - 12 + Math.sin(ang) * 22, v = yarn ? 470 : 640;
+  G.bullets.push({ k: 'bolt', yarn: !!yarn, x: mx, y: my, vx: Math.cos(sp) * v, vy: Math.sin(sp) * v, life: yarn ? 1.1 : 0.8, dmg: (yarn ? 18 : (ai ? 9 : 13)) * (yarn && ai ? 0.7 : 1) * (c.exhausted ? 0.8 : 1) * pv('boltDmg', 1) * (c.bigT > 0 ? 2 : 1), from: 'cat', r: yarn ? 8 : 6, t: 0 });
   if (VP.Prog) VP.Prog.shot(G, c, ang);
   c.recoil = 1; c.kx -= Math.cos(ang) * 26; c.ky -= Math.sin(ang) * 26;
   part({ x: mx, y: my, k: 'flash', col: '#bff4ff', size: 13, life: 0.07 });
@@ -316,7 +320,7 @@ function biteHit(c, ang, dmg, reach, rad, kb, src) {
     const pr = p.k === 'fgate' ? 56 : 34;
     if (U.d2(p.x, p.y, hx, hy) < (rad + pr) * (rad + pr) * 0.6) {
       if (c.hitSet) c.hitSet.add(p);
-      if (c.name !== 'mimosa') { text(p.x, p.y - 40, tr('needMimosa'), '#ff7ac0', 13); sfx('tink', 0.2); continue; }
+      if (!(atkOf(c) === 'bite' || atkOf(c) === 'swipe' || c.bigT > 0)) { text(p.x, p.y - 40, tr('needMimosa'), '#ff7ac0', 13); sfx('tink', 0.2); continue; }
       p.hp--; p.flash = 0.12; hit++; burst(p.x, p.y - 10, 6, '#c98f4b', 150, 'dot', 5); sfx('break');
       if (p.hp <= 0) breakProp(p);
     }
@@ -359,26 +363,31 @@ function eat(c, kind, big) {
   burst(c.x + c.face * 8, c.y - 22, 4, ['#ffb347', '#fff3a8'], 90, 'dot', 4);
   void kind;
 }
+// take the snack an enemy carries (shared by the pounce and the Rouba-Rouba power)
+function stealFrom(c, e) {
+  const locked = e.isBoss && e.boss.phase !== 'exposed' && e.stun <= 0;
+  if (!e.carry || locked) return false;
+  const k = e.carry; e.carry = null; G.stat.stolen++;
+  part({ x: e.x, y: e.y - 44, k: 'fly', icon: k, tx: c, life: 0.25, size: 12 });
+  sfx('steal'); text(e.x, e.y - 58, tr('stolen'), '#ffd23f', 15); hitstop(0.04);
+  e.robbed = 1.3; e.stun = Math.max(e.stun, e.isBoss ? 0 : 1.1);
+  if (k === 'key') { G.keys++; G.flags.key = (G.flags.key || 0) + 1; say(tr('gotKey'), '#ffd23f'); sfx('paw'); }
+  else if (k === 'ammo' || k === 'net') { e.disarmed = true; G.stat.cash += 20; text(c.x, c.y - 50, tr('disarmed'), '#8ff3ff', 13); c.belly = Math.min(100, c.belly + 6); if (k === 'net') { e.state = 'flee'; e.st = 6; } }
+  else { eat(c, k, true); if (e.isBoss) { e.boss.pt += 2.5; e.boss.robbed = true; healTeam(20); say(tr('bossRobbed'), '#ffd23f'); shake(8); } }
+  return true;
+}
 function snatch(c, ang) {
   // steal from enemies first
   let best = null, bd = 62 * 62;
   for (const e of G.dogs) { if (e.dead) continue; const d = U.d2(e.x, e.y, c.x, c.y); const rr = 50 + e.r; if (d < rr * rr && d < bd + e.r * e.r * 4) { if (!best || (e.carry && !best.carry) || (!!e.carry === !!best.carry && d < bd)) { best = e; bd = d; } } }
   c.atk = 1; c.mouth = 0.8;
+  if (c.bigT > 0) { c.hitSet = null; biteHit(c, ang, 18, 34, 38, 220, 'snatch'); } // SUPER LANCHAO: the pounce smashes crates and shoves dogs
   if (best) {
     const e = best; c.face = e.x > c.x ? 1 : -1;
+    if (stealFrom(c, e)) return;
     const locked = e.isBoss && e.boss.phase !== 'exposed' && e.stun <= 0;
-    if (e.carry && !locked) {
-      const k = e.carry; e.carry = null; G.stat.stolen++;
-      part({ x: e.x, y: e.y - 44, k: 'fly', icon: k, tx: c, life: 0.25, size: 12 });
-      sfx('steal'); text(e.x, e.y - 58, tr('stolen'), '#ffd23f', 15); hitstop(0.04);
-      e.robbed = 1.3; e.stun = Math.max(e.stun, e.isBoss ? 0 : 1.1);
-      if (k === 'key') { G.keys++; G.flags.key = (G.flags.key || 0) + 1; say(tr('gotKey'), '#ffd23f'); sfx('paw'); }
-      else if (k === 'ammo' || k === 'net') { e.disarmed = true; G.stat.cash += 20; text(c.x, c.y - 50, tr('disarmed'), '#8ff3ff', 13); c.belly = Math.min(100, c.belly + 6); if (k === 'net') { e.state = 'flee'; e.st = 6; } }
-      else { eat(c, k, true); if (e.isBoss) { e.boss.pt += 2.5; e.boss.robbed = true; healTeam(20); say(tr('bossRobbed'), '#ffd23f'); shake(8); } }
-      return;
-    }
     if (locked && e.carry) text(e.x, e.y - 80, tr('needExpose'), '#c0c7d1', 13);
-    hurtDog(e, 9, 'snatch', c.x, c.y, 90); sfx('hit', 0.08);
+    hurtDog(e, 9 * dm(c), 'snatch', c.x, c.y, 90); sfx('hit', 0.08);
     part({ x: (c.x + e.x) / 2, y: (c.y + e.y) / 2 - 16, k: 'slash', a: ang, size: 18, life: 0.12, col: '#fff' });
     return;
   }
@@ -395,57 +404,72 @@ function snatch(c, ang) {
   }
   part({ x: c.x + Math.cos(ang) * 26, y: c.y - 14 + Math.sin(ang) * 26, k: 'slash', a: ang, size: 16, life: 0.12, col: '#d9c8f0' });
 }
+const OFFICIAL_ATK = { mimo: 'bubbles', mimosa: 'bite', morticia: 'pounce' };
+const atkOf = c => c.atkId || OFFICIAL_ATK[c.name];
+const isRanged = c => { const a = atkOf(c); return a === 'bubbles' || a === 'yarn'; };
+const dm = c => (c.bigT > 0 ? 2 : 1); // Super Lanchão: double damage
+Game.atkOf = atkOf; Game.isRanged = isRanged;
 function doAttack(c, ang, ai) {
-  if (c.cd > 0 || c.down || c.root > 0 && c.name !== 'mimo') return;
+  const kind = atkOf(c);
+  if (c.cd > 0 || c.down || (c.root > 0 && !isRanged(c))) return;
   c.face = Math.cos(ang) >= 0 ? 1 : -1; c.aim = ang; c.idle = 0;
-  if (c.name === 'mimo') { shoot(c, ang, ai); c.cd = (c.exhausted ? 0.52 : 0.2) * (ai ? 2.3 : 1); }
-  else if (c.name === 'mimosa') {
+  if (kind === 'bubbles' || kind === 'yarn') { shoot(c, ang, ai, kind === 'yarn'); c.cd = (kind === 'yarn' ? 0.36 : (c.exhausted ? 0.52 : 0.2)) * (ai ? 2.3 : 1); }
+  else if (kind === 'bite') {
     if (c.comboT <= 0) c.combo = 0;
     const third = c.combo === 2; c.hitSet = null;
     c.kx += Math.cos(ang) * (third ? 230 : 130); c.ky += Math.sin(ang) * (third ? 230 : 130);
-    let n = biteHit(c, ang, (third ? 34 : 21) * (ai ? 0.7 : 1) * pv('biteDmg', 1), 30, third ? 34 : 28, third ? 330 : 120);
+    let n = biteHit(c, ang, (third ? 34 : 21) * (ai ? 0.7 : 1) * pv('biteDmg', 1) * dm(c), 30, third ? 34 : 28, third ? 330 : 120);
     if (third && pv('spin', 0)) { c.hitSet = new Set(); for (let k = 0; k < 6; k++) n += biteHit(c, ang + k * 1.047, 20 * pv('biteDmg', 1), 34, 30, 260); c.hitSet = null; G.parts.push({ x: c.x, y: c.y - 14, k: 'ring', col: '#ff7ac0', size: 16, life: 0.3, grow: 300, t: 0, vx: 0, vy: 0 }); } // Mordida Giratória
     c.atk = 1; c.mouth = 1; sfx(third ? 'bite3' : 'bite');
     if (n) { hitstop(third ? 0.085 : 0.045); if (!ai) shake(third ? 7 : 3.5); }
     c.combo = (c.combo + 1) % 3; c.comboT = 0.75; c.cd = (third ? 0.42 : 0.23) * (ai ? 1.5 : 1);
-  } else { snatch(c, ang); c.cd = (ai ? 0.5 : 0.3) * pv('stealCd', 1); }
-}
-function doDash(c) {
-  if (c.cd2 > 0 || c.down || c.root > 0) return;
-  let ang = c.aim; if (Math.hypot(I.mx, I.my) > 0.3 && c.idx === G.active) ang = Math.atan2(I.my, I.mx);
-  if (c.name === 'mimosa') {
-    c.dashT = 0.2; c.dx = Math.cos(ang); c.dy = Math.sin(ang); c.aim = ang; c.inv = Math.max(c.inv, 0.3); c.cd2 = 2.4 * pv('dashCd', 1); c.hitSet = new Set(); c.face = c.dx >= 0 ? 1 : -1; sfx('dash');
-  } else if (c.name === 'morticia') {
-    c.dashT = 0.16; c.dx = Math.cos(ang); c.dy = Math.sin(ang); c.invis = 2.2 + pv('invisT', 0); c.inv = Math.max(c.inv, 0.4); c.cd2 = 4; sfx('dash'); poof(c.x, c.y - 12, 6, '#b9a6d9');
-    for (const e of G.dogs) if (e.target === c) e.target = null;
-  } else { // Mimo: hairball lob (stuns)
-    if (c.energy < 12) { text(c.x, c.y - 50, tr('tired'), '#bfe9ff', 13); return; }
-    const tgt = autoAim(c, 300, 'bolt'); const a = I.aim !== null && c.idx === G.active ? I.aim : (tgt === null ? ang : tgt);
-    let dist = 190; for (const e of G.dogs) if (!e.dead) { const d = Math.hypot(e.x - c.x, e.y - c.y); if (d < 320 && Math.abs(U.angDiff(a, Math.atan2(e.y - c.y, e.x - c.x))) < 0.3) { dist = d; break; } }
-    G.bullets.push({ k: 'hair', x: c.x, y: c.y, sx: c.x, sy: c.y, tx: c.x + Math.cos(a) * dist, ty: c.y + Math.sin(a) * dist, t: 0, dur: 0.5, from: 'cat', life: 1, r: 8 });
-    c.energy -= 10; c.cd2 = 5 * pv('hairCd', 1); sfx('hairball');
+  } else if (kind === 'swipe') { // Patada: one wide, quick swing
+    c.hitSet = new Set();
+    c.kx += Math.cos(ang) * 110; c.ky += Math.sin(ang) * 110;
+    const n = biteHit(c, ang, 17 * (ai ? 0.7 : 1) * pv('biteDmg', 1) * dm(c), 26, 36, 170, 'bite') + biteHit(c, ang + 0.7, 14 * dm(c), 24, 30, 130, 'bite') + biteHit(c, ang - 0.7, 14 * dm(c), 24, 30, 130, 'bite');
+    c.hitSet = null; c.atk = 1; c.mouth = 0.6; sfx('bite');
+    if (n) { hitstop(0.04); if (!ai) shake(3); }
+    c.cd = 0.3 * (ai ? 1.5 : 1);
+  } else { // Bote (pounce): lunges and grabs
+    c.kx += Math.cos(ang) * 120; c.ky += Math.sin(ang) * 120;
+    snatch(c, ang); c.cd = (ai ? 0.5 : 0.3) * pv('stealCd', 1);
   }
 }
-function doSpecial(c) {
-  if (c.down) return;
-  if (c.name === 'mimo') {
-    if (c.cdS > 0) return;
-    G.nap = 4.5 + pv('napT', 0); c.cdS = 18; c.energy = Math.min(100, c.energy + 50 + pv('napT', 0) * 16); c.exhausted = false; sfx('nap'); say(tr('nap') + '!', '#bfe9ff', 1.6);
-    part({ x: c.x, y: c.y - 16, k: 'ring', col: '#bfe9ff', size: 30, life: 0.7, grow: 500 });
-  } else if (c.name === 'mimosa') {
-    if (c.cdS > 0) return;
-    c.cdS = 12; sfx('roar'); shake(14); hitstop(0.08); say(tr('roar') + '!', '#ff7ac0', 1.4); c.mouth = 1; c.atk = 1;
-    for (let i = 0; i < 3; i++) part({ x: c.x, y: c.y - 14, k: 'ring', col: '#ff4fb8', size: 20, life: 0.5 + i * 0.12, grow: 420 });
-    const RR = 210 * pv('roarR', 1);
-    for (const e of G.dogs) if (!e.dead && U.d2(e.x, e.y, c.x, c.y) < RR * RR) { hurtDog(e, 16, 'roar', c.x, c.y, 260); if (!e.dead) { if (e.armor > 0) e.armor = Math.max(0, e.armor - 55); e.stun = Math.max(e.stun, e.isBoss ? 1.2 : 3 + pv('roarStun', 0)); e.wind = 0; if (e.state === 'wind') e.state = 'chase'; } }
-    for (const b of G.bullets) if (b.from === 'dog' && U.d2(b.x, b.y, c.x, c.y) < 210 * 210) b.life = 0;
-    for (const k of G.cats) k.root = 0;
-  } else {
-    if (!c.feastReady && c.belly < 99.5) { text(c.x, c.y - 50, tr('needFull'), '#ffb347', 13); return; }
-    G.feast = 5 + pv('feastT', 0); c.belly = 55; c.feastReady = false; sfx('feast'); say(tr('feast') + '!', '#ffb347', 1.6); shake(6);
-  }
+// ---------- jump (Shift): a real hop with gravity; on a parkour course it reaches higher roofs and longer gaps ----------
+const JUMP_V = 8.6, GRAV = 26;
+function jumpCat(c, boost) {
+  if (!c || c.down || G.car || G.over || c.root > 0 || c.jump) return false;
+  if (c.z > 0.05 && !boost) return false;
+  c.vz = boost || JUMP_V; if (c.z <= 0) c.z = 0.001; c.emote = null; G.stat.jumps = (G.stat.jumps || 0) + 1;
+  sfx('dash', 0.06); poof(c.x, c.y - 4, 4); VP.haptic(8);
+  return true;
 }
-Game.special = doSpecial;
+Game.jump = jumpCat;
+// ---------- aiming (shooters only: bolhas / bola de lã) ----------
+function foeList() { const out = []; for (const e of G.dogs) if (!e.dead && !e.sleep) out.push(e); if (G.foes) for (const e of G.foes) if (!e.dead && !e.gone) out.push(e); return out; }
+Game.targets = foeList;
+function lockNext(c) {
+  c = c || active(); if (!c || !isRanged(c) || G.car || c.down) return false;
+  const list = [];
+  for (const e of foeList()) { const d = Math.hypot(e.x - c.x, e.y - c.y); if (d > 580) continue; if (Math.abs(U.angDiff(c.aim || 0, Math.atan2(e.y - c.y, e.x - c.x))) > 1.75 && d > 120) continue; if (!W.los(c.x, c.y - 4, e.x, e.y - 4, 2)) continue; list.push({ e, d }); }
+  list.sort((a, b) => a.d - b.d);
+  const i = G.lock ? list.findIndex(o => o.e === G.lock) : -1;
+  const nx = list[i + 1];
+  G.lock = nx ? nx.e : null; if (G.lock) { sfx('sw', 0.2); part({ x: G.lock.x, y: G.lock.y - 10, k: 'ring', col: '#ff4f5e', size: 12, life: 0.3, grow: 90 }); }
+  return !!G.lock;
+}
+Game.lockNext = lockNext;
+function aimPoint(c) {
+  if (G.lock && (G.lock.dead || G.lock.gone || Math.hypot(G.lock.x - c.x, G.lock.y - c.y) > 720)) G.lock = null;
+  if (G.lock) return { x: G.lock.x, y: G.lock.y, tgt: G.lock, mode: 'lock' };
+  if (I.touch && I.aimStick && I.atk.id >= 0 && I.aim !== null) { const d = Math.min(1, Math.hypot(I.atk.x - I.atk.ox, I.atk.y - I.atk.oy) / 52), r = 90 + d * 230; let tgt = null, bd = 46 * 46; const px = c.x + Math.cos(I.aim) * r, py = c.y + Math.sin(I.aim) * r; for (const e of foeList()) { const q = U.d2(e.x, e.y, px, py); if (q < bd) { bd = q; tgt = e; } } return tgt ? { x: tgt.x, y: tgt.y, tgt, mode: 'stick' } : { x: px, y: py, tgt: null, mode: 'stick' }; }
+  if (I.useMouse && !I.touch && I.mw) { let tgt = null, bd = 40 * 40; for (const e of foeList()) { const q = U.d2(e.x, e.y, I.mw.x, I.mw.y); if (q < bd + e.r * e.r) { bd = q; tgt = e; } } return tgt ? { x: tgt.x, y: tgt.y, tgt, mode: 'mouse' } : { x: I.mw.x, y: I.mw.y, tgt: null, mode: 'mouse' }; }
+  let best = null, bd = 520 * 520; for (const e of foeList()) { const q = U.d2(e.x, e.y, c.x, c.y); if (q < bd && W.los(c.x, c.y - 4, e.x, e.y - 4, 2)) { bd = q; best = e; } }
+  if (best) return { x: best.x, y: best.y, tgt: best, mode: 'auto' };
+  return { x: c.x + Math.cos(c.aim || 0) * 150, y: c.y + Math.sin(c.aim || 0) * 150, tgt: null, mode: 'auto' };
+}
+Game.aimPoint = aimPoint;
+Game.X = { step, part, burst, poof, text, shake, say, hitstop, hurtDog: (...a) => hurtDog(...a), biteHit, shoot, autoAim, eat, stealFrom, nearFree, breakProp, healTeam, jumpCat, atkOf, dm, FOODS, hurtCat, pv, damageCar: (...a) => damageCar(...a), switchTo: (...a) => switchTo(...a) };
 // ---------- parkour course: low roofs, crates, gaps and jump pads ----------
 // The simulation stays 2D: a course is a set of rectangles ("platforms") with a height. The leading cat climbs anything up to
 // CLIMB higher than where it stands just by walking into it (crates can be scrambled up from the street at any height), hops over short gaps on its own when it walks off an edge
@@ -460,7 +484,7 @@ Game.addCourse = function (plats, pads) {
 };
 function platAt(x, y, m) { let best = null; m = m || 0; for (const p of G.pk.plats) if (Math.abs(x - p.x) <= p.hw + m && Math.abs(y - p.y) <= p.hh + m && (!best || p.h > best.h)) best = p; return best; }
 Game.platAt = (x, y) => (G && G.pk ? platAt(x, y) : null);
-function startJump(c, to, dur, arc) { c.jump = { t: 0, dur, arc, fx: c.x, fy: c.y, fp: c.plat || null, tx: to.x, ty: to.y, tp: to.plat || null }; c.emote = null; sfx('dash', 0.05); }
+function startJump(c, to, dur, arc) { c.z = 0; c.vz = 0; c.jump = { t: 0, dur, arc, fx: c.x, fy: c.y, fp: c.plat || null, tx: to.x, ty: to.y, tp: to.plat || null }; c.emote = null; sfx('dash', 0.05); }
 function pkJump(c, dt) {
   const j = c.jump; j.t += dt; const f = Math.min(1, j.t / j.dur);
   c.x = U.lerp(j.fx, j.tx, f); c.y = U.lerp(j.fy, j.ty, f); c.walk = 1;
@@ -471,16 +495,18 @@ function pkMove(c, dx, dy, mode) {
   const cur = c.plat || null, ch = cur ? cur.h : 0, nx = c.x + dx, ny = c.y + dy, np = platAt(nx, ny);
   if (np && np !== cur && np.h > ch + 0.01) {
     // low enough: climb. Crates (solid) can always be scrambled up from the street, so a course never blocks the way.
-    if (np.h - ch <= CLIMB || (np.solid && !cur)) { c.x = nx; c.y = ny; c.plat = np; c.climbT = np.h - ch <= CLIMB ? 0.18 : 0.3; sfx('step', 0.08); return false; }
+    const air = c.z > 0.05 ? c.z : 0;
+    if (np.h - ch <= CLIMB + air || (np.solid && !cur)) { c.x = nx; c.y = ny; c.plat = np; c.climbT = np.h - ch <= CLIMB ? 0.18 : 0.3; if (air) { c.z = Math.max(0, ch + c.z - np.h); if (c.z <= 0) c.vz = Math.min(c.vz, 0); c.climbT = 0; } sfx('step', 0.08); return false; }
     if (!cur) return step(c, dx, dy, mode);            // awnings and roofs on posts: walk underneath
   }
   if (cur) {
-    if (np === cur || (np && np.h <= ch)) { c.x = nx; c.y = ny; if (np !== cur) { c.plat = np; c.dropH = ch - np.h; c.dropT = 0.16; } return false; }
+    if (np === cur || (np && np.h <= ch)) { c.x = nx; c.y = ny; if (np !== cur) { c.plat = np; if (c.z > 0.05) c.z += ch - np.h; else { c.dropH = ch - np.h; c.dropT = 0.16; } } return false; }
     if (!np) { // walking off the edge: hop to a platform straight ahead, otherwise drop to the ground
       const l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l;
-      for (let d = 24; d <= HOP; d += 8) { const q = platAt(c.x + ux * d, c.y + uy * d); if (q && q !== cur && q.h - ch <= CLIMB + 0.1) { const lx = U.clamp(c.x + ux * (d + 30), q.x - q.hw + 14, q.x + q.hw - 14), ly = U.clamp(c.y + uy * (d + 30), q.y - q.hh + 14, q.y + q.hh - 14); startJump(c, { x: lx, y: ly, plat: q }, 0.4, 0.9); return false; } }
+      const air = c.z > 0.3, hop = air ? HOP * 1.5 : HOP;
+      for (let d = 24; d <= hop; d += 8) { const q = platAt(c.x + ux * d, c.y + uy * d); if (q && q !== cur && q.h - ch <= CLIMB + 0.1 + (air ? c.z : 0)) { const lx = U.clamp(c.x + ux * (d + 30), q.x - q.hw + 14, q.x + q.hw - 14), ly = U.clamp(c.y + uy * (d + 30), q.y - q.hh + 14, q.y + q.hh - 14); startJump(c, { x: lx, y: ly, plat: q }, 0.4, 0.9); return false; } }
       if (W.blocked(nx, ny, c.r, mode)) return true;
-      c.x = nx; c.y = ny; c.plat = null; c.dropH = ch; c.dropT = 0.26; poof(c.x, c.y - 6, 4, '#fff'); return false;
+      c.x = nx; c.y = ny; c.plat = null; if (air) c.z += ch; else { c.dropH = ch; c.dropT = 0.26; poof(c.x, c.y - 6, 4, '#fff'); } return false;
     }
     return true; // a taller platform ahead while up here: blocked
   }
@@ -508,7 +534,16 @@ Game.emote = function (k, c) {
 function updCat(c, dt) {
   const isA = c.idx === G.active;
   c.t += dt; c.walk = 0;
-  for (const k of ['cd', 'cd2', 'cdS', 'flash', 'inv', 'comboT', 'invis', 'root']) if (c[k] > 0) c[k] -= dt;
+  for (const k of ['cd', 'cd2', 'cdS', 'flash', 'inv', 'comboT', 'invis', 'root', 'bigT', 'shieldT', 'spikeT', 'zoomT', 'magT']) if (c[k] > 0) c[k] -= dt;
+  for (let i = 1; i < 4; i++) if (c.pcd[i] > 0) c.pcd[i] -= dt;
+  c.pe = Math.min(100, c.pe + 6 * dt);
+  c.gs += ((c.bigT > 0 ? 1.6 : 1) - c.gs) * Math.min(1, dt * 4); // SUPER LANCHAO grows her smoothly, and shrinks her back
+  if (c.bigT <= 0 && Math.abs(c.gs - 1) < 0.004) c.gs = 1;
+  if (!G.car && !c.jump && (c.z > 0 || c.vz > 0)) { // jump physics (relative to the surface the cat stands on)
+    c.vz -= GRAV * dt; c.z += c.vz * dt;
+    if (c.z <= 0) { c.z = 0; c.vz = 0; if (isA) { poof(c.x, c.y - 4, 4, '#fff'); sfx('step', 0.08); } }
+  }
+  if (VP.Powers) VP.Powers.catTick(c, dt);
   c.atk = Math.max(0, c.atk - dt * 6); c.mouth = Math.max(0, c.mouth - dt * 4); c.recoil = Math.max(0, c.recoil - dt * 9);
   if (c.down) {
     if (!G.car && c.idx !== G.active && G.field && W.distAt(G.cats[G.active].name === 'morticia' ? G.fieldM : G.field, c.x, c.y) < 0) {
@@ -530,17 +565,18 @@ function updCat(c, dt) {
     if (!G.car) c.belly = Math.max(0, c.belly - dt * 0.85 * G.hungerMul * pv('hunger', 1));
     if (c.belly <= 0) { c.hungerT = (c.hungerT || 0) + dt; if (c.hungerT > 1 && !G.car) { c.hungerT = 0; if (c.hp > 12) { c.hp = Math.max(12, c.hp - 3); c.flash = 0.1; } text(c.x, c.y - 46, tr('hungry'), '#ffb347', 13); if (!G.tut.hungry) { G.tut.hungry = 1; say(tr('tipHungry'), '#ffb347', 3); } } }
     if (c.belly >= 99.5 && !c.feastReady) { c.feastReady = true; text(c.x, c.y - 56, tr('feast') + '!', '#ffd23f', 15); sfx('paw', 0.5); }
-    if (G.feast > 0) feastTick(c, dt);
   }
+  if (c.bigT > 0) feastTick(c, dt);
   if (G.car) { c.x = G.car.x; c.y = G.car.y; return; }
   // knockback
   if (c.kx || c.ky) { step(c, c.kx * dt, c.ky * dt, c.name === 'morticia' ? 1 : 0); const f = Math.pow(0.0008, dt); c.kx *= f; c.ky *= f; if (Math.abs(c.kx) + Math.abs(c.ky) < 6) c.kx = c.ky = 0; }
   if (c.dashT > 0) {
-    c.dashT -= dt; const sp = c.name === 'mimosa' ? 900 : 760;
+    c.dashT -= dt; const dk = c.dashK || 'swipe', sp = dk === 'swipe' ? 900 : 760;
     const hit = step(c, c.dx * sp * dt, c.dy * sp * dt, c.name === 'morticia' ? 1 : 0);
     part({ x: c.x, y: c.y - 14, k: 'ghost', name: c.name, face: c.face, life: 0.18 });
-    if (c.name === 'mimosa') { c.mouth = 1; biteHit(c, Math.atan2(c.dy, c.dx), 38 * pv('biteDmg', 1), 16, 30, 380); }
+    if (dk === 'swipe') { c.mouth = 1; biteHit(c, Math.atan2(c.dy, c.dx), 38 * pv('biteDmg', 1) * dm(c), 16, 30, 380); }
     if (hit) c.dashT = 0;
+    if (c.dashT <= 0 && dk === 'leap' && VP.Powers) VP.Powers.land(c);
     return;
   }
   let pace = 1;
@@ -549,20 +585,31 @@ function updCat(c, dt) {
   if (G.catnip > 0) pace *= 1.2;
   let spd = c.spd * pace * (c.exhausted ? 0.62 : 1) * (c.root > 0 ? 0 : 1);
   if (c.name === 'morticia' && c.belly <= 0) spd *= 0.8;
+  // run (Ctrl / Alt, or the toggle on touch): faster while the stamina lasts
+  let running = false;
+  if (isA && !G.car && (I.run || I.runT) && Math.hypot(I.mx, I.my) > 0.12 && c.root <= 0 && !c.emote) { if (!c.staLocked && c.sta > 0) { running = true; c.sta = Math.max(0, c.sta - 30 * dt); if (c.sta <= 0) { c.staLocked = true; I.runT = false; text(c.x, c.y - 50, tr('pw_tired'), '#bfe9ff', 13); } } }
+  if (!running) c.sta = Math.min(100, c.sta + (c.staLocked ? 14 : 24) * dt);
+  if (c.staLocked && c.sta >= 25) c.staLocked = false;
+  c.running = running;
+  if (running) spd *= 1.55;
+  if (c.zoomT > 0) spd *= 1.5;
   if (c.hopT > 0) c.hopT -= dt;
   if (G.pk) { pkTick(c, dt); if (c.jump) { pkJump(c, dt); return; } }
   if (c.emote) { c.emote.t -= dt; if (c.emote.t <= 0 || (isA && (Math.hypot(I.mx, I.my) > 0.3 || I.attack))) c.emote = null; else if (c.emote.k === 'miau') c.mouth = Math.max(c.mouth, 0.6); } // moving or attacking ends the gesture
   if (isA) {
     const m = Math.hypot(I.mx, I.my);
     if (m > 0.12 && spd > 0) spd *= slopeMul(c.x, c.y, I.mx / m, I.my / m);
-    if (m > 0.12 && spd > 0) { if (G.pk) pkMove(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); else step(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); c.walk = 1; if (!I.attack && Math.abs(I.mx) > 0.15) c.face = I.mx > 0 ? 1 : -1; if (Math.random() < dt * 9) part({ x: c.x - I.mx * 8, y: c.y - 1, k: 'puff', size: 5, life: 0.3, col: 'rgba(255,255,255,.5)' }); }
+    if (m > 0.12 && spd > 0) { if (G.pk) pkMove(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); else step(c, I.mx * spd * dt, I.my * spd * dt, c.name === 'morticia' ? 1 : 0); c.walk = 1; if (!I.attack && Math.abs(I.mx) > 0.15) c.face = I.mx > 0 ? 1 : -1; if (Math.random() < dt * (running ? 22 : 9)) part({ x: c.x - I.mx * 8, y: c.y - 1, k: 'puff', size: running ? 7 : 5, life: 0.3, col: 'rgba(255,255,255,.5)' }); }
     // aim
-    const range = c.name === 'mimo' ? 520 : 120, kind = c.name === 'mimo' ? 'bolt' : c.name === 'mimosa' ? 'bite' : 'snatch';
+    const ranged = isRanged(c), akind = atkOf(c), range = ranged ? 520 : 120, kind = ranged ? 'bolt' : akind === 'pounce' ? 'snatch' : 'bite';
+    G.ret = ranged && !G.car ? aimPoint(c) : null; // the reticle: shooters only
     let ang = null;
     if (I.aim !== null) ang = I.aim;
-    else if (I.useMouse && !I.touch && I.mw) ang = Math.atan2(I.mw.y - c.y, I.mw.x - c.x);
+    else if (G.ret && G.ret.mode !== 'auto') ang = Math.atan2(G.ret.y - c.y, G.ret.x - c.x);
+    else if (!ranged && I.mouse.down && I.useMouse && !I.touch && I.mw) ang = Math.atan2(I.mw.y - c.y, I.mw.x - c.x); // melee: a click hits towards the pointer, Space hits what is near
     else { ang = autoAim(c, range, kind); if (ang === null && m > 0.12) ang = Math.atan2(I.my, I.mx); }
     if (ang !== null) c.aim = ang;
+    if (c.burstN > 0 && c.cd <= 0 && !c.down) { c.burstN--; doAttack(c, c.burstAng, false); } // touch aim stick: release fires a short volley
     if (I.attack && !(G.ctx && G.ctx.k === 'revive' && I.ctxHeld) && !(G.mini && G.mini.quiet)) doAttack(c, c.aim, false);
   } else updFollower(c, dt, spd);
 }
@@ -672,7 +719,7 @@ function updDog(e, dt) {
   e.t += dt; e.walk = 0;
   if (e.flash > 0) e.flash -= dt; if (e.robbed > 0) e.robbed -= dt;
   if (e.kx || e.ky) { step(e, e.kx * dt, e.ky * dt, 0); const f = Math.pow(0.001, dt); e.kx *= f; e.ky *= f; if (Math.abs(e.kx) + Math.abs(e.ky) < 6) e.kx = e.ky = 0; }
-  if (e.stun > 0) { e.stun -= dt; e.wind = 0; if (e.state === 'wind') e.state = 'chase'; if (Math.random() < dt * 5) part({ x: e.x + U.rand(-10, 10), y: e.y - 46 - e.r, k: 'star', size: 5, life: 0.4, col: '#ffd23f', vy: -20 }); return; }
+  if (e.stun > 0) { e.stun -= dt; e.wind = 0; if (e.state === 'wind') e.state = 'chase'; if (e.zz > 0) { e.zz -= dt; if (Math.random() < dt * 2.5) part({ x: e.x + 8, y: e.y - 44 - e.r, k: 'icon', icon: 'zzz', vy: -26, vx: 10, size: 9, life: 1 }); } else if (Math.random() < dt * 5) part({ x: e.x + U.rand(-10, 10), y: e.y - 46 - e.r, k: 'star', size: 5, life: 0.4, col: '#ffd23f', vy: -20 }); return; }
   if (e.isBoss) return updBoss(e, dt);
   if (e.sleep) { // snoring: the ring shows how close a cat may get before the dog wakes up
     e.zt = (e.zt || 0) - dt; if (e.zt <= 0) { e.zt = 1.25; part({ x: e.x, y: e.y - 14, k: 'ring', col: '#8fd0ff', size: e.wake, grow: 0.01, life: 1.25 }); part({ x: e.x + 8, y: e.y - 40, k: 'icon', icon: 'zzz', vy: -26, vx: 10, size: 9, life: 1 }); }
@@ -827,8 +874,8 @@ function updBullet(b, dt) {
       for (const c of G.cats) {
         if (c.down || U.d2(c.x, c.y - 12, b.x, b.y) > (c.r + b.r) * (c.r + b.r)) continue;
         if (G.car && c.idx !== G.active) continue;
-        if (b.k === 'net') { if (c.inv <= 0 && !G.car) { c.root = c.name === 'mimosa' ? 0.7 : 2.2; hurtCat(c, b.dmg, b.x, b.y); c.kx = c.ky = 0; if (c.name === 'mimosa') text(c.x, c.y - 56, tr('ripNet'), '#ff7ac0', 13); } }
-        else hurtCat(c, b.dmg, b.x - b.vx, b.y - b.vy);
+        if (b.k === 'net') { if (c.inv <= 0 && !G.car) { c.root = c.name === 'mimosa' ? 0.7 : 2.2; hurtCat(c, b.dmg, b.x, b.y, true); c.kx = c.ky = 0; if (c.name === 'mimosa') text(c.x, c.y - 56, tr('ripNet'), '#ff7ac0', 13); } }
+        else hurtCat(c, b.dmg, b.x - b.vx, b.y - b.vy, true);
         b.life = 0; splash(b); return;
       }
     }
@@ -1145,13 +1192,17 @@ Game.update = function (dt) {
   if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 40);
   if (G.banner) { G.banner.t += dt; if (G.banner.t > G.banner.dur) G.banner = null; }
   // switching
+  G.ret = null;
   const sw = I.take('sw'); if (sw >= 0) switchTo(sw);
   if (I.take('cycle') && G.solo === null) { for (let i = 1; i < 3; i++) { const n = (G.active + i) % 3; if (!G.cats[n].down) { switchTo(n); break; } } }
   refreshFields();
   updContext(dt);
   if (VP.Prog) VP.Prog.tick(G, dt);
-  if (I.take('special')) { if (G.car) { sfx(G.car.type === 'gold' ? 'viphorn' : 'honk', 0.6); } else doSpecial(active()); }
-  if (I.take('dash')) { if (!G.car) doDash(active()); }
+  I.aimStick = !G.car && isRanged(active());
+  { const ev = I.shotEv; I.shotEv = null; const c = active(); if (ev && !G.car && isRanged(c) && !c.down) { let a = ev.aim; if (a === null || a === undefined) { const ap = aimPoint(c); a = Math.atan2(ap.y - c.y, ap.x - c.x); } c.burstN = 3; c.burstAng = a; } }
+  for (let i = 0; i < 4; i++) if (I.take('p' + i)) { if (G.car) { if (i === 0) sfx(G.car.type === 'gold' ? 'viphorn' : 'honk', 0.6); } else if (VP.Powers) VP.Powers.cast(G, active(), i); }
+  if (I.take('jump')) jumpCat(active());
+  if (I.take('lock')) lockNext();
   { const em = I.take('emote'); if (em) Game.emote(em); }
   for (const c of G.cats) updCat(c, dt);
   // friends follow

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "attacks": {
+    "bubbles": { "emoji": "🫧", "ranged": true,  "name": { "pt": "Bolhas", "en": "Bubbles" }, "desc": { "pt": "Atira bolhas de longe, com mira.", "en": "Shoots bubbles from afar, with aiming." } },
+    "bite":    { "emoji": "🦷", "ranged": false, "name": { "pt": "Mordida", "en": "Bite" }, "desc": { "pt": "Combo de mordidas e arranhões. Quebra caixotes.", "en": "Bite and scratch combo. Breaks crates." } },
+    "swipe":   { "emoji": "🐾", "ranged": false, "name": { "pt": "Patada", "en": "Swipe" }, "desc": { "pt": "Patada larga e rápida que acerta vários.", "en": "A wide, quick paw swipe that hits several." } },
+    "pounce":  { "emoji": "🐱", "ranged": false, "name": { "pt": "Bote", "en": "Pounce" }, "desc": { "pt": "Pula em cima, agarra e rouba petiscos.", "en": "Pounces, grabs and steals snacks." } },
+    "yarn":    { "emoji": "🧶", "ranged": true,  "name": { "pt": "Bola de lã", "en": "Yarn ball" }, "desc": { "pt": "Joga uma bola de lã que empurra o inimigo.", "en": "Throws a yarn ball that pushes enemies back." } }
+  },
+  "powers": {
+    "nap":        { "emoji": "💤", "cd": 18, "cost": 10, "name": { "pt": "Soneca", "en": "Nap" }, "desc": { "pt": "Câmera lenta e recupera a energia.", "en": "Slow motion and refills energy." } },
+    "yawn":       { "emoji": "🥱", "cd": 14, "cost": 20, "name": { "pt": "Bocejo Contagioso", "en": "Contagious Yawn" }, "desc": { "pt": "Os inimigos por perto dormem por 3 s.", "en": "Nearby enemies fall asleep for 3 s." } },
+    "pillow":     { "emoji": "🛏️", "cd": 16, "cost": 20, "name": { "pt": "Travesseiro-Escudo", "en": "Pillow Shield" }, "desc": { "pt": "Um travesseiro bloqueia os golpes por um instante.", "en": "A pillow blocks hits for a moment." } },
+    "snore":      { "emoji": "😪", "cd": 9,  "cost": 15, "name": { "pt": "Ronco Sônico", "en": "Sonic Snore" }, "desc": { "pt": "Um ronco em cone empurra todo mundo.", "en": "A cone of snore pushes everyone back." } },
+    "tantrum":    { "emoji": "😾", "cd": 12, "cost": 25, "name": { "pt": "Chilique", "en": "Tantrum" }, "desc": { "pt": "Um chilique nervoso que atordoa em volta.", "en": "A nervous tantrum that stuns all around." } },
+    "lightning":  { "emoji": "⚡", "cd": 2.4, "cost": 10, "name": { "pt": "Unhada Relâmpago", "en": "Lightning Swipe" }, "desc": { "pt": "Um bote veloz com unhada.", "en": "A fast dash with a swipe." } },
+    "spiky":      { "emoji": "🦔", "cd": 15, "cost": 20, "name": { "pt": "Pelo Arrepiado", "en": "Spiky Fur" }, "desc": { "pt": "O pelo arrepia e devolve o próximo golpe.", "en": "Fur spikes up and reflects the next hit." } },
+    "glare":      { "emoji": "👁️", "cd": 10, "cost": 15, "name": { "pt": "Olhar Fulminante", "en": "Stunning Glare" }, "desc": { "pt": "Congela um inimigo com o olhar.", "en": "Freezes one enemy with a look." } },
+    "feast":      { "emoji": "🍔", "cd": 26, "cost": 30, "name": { "pt": "SUPER LANCHÃO", "en": "SUPER FEAST" }, "desc": { "pt": "Come um lanche gigante: fica maior e mais forte por 8 s.", "en": "Eats a giant snack: bigger and stronger for 8 s." } },
+    "magnet":     { "emoji": "🧲", "cd": 15, "cost": 15, "name": { "pt": "Ímã de Petiscos", "en": "Treat Magnet" }, "desc": { "pt": "Puxa petiscos e moedas de longe.", "en": "Pulls treats and coins from far away." } },
+    "pilfer":     { "emoji": "🫳", "cd": 6,  "cost": 15, "name": { "pt": "Rouba-Rouba", "en": "Pilfer" }, "desc": { "pt": "Rouba o lanche de um inimigo de longe.", "en": "Steals an enemy's snack from a distance." } },
+    "burp":       { "emoji": "🫧", "cd": 11, "cost": 25, "name": { "pt": "Arroto Turbo", "en": "Turbo Burp" }, "desc": { "pt": "Um arroto engraçado que empurra em onda.", "en": "A funny burp shockwave." } },
+    "charm":      { "emoji": "💖", "cd": 14, "cost": 20, "name": { "pt": "Miado Fofo", "en": "Cute Meow" }, "desc": { "pt": "Um miado tão fofo que os inimigos param para babar.", "en": "A meow so cute enemies stop to swoon." } },
+    "furball":    { "emoji": "🟤", "cd": 5,  "cost": 15, "name": { "pt": "Bola de Pelo", "en": "Hairball" }, "desc": { "pt": "Lança uma bola de pelo que atordoa onde cai.", "en": "Lobs a hairball that stuns where it lands." } },
+    "doublejump": { "emoji": "🦘", "cd": 5,  "cost": 10, "name": { "pt": "Salto Duplo", "en": "Double Jump" }, "desc": { "pt": "Um super pulo, até no ar.", "en": "A super jump, even in mid-air." } },
+    "spin":       { "emoji": "🌪️", "cd": 7,  "cost": 20, "name": { "pt": "Arranhão Giratório", "en": "Spinning Scratch" }, "desc": { "pt": "Gira e arranha todo mundo em volta.", "en": "Spins and scratches everyone around." } },
+    "catnap":     { "emoji": "😸", "cd": 22, "cost": 20, "name": { "pt": "Cochilo Curativo", "en": "Healing Catnap" }, "desc": { "pt": "Um cochilinho que cura o time.", "en": "A little nap that heals the team." } },
+    "catleap":    { "emoji": "🐾", "cd": 8,  "cost": 15, "name": { "pt": "Pulo do Gato", "en": "Cat Leap" }, "desc": { "pt": "Um salto longo que cai com tudo.", "en": "A long leap that lands with a thud." } },
+    "hide":       { "emoji": "🫥", "cd": 4,  "cost": 15, "name": { "pt": "Esconde-Esconde", "en": "Hide and Seek" }, "desc": { "pt": "Some numa nuvem e ninguém vê.", "en": "Vanish in a puff of smoke." } },
+    "zoomies":    { "emoji": "💨", "cd": 14, "cost": 15, "name": { "pt": "Corrida Maluca", "en": "Zoomies" }, "desc": { "pt": "Disparada de velocidade por 4 s.", "en": "A speed burst for 4 s." } }
+  },
+  "official": {
+    "mimo":     { "attack": "bubbles", "powers": ["nap", "yawn", "pillow", "snore"] },
+    "mimosa":   { "attack": "bite",    "powers": ["tantrum", "lightning", "spiky", "glare"] },
+    "morticia": { "attack": "pounce",  "powers": ["feast", "magnet", "pilfer", "burp"] }
+  },
+  "personalities": {
+    "dorminhoco":  { "emoji": "😴", "role": "shooter", "attack": "bubbles", "powers": ["nap", "yawn", "pillow", "snore"],           "name": { "pt": "Dorminhoco", "en": "Sleepyhead" }, "desc": { "pt": "Vive cochilando e dorme em pé.", "en": "Always napping." } },
+    "nervosinho":  { "emoji": "😾", "role": "biter",   "attack": "bite",    "powers": ["tantrum", "lightning", "spiky", "glare"],     "name": { "pt": "Nervosinho", "en": "Feisty" }, "desc": { "pt": "Esquentado, mas fofo.", "en": "Hot-tempered but cute." } },
+    "comilao":     { "emoji": "🍔", "role": "glutton", "attack": "pounce",  "powers": ["feast", "magnet", "pilfer", "burp"],          "name": { "pt": "Comilão", "en": "Foodie" }, "desc": { "pt": "Só pensa em petisco.", "en": "Only thinks of snacks." } },
+    "brincalhao":  { "emoji": "🎾", "role": "shooter", "attack": "yarn",    "powers": ["furball", "zoomies", "doublejump", "spin"],   "name": { "pt": "Brincalhão", "en": "Playful" }, "desc": { "pt": "Tudo vira brincadeira.", "en": "Everything is a game." } },
+    "curioso":     { "emoji": "🔍", "role": "glutton", "attack": "swipe",   "powers": ["hide", "glare", "magnet", "catleap"],         "name": { "pt": "Curioso", "en": "Curious" }, "desc": { "pt": "Mete o focinho em tudo.", "en": "Pokes its nose everywhere." } },
+    "carinhoso":   { "emoji": "🥰", "role": "shooter", "attack": "yarn",    "powers": ["charm", "catnap", "pillow", "zoomies"],       "name": { "pt": "Carinhoso", "en": "Cuddly" }, "desc": { "pt": "Quer colo e faz amigos.", "en": "Wants cuddles, makes friends." } },
+    "aventureiro": { "emoji": "🧗", "role": "biter",   "attack": "swipe",   "powers": ["catleap", "doublejump", "lightning", "spin"], "name": { "pt": "Aventureiro", "en": "Adventurer" }, "desc": { "pt": "Sobe em tudo e pula de telhado.", "en": "Climbs everything." } },
+    "elegante":    { "emoji": "🎩", "role": "biter",   "attack": "pounce",  "powers": ["glare", "charm", "spiky", "hide"],            "name": { "pt": "Elegante", "en": "Elegant" }, "desc": { "pt": "Chique e sempre no ponto.", "en": "Posh and poised." } }
+  }
+}

@@ -264,6 +264,26 @@
    "stars": 12
   },
   {
+   "id": "recife",
+   "name": "Recife — Marco Zero",
+   "country": "Brasil",
+   "lat": -8.0631,
+   "lon": -34.8711,
+   "file": "recife.json",
+   "kb": 69,
+   "landmarks": 27,
+   "tags": [
+    "beach"
+   ],
+   "elev": 1,
+   "order": 13,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 15
+  },
+  {
    "id": "fortaleza",
    "name": "Fortaleza — Beira-Mar",
    "country": "Brasil",
@@ -611,6 +631,44 @@
    "stars": 24
   },
   {
+   "id": "macapa",
+   "name": "Macapá — Fortaleza de São José",
+   "country": "Brasil",
+   "lat": 0.0372,
+   "lon": -51.0498,
+   "file": "macapa.json",
+   "kb": 37,
+   "landmarks": 17,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 32,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 24
+  },
+  {
+   "id": "boavista",
+   "name": "Boa Vista — Centro Cívico",
+   "country": "Brasil",
+   "lat": 2.8197,
+   "lon": -60.6733,
+   "file": "boavista.json",
+   "kb": 57,
+   "landmarks": 2,
+   "tags": [],
+   "elev": 1,
+   "order": 33,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 0,
+   "palms": 1,
+   "stars": 24
+  },
+  {
    "id": "newyork",
    "name": "Nova York — Times Square",
    "country": "EUA",
@@ -895,30 +953,5 @@
    "stars": 45
   }
  ],
- "soon": [
-  {
-   "id": "recife",
-   "name": "Recife — Marco Zero",
-   "country": "Brasil",
-   "lat": -8.0631,
-   "lon": -34.8711,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "macapa",
-   "name": "Macapá — Fortaleza de São José",
-   "country": "Brasil",
-   "lat": 0.0372,
-   "lon": -51.0498,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "boavista",
-   "name": "Boa Vista — Centro Cívico",
-   "country": "Brasil",
-   "lat": 2.8197,
-   "lon": -60.6733,
-   "flag": "🇧🇷"
-  }
- ]
+ "soon": []
 }

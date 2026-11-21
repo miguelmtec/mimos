@@ -381,6 +381,63 @@
    "mood": 3,
    "pal": 3,
    "stars": 21
+  },
+  {
+   "id": "portoalegre",
+   "name": "Porto Alegre — Centro Histórico",
+   "country": "Brasil",
+   "lat": -30.0277,
+   "lon": -51.2287,
+   "file": "portoalegre.json",
+   "kb": 234,
+   "landmarks": 84,
+   "tags": [],
+   "elev": 1,
+   "order": 20,
+   "flag": "🇧🇷",
+   "mood": 4,
+   "pal": 4,
+   "stars": 21
+  },
+  {
+   "id": "vitoria",
+   "name": "Vitória — Centro e Palácio Anchieta",
+   "country": "Brasil",
+   "lat": -20.3197,
+   "lon": -40.339,
+   "file": "vitoria.json",
+   "kb": 316,
+   "landmarks": 14,
+   "tags": [
+    "morro"
+   ],
+   "elev": 1,
+   "order": 21,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 21
+  },
+  {
+   "id": "saoluis",
+   "name": "São Luís — Centro Histórico",
+   "country": "Brasil",
+   "lat": -2.5297,
+   "lon": -44.3044,
+   "file": "saoluis.json",
+   "kb": 43,
+   "landmarks": 22,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 22,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 0,
+   "palms": 1,
+   "stars": 21
   }
  ],
  "soon": [
@@ -390,30 +447,6 @@
    "country": "Brasil",
    "lat": -8.0631,
    "lon": -34.8711,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "portoalegre",
-   "name": "Porto Alegre — Centro Histórico",
-   "country": "Brasil",
-   "lat": -30.0277,
-   "lon": -51.2287,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "vitoria",
-   "name": "Vitória — Centro e Palácio Anchieta",
-   "country": "Brasil",
-   "lat": -20.3197,
-   "lon": -40.339,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "saoluis",
-   "name": "São Luís — Centro Histórico",
-   "country": "Brasil",
-   "lat": -2.5297,
-   "lon": -44.3044,
    "flag": "🇧🇷"
   },
   {

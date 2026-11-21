@@ -41,7 +41,7 @@ const CITIES = [
   ['portovelho', 'Porto Velho — Madeira-Mamoré', 'Brasil', -8.7608, -63.9119, 550, 'landmark'],
   ['riobranco', 'Rio Branco — Centro', 'Brasil', -9.9747, -67.8100, 550, ''],
   ['macapa', 'Macapá — Fortaleza de São José', 'Brasil', -0.0372, -51.0498, 550, 'landmark'],
-  ['boavista', 'Boa Vista — Centro Cívico', 'Brasil', -2.8197, -60.6733, 550, ''],
+  ['boavista', 'Boa Vista — Centro Cívico', 'Brasil', 2.8197, -60.6733, 550, ''],
   ['newyork', 'Nova York — Times Square', 'EUA', 40.7580, -73.9855, 550, ''],
   ['paris', 'Paris — Torre Eiffel', 'França', 48.8570, 2.2970, 650, 'landmark'],
   ['londres', 'Londres — Westminster', 'Reino Unido', 51.5007, -0.1246, 600, 'landmark'],

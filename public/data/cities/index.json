@@ -3,6 +3,27 @@
  "attribution": "© OpenStreetMap contributors (ODbL)",
  "cities": [
   {
+   "id": "rioverde",
+   "name": "Rio Verde — Centro",
+   "country": "Brasil",
+   "lat": -17.798,
+   "lon": -50.928,
+   "file": "rioverde.json",
+   "kb": 22,
+   "landmarks": 2,
+   "tags": [
+    "hometown"
+   ],
+   "elev": 1,
+   "order": 7,
+   "flag": "🏡",
+   "mood": 5,
+   "pal": 2,
+   "palms": 1,
+   "stars": 0,
+   "hometown": 1
+  },
+  {
    "id": "miami",
    "name": "Miami Beach",
    "country": "EUA",
@@ -84,16 +105,28 @@
    "pal": 2,
    "palms": 1,
    "stars": 6
-  }
- ],
- "soon": [
+  },
   {
    "id": "rio_urca",
    "name": "Rio — Urca e Pão de Açúcar",
    "country": "Brasil",
    "lat": -22.95,
    "lon": -43.162,
-   "flag": "🇧🇷"
+   "file": "rio_urca.json",
+   "kb": 76,
+   "landmarks": 12,
+   "tags": [
+    "beach",
+    "morro",
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 4,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 2,
+   "palms": 1,
+   "stars": 9
   },
   {
    "id": "rio_lapa",
@@ -101,7 +134,19 @@
    "country": "Brasil",
    "lat": -22.913,
    "lon": -43.18,
-   "flag": "🇧🇷"
+   "file": "rio_lapa.json",
+   "kb": 315,
+   "landmarks": 41,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 5,
+   "flag": "🇧🇷",
+   "mood": 4,
+   "pal": 4,
+   "palms": 1,
+   "stars": 9
   },
   {
    "id": "rio_maracana",
@@ -109,31 +154,19 @@
    "country": "Brasil",
    "lat": -22.9122,
    "lon": -43.2302,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "saopaulo",
-   "name": "São Paulo — Av. Paulista",
-   "country": "Brasil",
-   "lat": -23.5614,
-   "lon": -46.6559,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "brasilia",
-   "name": "Brasília — Esplanada",
-   "country": "Brasil",
-   "lat": -15.7975,
-   "lon": -47.8645,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "rioverde",
-   "name": "Rio Verde — Centro",
-   "country": "Brasil",
-   "lat": -17.798,
-   "lon": -50.928,
-   "flag": "🏡"
+   "file": "rio_maracana.json",
+   "kb": 89,
+   "landmarks": 3,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 6,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 12
   },
   {
    "id": "goiania",
@@ -141,7 +174,53 @@
    "country": "Brasil",
    "lat": -16.6799,
    "lon": -49.255,
-   "flag": "🇧🇷"
+   "file": "goiania.json",
+   "kb": 35,
+   "landmarks": 8,
+   "tags": [],
+   "elev": 1,
+   "order": 8,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 2,
+   "palms": 1,
+   "stars": 6
+  },
+  {
+   "id": "saopaulo",
+   "name": "São Paulo — Av. Paulista",
+   "country": "Brasil",
+   "lat": -23.5614,
+   "lon": -46.6559,
+   "file": "saopaulo.json",
+   "kb": 405,
+   "landmarks": 144,
+   "tags": [],
+   "elev": 1,
+   "order": 9,
+   "flag": "🇧🇷",
+   "mood": 1,
+   "pal": 1,
+   "stars": 9
+  },
+  {
+   "id": "brasilia",
+   "name": "Brasília — Esplanada",
+   "country": "Brasil",
+   "lat": -15.7975,
+   "lon": -47.8645,
+   "file": "brasilia.json",
+   "kb": 95,
+   "landmarks": 13,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 10,
+   "flag": "🇧🇷",
+   "mood": 5,
+   "pal": 2,
+   "stars": 9
   },
   {
    "id": "salvador",
@@ -149,7 +228,21 @@
    "country": "Brasil",
    "lat": -12.9714,
    "lon": -38.5108,
-   "flag": "🇧🇷"
+   "file": "salvador.json",
+   "kb": 147,
+   "landmarks": 46,
+   "tags": [
+    "beach",
+    "morro",
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 11,
+   "flag": "🇧🇷",
+   "mood": 0,
+   "pal": 0,
+   "palms": 1,
+   "stars": 12
   },
   {
    "id": "bh",
@@ -157,8 +250,140 @@
    "country": "Brasil",
    "lat": -19.932,
    "lon": -43.938,
-   "flag": "🇧🇷"
+   "file": "bh.json",
+   "kb": 70,
+   "landmarks": 19,
+   "tags": [
+    "morro"
+   ],
+   "elev": 1,
+   "order": 12,
+   "flag": "🇧🇷",
+   "mood": 4,
+   "pal": 4,
+   "stars": 12
   },
+  {
+   "id": "fortaleza",
+   "name": "Fortaleza — Beira-Mar",
+   "country": "Brasil",
+   "lat": -3.725,
+   "lon": -38.495,
+   "file": "fortaleza.json",
+   "kb": 166,
+   "landmarks": 12,
+   "tags": [
+    "beach"
+   ],
+   "elev": 1,
+   "order": 14,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 15
+  },
+  {
+   "id": "natal",
+   "name": "Natal — Ponta Negra",
+   "country": "Brasil",
+   "lat": -5.88,
+   "lon": -35.17,
+   "file": "natal.json",
+   "kb": 57,
+   "landmarks": 9,
+   "tags": [
+    "beach",
+    "morro"
+   ],
+   "elev": 1,
+   "order": 15,
+   "flag": "🇧🇷",
+   "mood": 0,
+   "pal": 0,
+   "palms": 1,
+   "stars": 15
+  },
+  {
+   "id": "belem",
+   "name": "Belém — Ver-o-Peso",
+   "country": "Brasil",
+   "lat": -1.453,
+   "lon": -48.504,
+   "file": "belem.json",
+   "kb": 101,
+   "landmarks": 20,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 16,
+   "flag": "🇧🇷",
+   "mood": 3,
+   "pal": 3,
+   "palms": 1,
+   "stars": 18
+  },
+  {
+   "id": "manaus",
+   "name": "Manaus — Teatro Amazonas",
+   "country": "Brasil",
+   "lat": -3.1303,
+   "lon": -60.0234,
+   "file": "manaus.json",
+   "kb": 156,
+   "landmarks": 18,
+   "tags": [
+    "landmark"
+   ],
+   "elev": 1,
+   "order": 17,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 18
+  },
+  {
+   "id": "floripa",
+   "name": "Florianópolis — Centro",
+   "country": "Brasil",
+   "lat": -27.596,
+   "lon": -48.549,
+   "file": "floripa.json",
+   "kb": 167,
+   "landmarks": 39,
+   "tags": [
+    "beach",
+    "morro"
+   ],
+   "elev": 1,
+   "order": 18,
+   "flag": "🇧🇷",
+   "mood": 2,
+   "pal": 2,
+   "palms": 1,
+   "stars": 18
+  },
+  {
+   "id": "curitiba",
+   "name": "Curitiba — Centro",
+   "country": "Brasil",
+   "lat": -25.429,
+   "lon": -49.271,
+   "file": "curitiba.json",
+   "kb": 222,
+   "landmarks": 54,
+   "tags": [],
+   "elev": 1,
+   "order": 19,
+   "flag": "🇧🇷",
+   "mood": 3,
+   "pal": 3,
+   "stars": 21
+  }
+ ],
+ "soon": [
   {
    "id": "recife",
    "name": "Recife — Marco Zero",
@@ -168,59 +393,115 @@
    "flag": "🇧🇷"
   },
   {
-   "id": "fortaleza",
-   "name": "Fortaleza — Beira-Mar",
-   "country": "Brasil",
-   "lat": -3.725,
-   "lon": -38.495,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "natal",
-   "name": "Natal — Ponta Negra",
-   "country": "Brasil",
-   "lat": -5.88,
-   "lon": -35.17,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "belem",
-   "name": "Belém — Ver-o-Peso",
-   "country": "Brasil",
-   "lat": -1.453,
-   "lon": -48.504,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "manaus",
-   "name": "Manaus — Teatro Amazonas",
-   "country": "Brasil",
-   "lat": -3.1303,
-   "lon": -60.0234,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "floripa",
-   "name": "Florianópolis — Centro",
-   "country": "Brasil",
-   "lat": -27.596,
-   "lon": -48.549,
-   "flag": "🇧🇷"
-  },
-  {
-   "id": "curitiba",
-   "name": "Curitiba — Centro",
-   "country": "Brasil",
-   "lat": -25.429,
-   "lon": -49.271,
-   "flag": "🇧🇷"
-  },
-  {
    "id": "portoalegre",
    "name": "Porto Alegre — Centro Histórico",
    "country": "Brasil",
    "lat": -30.0277,
    "lon": -51.2287,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "vitoria",
+   "name": "Vitória — Centro e Palácio Anchieta",
+   "country": "Brasil",
+   "lat": -20.3197,
+   "lon": -40.339,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "saoluis",
+   "name": "São Luís — Centro Histórico",
+   "country": "Brasil",
+   "lat": -2.5297,
+   "lon": -44.3044,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "maceio",
+   "name": "Maceió — Pajuçara",
+   "country": "Brasil",
+   "lat": -9.6658,
+   "lon": -35.7133,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "joaopessoa",
+   "name": "João Pessoa — Tambaú",
+   "country": "Brasil",
+   "lat": -7.1153,
+   "lon": -34.8226,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "aracaju",
+   "name": "Aracaju — Orla de Atalaia",
+   "country": "Brasil",
+   "lat": -10.9853,
+   "lon": -37.048,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "teresina",
+   "name": "Teresina — Centro",
+   "country": "Brasil",
+   "lat": -5.0892,
+   "lon": -42.8019,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "cuiaba",
+   "name": "Cuiabá — Centro",
+   "country": "Brasil",
+   "lat": -15.5989,
+   "lon": -56.0949,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "campogrande",
+   "name": "Campo Grande — Av. Afonso Pena",
+   "country": "Brasil",
+   "lat": -20.4628,
+   "lon": -54.6156,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "palmas",
+   "name": "Palmas — Praça dos Girassóis",
+   "country": "Brasil",
+   "lat": -10.1844,
+   "lon": -48.3336,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "portovelho",
+   "name": "Porto Velho — Madeira-Mamoré",
+   "country": "Brasil",
+   "lat": -8.7608,
+   "lon": -63.9119,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "riobranco",
+   "name": "Rio Branco — Centro",
+   "country": "Brasil",
+   "lat": -9.9747,
+   "lon": -67.81,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "macapa",
+   "name": "Macapá — Fortaleza de São José",
+   "country": "Brasil",
+   "lat": -0.0372,
+   "lon": -51.0498,
+   "flag": "🇧🇷"
+  },
+  {
+   "id": "boavista",
+   "name": "Boa Vista — Centro Cívico",
+   "country": "Brasil",
+   "lat": 2.8197,
+   "lon": -60.6733,
    "flag": "🇧🇷"
   },
   {

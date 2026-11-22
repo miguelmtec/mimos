@@ -50,7 +50,7 @@ test('outfits.json: 60+ items, every paid item maps to a real product', async ()
     assert.ok(!ids.has(it.id), 'duplicate ' + it.id); ids.add(it.id);
     assert.ok(d.slots.includes(it.slot) && it.name.pt && it.name.en, it.id);
     assert.ok(it.free || it.price > 0 || grants.has(it.grant), it.id + ' needs free, a coin price or a grant that a product gives');
-    assert.ok(it.slot === 'trail' ? it.trail && it.trail.col : it.acc && Object.keys(it.acc).length, it.id + ' look');
+    assert.ok(it.slot === 'trail' ? it.trail && it.trail.col : it.slot === 'atk' ? it.fx : it.acc && Object.keys(it.acc).length, it.id + ' look');
   }
   for (const sl of d.slots) assert.ok(d.items.filter(i => i.slot === sl).length >= 5, 'slot ' + sl);
   assert.ok(d.items.filter(i => i.grant === 'pack_natal' || i.grant === 'season').length >= 4, 'seasonal Natal items');

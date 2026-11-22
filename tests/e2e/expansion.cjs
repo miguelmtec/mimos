@@ -156,7 +156,7 @@ const run = (page, n) => page.evaluate(n => { try { return __bot.run(n, 400); } 
   if (want('shop')) {
     const { browser, page, errors } = await L.open(true);
     const w = await page.evaluate(() => { const D = VP.Wardrobe.data, by = {}; for (const i of D.items) by[i.slot] = (by[i.slot] || 0) + 1; return { n: D.items.length, by, natal: D.items.filter(i => i.grant === 'pack_natal' || i.grant === 'season').length, grants: [...new Set(D.items.filter(i => i.grant).map(i => i.grant))], price: VP.Shop.PRICE }; });
-    ok('wardrobe has at least 60 items across all slots', w.n >= 60 && Object.keys(w.by).length === 6, w.by);
+    ok('wardrobe has at least 60 items across all slots', w.n >= 60 && Object.keys(w.by).length >= 6, w.by);
     ok('wardrobe has seasonal Natal items', w.natal >= 4, w.natal);
     await page.evaluate(() => VP.Shop.open()); await page.waitForTimeout(300);
     ok('shop shows 4 cosmetic packs and the R$0,99 support button', await page.locator('.card.pack').count() === 4 && await page.locator('[data-p=supporter_small]').count() === 1);

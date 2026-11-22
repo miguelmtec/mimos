@@ -311,7 +311,10 @@
    },
    "acc": {
     "hoodie": "#b967ff",
-    "trim": "#7CFF6B"
+    "trim": "#7CFF6B",
+    "snow": "#7CFF6B",
+    "sparkle": ["#b967ff", "#7CFF6B", "#ffffff"],
+    "aura": "#b967ff"
    },
    "premium": true
   },
@@ -398,7 +401,11 @@
    },
    "acc": {
     "hoodie": "#e01e37",
-    "trim": "#ffffff"
+    "trim": "#ffffff",
+    "snow": "#ffffff",
+    "sparkle": ["#ffffff", "#e01e37", "#7CFF6B"],
+    "aura": "#e01e37",
+    "tag": "#ffd23f"
    },
    "exclusive": true
   }

@@ -7,6 +7,7 @@ const PR = {
   box: new THREE.BoxGeometry(1, 1, 1).toNonIndexed(), cyl: new THREE.CylinderGeometry(1, 1, 1, 10).toNonIndexed(),
   cone: new THREE.ConeGeometry(1, 1, 8).toNonIndexed(), tor: new THREE.TorusGeometry(1, 0.22, 5, 12).toNonIndexed(),
   taper: new THREE.CylinderGeometry(0.6, 1, 1, 8).toNonIndexed(), cyl6: new THREE.CylinderGeometry(1, 1, 1, 6, 1, true).toNonIndexed(),
+  pet: new THREE.SphereGeometry(1, 6, 4).toNonIndexed(), gem: new THREE.OctahedronGeometry(1, 0).toNonIndexed(), torf: new THREE.TorusGeometry(1, 0.12, 4, 16).toNonIndexed(),
 };
 // geometry builder: every part is baked (position/normal/colour) into one BufferGeometry => 1 draw call
 export class GB {
@@ -27,6 +28,9 @@ export class GB {
   cyl(col, x, y, z, r, h, r2, rx, ry, rz) { return this.add(PR.cyl, col, x, y, z, r, h, r2 === undefined ? r : r2, rx, ry, rz); }
   cone(col, x, y, z, r, h, r2, rx, ry, rz) { return this.add(PR.cone, col, x, y, z, r, h, r2 === undefined ? r : r2, rx, ry, rz); }
   tor(col, x, y, z, r, t, r2, rx, ry, rz) { return this.add(PR.tor, col, x, y, z, r, t === undefined ? r : t, r2 === undefined ? r : r2, rx, ry, rz); }
+  pet(col, x, y, z, sx, sy, sz, rx, ry, rz) { return this.add(PR.pet, col, x, y, z, sx, sy, sz, rx, ry, rz); }
+  gem(col, x, y, z, sx, sy, sz, rx, ry, rz) { return this.add(PR.gem, col, x, y, z, sx, sy, sz, rx, ry, rz); }
+  ring(col, x, y, z, rx, rz, th, ax, ay, az) { return this.add(PR.torf, col, x, y, z, rx, rz === undefined ? rx : rz, th === undefined ? (rx + (rz === undefined ? rx : rz)) / 2 : th, ax === undefined ? Math.PI / 2 : ax, ay, az); }   // thin ring, lies flat (xz plane) by default
   geo() {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
@@ -38,6 +42,7 @@ export class GB {
   mesh(mat) { return new THREE.Mesh(this.geo(), mat || MAT.lit); }
 }
 // low quality: characters are built from coarser spheres (about 40% of the triangles)
+export const premiumTick = () => premTick();
 export function setDetail(low) { GB.low = !!low; }
 export const MAT = {
   lit: new THREE.MeshLambertMaterial({ vertexColors: true }),
@@ -45,7 +50,21 @@ export const MAT = {
   glow: new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }),
   ghost: new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.4 }),
   white: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+  // paid looks: shiny gold / chrome (specular + pulsing warm emissive), neon (unlit, pulsing), glossy plastic, additive sparkle
+  gold: new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0xfff0b8, shininess: 95, emissive: 0x4a3410, emissiveIntensity: 0.6 }),
+  gloss: new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0xffffff, shininess: 110 }),
+  neon: new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }),
+  spark: new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }),
 };
+// shared pulse of the premium materials (called from animCat, at most once per frame)
+let _pt = -1;
+function premTick() {
+  const T = performance.now() * 0.001; if (T - _pt < 0.012) return; _pt = T;
+  MAT.gold.emissiveIntensity = 0.55 + 0.4 * Math.sin(T * 2.6);
+  const k = 0.8 + 0.2 * Math.sin(T * 3.3); MAT.neon.color.setRGB(k, k, k);
+  MAT.spark.opacity = 0.72 + 0.28 * Math.sin(T * 5.1);
+}
+const goldish = c => { if (!c || typeof c !== 'string' || c[0] !== '#' || c.length < 7) return false; const r = parseInt(c.slice(1, 3), 16), g = parseInt(c.slice(3, 5), 16), b = parseInt(c.slice(5, 7), 16); return r > 190 && g > 140 && b < 120 && r >= g; };
 const INK = '#1a0d24';
 
 // ================= CATS (parametric) =================
@@ -71,6 +90,9 @@ export const CAT_SPECS = {
 export function buildCat(spec) {
   const A = spec.acc || {}, fur = spec.fur, fur2 = spec.fur2 || fur, pA = spec.patchA || fur, pB = spec.patchB || pA, fl = spec.fluff || 0;
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
+  // premium layers: metal (bm/hm = body/head, Phong + pulsing emissive), neon (bn/hn, unlit + pulse) and animated parts (later)
+  const bm = new GB(), bn = new GB(), hm = new GB(), hn = new GB(), later = [];
+  const lat = (on, gb, mat, x, y, z, k, a, sp, ph) => { if (gb.p.length) later.push({ on, gb, mat, x, y, z, k, a: a || 0, s: sp || 1, p: ph || 0 }); };
   // ---- body ----
   const b = new GB();
   const coat = A.hoodie || A.jacket || null;
@@ -79,16 +101,24 @@ export function buildCat(spec) {
   if (spec.pattern === 'calico' && !coat) { b.sph(pA, -0.22, 0.62, -0.2, 0.24, 0.2, 0.26); b.sph(pB, 0.24, 0.55, -0.05, 0.2, 0.22, 0.24); }
   if (spec.pattern === 'spotted' && !coat) for (let i = 0; i < 12; i++) { const a = i * 2.4, yy = 0.4 + (i % 4) * 0.09; b.lo(pA, Math.sin(a) * 0.37, yy, Math.cos(a) * 0.42 - 0.04, 0.075, 0.06, 0.075); }
   if (spec.pattern === 'tabby') for (let i = 0; i < 3; i++) b.tor(pA, 0, 0.52, -0.3 + i * 0.2, 0.39 - Math.abs(i - 1) * 0.04, 0.4, 0.3, 0, 0, 0);
-  if (A.shirt) { b.sph(A.shirt, 0, 0.5, 0.0, 0.42, 0.36, 0.44); if (A.shirt2) for (let i = 0; i < 9; i++) { const a = i * 2.4, yy = 0.36 + (i % 3) * 0.12; b.lo(A.shirt2, Math.sin(a) * 0.38, yy, Math.cos(a) * 0.36 + 0.02, 0.07, 0.07, 0.07); } }
-  if (A.jacket) { // open jacket: two side shells + collar, chest stays visible
-    b.sph(A.jacket, -0.17, 0.5, -0.06, 0.32, 0.4, 0.46); b.sph(A.jacket, 0.17, 0.5, -0.06, 0.32, 0.4, 0.46);
-    b.box(A.trim || A.jacket, -0.2, 0.74, 0.22, 0.2, 0.07, 0.12, 0.3, 0.3, 0.5); b.box(A.trim || A.jacket, 0.2, 0.74, 0.22, 0.2, 0.07, 0.12, 0.3, -0.3, -0.5);
-    b.tor(A.trim || '#fff', 0, 0.27, -0.05, 0.4, 0.46, 0.5, Math.PI / 2);
-    if (A.studs) for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) b.lo(A.studs, sx * 0.43, 0.42 + i * 0.12, 0.12, 0.035);
+  if (A.shirt) { b.sph(A.shirt, 0, 0.5, 0.0, 0.42, 0.36, 0.44); if (A.shirt2) for (let i = 0; i < 9; i++) { const a = i * 2.4, yy = 0.36 + (i % 3) * 0.12; b.lo(A.shirt2, Math.sin(a) * 0.38, yy, Math.cos(a) * 0.36 + 0.02, 0.07, 0.07, 0.07); }
+    if (A.floral) for (let i = 0; i < 7; i++) { const a = -1.5 + i * 0.5, yy = 0.34 + (i % 3) * 0.13, fx = Math.sin(a) * 0.4, fz = Math.cos(a) * 0.38 + 0.02; for (let k = 0; k < 5; k++) { const q = k * 1.257 + i; b.pet(i % 2 ? A.floral : '#ffffff', fx + Math.cos(q) * 0.06, yy + Math.sin(q) * 0.06, fz + 0.01, 0.045, 0.045, 0.03); } b.pet('#ffd23f', fx, yy, fz + 0.03, 0.035, 0.035, 0.03); }
+    if (A.check) { for (let i = 0; i < 4; i++) b.ring(A.shirt2 || '#17101c', 0, 0.28 + i * 0.13, 0.0, 0.43 - Math.abs(i - 1.5) * 0.02, 0.45 - Math.abs(i - 1.5) * 0.02, 0.5); for (let i = -3; i <= 3; i++) b.box(A.shirt2 || '#17101c', i * 0.11, 0.5, 0.45 - Math.abs(i) * 0.03, 0.035, 0.4, 0.03); } }
+  if (A.jacket) { // open jacket: two side shells + collar, chest stays visible (gold jackets are real metal, neon ones glow along the edges)
+    const J = goldish(A.jacket) ? bm : b, tc = A.glow || A.trim || A.jacket, T = A.glow ? bn : goldish(A.trim) ? bm : b;
+    J.sph(A.jacket, -0.17, 0.5, -0.06, 0.32, 0.4, 0.46); J.sph(A.jacket, 0.17, 0.5, -0.06, 0.32, 0.4, 0.46);
+    T.box(tc, -0.2, 0.74, 0.22, 0.2, 0.07, 0.12, 0.3, 0.3, 0.5); T.box(tc, 0.2, 0.74, 0.22, 0.2, 0.07, 0.12, 0.3, -0.3, -0.5);
+    T.tor(tc, 0, 0.27, -0.05, 0.4, 0.46, 0.5, Math.PI / 2);
+    if (A.glow) { bn.ring(A.glow, 0, 0.5, -0.05, 0.5, 0.56, 0.5); for (const sx of [-1, 1]) { bn.box(A.glow, sx * 0.1, 0.56, 0.44, 0.035, 0.42, 0.04, 0, 0, sx * 0.08); bn.box(A.glow, sx * 0.49, 0.5, 0.0, 0.04, 0.6, 0.04); } }
+    if (goldish(A.jacket)) for (let i = 0; i < 3; i++) bm.lo('#fff3b0', 0, 0.62 - i * 0.12, 0.46, 0.04); // buttons
+    if (A.studs) for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) bm.lo(A.studs, sx * 0.43, 0.38 + i * 0.1, 0.12, 0.04);
   }
   if (A.hoodie) {
     b.sph(A.hoodie, 0, 0.5, -0.04, 0.44, 0.41, 0.5); b.sph(A.hoodie, 0, 0.86, -0.32, 0.36, 0.3, 0.26); // hood resting on the back
-    b.tor(A.trim || A.hoodie, 0, 0.27, -0.04, 0.4, 0.47, 0.5, Math.PI / 2); b.box(A.trim || '#fff', -0.07, 0.6, 0.44, 0.03, 0.26, 0.03); b.box(A.trim || '#fff', 0.07, 0.6, 0.44, 0.03, 0.26, 0.03);
+    const HT = goldish(A.trim) ? bm : b;
+    HT.tor(A.trim || A.hoodie, 0, 0.27, -0.04, 0.4, 0.47, 0.5, Math.PI / 2); HT.box(A.trim || '#fff', -0.07, 0.6, 0.44, 0.03, 0.26, 0.03); HT.box(A.trim || '#fff', 0.07, 0.6, 0.44, 0.03, 0.26, 0.03);
+    if (goldish(A.trim)) { bm.ring(A.trim, 0, 0.9, -0.3, 0.28, 0.2, 0.3); bm.sph(A.trim, -0.07, 0.34, 0.47, 0.035); bm.sph(A.trim, 0.07, 0.34, 0.47, 0.035); }
+    if (A.snow) { for (let i = 0; i < 9; i++) { const a = -1.1 + i * 0.275; b.lo(A.snow, Math.sin(a) * 0.46, 0.4 + (i % 2) * 0.07, Math.cos(a) * 0.5 - 0.04, 0.05); } for (const [fx, fy] of [[-0.2, 0.62], [0.2, 0.55]]) for (let k = 0; k < 3; k++) b.box(A.snow, fx, fy, 0.5, 0.15, 0.03, 0.03, 0, 0, k * 1.047); }
     b.box(A.hoodie, 0, 0.42, 0.42, 0.34, 0.16, 0.08);
   }
   // Coleção Mimos
@@ -97,19 +127,19 @@ export function buildCat(spec) {
   if (A.pillow) { b.box(A.pillow, 0, 0.6, -0.52, 0.66, 0.5, 0.2); b.sph(A.pillow, 0, 0.6, -0.56, 0.36, 0.28, 0.14); b.tor(A.pillow2 || '#2de2e6', 0, 0.86, 0.02, 0.32, 0.2, 0.4, Math.PI / 2); }
   if (A.mug) { b.cyl('#ffffff', -0.42, 0.66, 0.44, 0.11, 0.2); b.cyl('#6b3f22', -0.42, 0.765, 0.44, 0.09, 0.01); b.tor('#ffffff', -0.54, 0.66, 0.44, 0.06, 0.07, 0.06); b.box(A.mug, -0.42, 0.64, 0.44, 0.225, 0.06, 0.225); }
   if (A.snack) { b.sph(A.snack, 0.3, 0.5, -0.34, 0.2, 0.24, 0.16); b.box(A.snack, 0.12, 0.74, -0.1, 0.05, 0.05, 0.6, 0, 0.5, 0); b.sph('#ffb347', 0.3, 0.52, -0.2, 0.08, 0.06, 0.03); }
-  if (A.collar) b.tor(A.collar, 0, 0.82, 0.05, 0.3, 0.3, 0.3, Math.PI / 2);
+  if (A.collar) (goldish(A.collar) ? bm : b).tor(A.collar, 0, 0.82, 0.05, 0.3, 0.3, 0.3, Math.PI / 2);
   if (A.spikes) for (let i = 0; i < 7; i++) { const a = (i / 6 - 0.5) * 2.6; b.cone(A.spikes, Math.sin(a) * 0.33, 0.84, 0.05 + Math.cos(a) * 0.33, 0.045, 0.13, 0.045, Math.cos(a) * 1.3, 0, -Math.sin(a) * 1.3); }
-  if (A.bell) b.sph(A.bell, 0, 0.74, 0.36, 0.08);
+  if (A.bell) { bm.sph(A.bell, 0, 0.72, 0.38, 0.1); bm.box('#8a6a10', 0, 0.72, 0.47, 0.1, 0.012, 0.02); bm.lo('#5a4000', 0, 0.68, 0.47, 0.02); }
   if (A.bowtie) { b.cone(A.bowtie, -0.1, 0.78, 0.4, 0.09, 0.2, 0.05, 0, 0, -Math.PI / 2); b.cone(A.bowtie, 0.1, 0.78, 0.4, 0.09, 0.2, 0.05, 0, 0, Math.PI / 2); b.lo(A.bowtie, 0, 0.78, 0.4, 0.05); }
-  if (A.scarf) { b.tor(A.scarf, 0, 0.84, 0.06, 0.34, 0.5, 0.34, Math.PI / 2); b.box(A.scarf, 0.2, 0.62, 0.36, 0.14, 0.4, 0.07, 0, 0, -0.2); }
+  if (A.scarf) { b.tor(A.scarf, 0, 0.84, 0.06, 0.34, 0.5, 0.34, Math.PI / 2); b.sph(A.scarf, 0.2, 0.82, 0.3, 0.12, 0.1, 0.1); const sc = new GB(); sc.box(A.scarf, 0, -0.2, 0, 0.14, 0.4, 0.07); sc.box('#ffffff', 0, -0.38, 0.0, 0.15, 0.04, 0.075); lat('b', sc, null, 0.2, 0.8, 0.34, 'sway', 0.2, 2.4, 0); const s2 = new GB(); s2.box(A.scarf, 0, -0.14, 0, 0.12, 0.28, 0.06); s2.box('#ffffff', 0, -0.27, 0, 0.13, 0.04, 0.065); lat('b', s2, null, 0.08, 0.8, 0.36, 'sway', 0.28, 2.9, 1.3); }
   if (A.pack) { b.box(A.pack, 0, 0.6, -0.5, 0.44, 0.44, 0.26); b.box('#ffffff', 0, 0.66, -0.64, 0.24, 0.14, 0.04); b.box(A.pack, -0.2, 0.7, -0.2, 0.06, 0.4, 0.5); b.box(A.pack, 0.2, 0.7, -0.2, 0.06, 0.4, 0.5); }
   if (A.cape) { b.box(A.cape, 0, 0.52, -0.5, 0.74, 0.86, 0.05, 0.42); b.tor(A.cape, 0, 0.86, 0.02, 0.32, 0.32, 0.4, Math.PI / 2); }
-  if (A.bells) for (let i = 0; i < 5; i++) { const a = (i / 4 - 0.5) * 1.6; b.sph(i % 2 ? '#ffd23f' : A.bells, Math.sin(a) * 0.3, 0.78, 0.26 + Math.cos(a) * 0.1, 0.06); }
-  if (A.lei) for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283; b.lo(A.lei[i % A.lei.length], Math.sin(a) * 0.33, 0.8 - Math.cos(a) * 0.04, 0.05 + Math.cos(a) * 0.3, 0.085); }
-  if (A.board) { b.sph(A.board, 0.12, 0.8, -0.56, 0.2, 0.74, 0.05, 0, 0, 0.25); b.box(A.board2 || '#ffffff', 0.12, 0.8, -0.59, 0.05, 1.3, 0.02, 0, 0, 0.25); }
-  if (A.guitar) { b.sph(A.guitar, -0.06, 0.52, -0.56, 0.24, 0.3, 0.07); b.sph('#3a2140', -0.06, 0.56, -0.62, 0.08, 0.08, 0.02); b.box('#8a5a2b', 0.2, 0.98, -0.56, 0.07, 0.62, 0.05, 0, 0, -0.5); }
-  if (A.balloon) { b.cyl('#ffffff', 0.3, 1.4, -0.36, 0.008, 1.3, 0.008); b.sph(A.balloon, 0.3, 2.2, -0.36, 0.26, 0.32, 0.26); b.sph('#ffffff', 0.22, 2.3, -0.2, 0.05); }
-  if (A.gift) { b.box(A.gift, 0, 0.62, -0.52, 0.4, 0.4, 0.3); b.box('#ffd23f', 0, 0.62, -0.52, 0.42, 0.08, 0.32); b.box('#ffd23f', 0, 0.62, -0.52, 0.08, 0.42, 0.32); b.lo('#ffd23f', 0, 0.86, -0.52, 0.09); }
+  if (A.bells) for (let i = 0; i < 5; i++) { const a = (i / 4 - 0.5) * 1.6; bm.sph(i % 2 ? '#ffd23f' : A.bells, Math.sin(a) * 0.3, 0.76 - Math.abs(Math.sin(a)) * 0.06, 0.26 + Math.cos(a) * 0.1, 0.085); }
+  if (A.lei) { for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283, lx = Math.sin(a) * 0.35, lz = 0.05 + Math.cos(a) * 0.32; for (let k = 0; k < 5; k++) { const q = k * 1.257; b.pet(A.lei[i % A.lei.length], lx + Math.cos(q) * 0.05, 0.8 - Math.cos(a) * 0.04 + Math.sin(q) * 0.05, lz, 0.06, 0.06, 0.05); } b.pet('#ffd23f', lx, 0.8 - Math.cos(a) * 0.04, lz + 0.02, 0.04); } }
+  if (A.board) { const sb = new GB(); sb.sph(A.board, 0, 0.5, 0, 0.26, 0.98, 0.06); sb.sph(A.board2 || '#ffffff', 0, 0.5, -0.03, 0.07, 0.96, 0.03); sb.sph('#ffffff', 0, 0.5, 0.03, 0.2, 0.2, 0.03); sb.sph(A.board2 || '#ffffff', 0, 0.9, 0.04, 0.2, 0.08, 0.03); sb.cone('#17101c', 0, -0.4, -0.12, 0.05, 0.22, 0.12); lat('b', sb, MAT.gloss, 0.16, 0.38, -0.58, 'sway', 0.07, 1.7, 0); }
+  if (A.guitar) { const gt = new GB(); gt.sph(A.guitar, 0, 0, 0, 0.26, 0.2, 0.07); gt.sph(A.guitar, 0, 0.26, 0, 0.2, 0.18, 0.07); gt.sph('#2a1436', 0, 0.12, 0.06, 0.09, 0.09, 0.02); gt.box('#5c3a18', 0, 0.62, 0, 0.07, 0.62, 0.05); gt.box('#e8d9b0', 0, 0.12, 0.07, 0.018, 0.82, 0.01); gt.box('#3a2140', 0, 0.98, 0, 0.11, 0.16, 0.05); gt.lo('#ffd23f', -0.05, 1.0, 0.03, 0.025); gt.lo('#ffd23f', 0.05, 1.0, 0.03, 0.025); lat('b', gt, MAT.gloss, -0.08, 0.4, -0.58, 'sway', 0.08, 3.1, 0.5); }
+  if (A.balloon) { const bl = new GB(); bl.cyl('#ffffff', 0, 0.6, 0, 0.008, 1.2, 0.008); bl.sph(A.balloon, 0, 1.52, 0, 0.34, 0.42, 0.34); bl.cone(A.balloon, 0, 1.08, 0, 0.05, 0.1, 0.02, Math.PI); bl.sph('#ffffff', -0.1, 1.68, 0.18, 0.07, 0.1, 0.04); lat('b', bl, MAT.gloss, 0.3, 0.95, -0.36, 'sway', 0.1, 1.9, 0); }
+  if (A.gift) { b.box(A.gift, 0, 0.62, -0.52, 0.4, 0.4, 0.3); bm.box('#ffd23f', 0, 0.62, -0.52, 0.42, 0.08, 0.32); bm.box('#ffd23f', 0, 0.62, -0.52, 0.08, 0.42, 0.32); const bw = new GB(); bw.cone('#ffd23f', -0.1, 0.04, 0, 0.09, 0.2, 0.05, 0, 0, Math.PI / 2 + 0.4); bw.cone('#ffd23f', 0.1, 0.04, 0, 0.09, 0.2, 0.05, 0, 0, -Math.PI / 2 - 0.4); bw.lo('#fff3b0', 0, 0, 0, 0.06); lat('b', bw, MAT.gold, 0, 0.86, -0.52, 'pulse', 0.12, 3, 0); }
   if (A.wings) for (const sx of [-1, 1]) { b.sph(A.wings, sx * 0.42, 0.86, -0.4, 0.34, 0.2, 0.05, 0, sx * 0.5, sx * 0.6); b.sph(A.wings, sx * 0.36, 0.64, -0.42, 0.22, 0.14, 0.05, 0, sx * 0.5, sx * 0.2); }
   // arms
   const sleeve = coat || A.shirt || fur;
@@ -151,7 +181,7 @@ export function buildCat(spec) {
   for (const sx of [-1, 1]) {
     h.sph('#ffffff', sx * ex, ey, ez, er, er, 0.07); h.sph(sx > 0 && spec.eye2 ? spec.eye2 : spec.eye, sx * ex, ey, ez + 0.035, er * 0.74, er * 0.74, 0.05); h.sph('#0b0610', sx * ex, ey, ez + 0.06, er * 0.36, er * 0.46, 0.035); h.sph('#ffffff', sx * ex - 0.04, ey + 0.05, ez + 0.085, 0.03);
     if (spec.lids) h.sph(pA, sx * ex, ey + 0.075, ez + 0.03, er * 1.12, er * 0.62, 0.085);
-    if (spec.brows) h.box(INK, sx * (ex - 0.02), ey + 0.18, ez + 0.04, 0.2, 0.05, 0.05, 0, 0, sx * -0.45);
+    if (spec.brows) h.box(INK, sx * (ex - 0.02), ey + 0.18, ez + 0.04, 0.2, 0.05, 0.05, 0, 0, sx * -0.2); // Mimosa: an elegant arch, never an angry frown
   }
   h.sph(fur2, 0, -0.15, ez + 0.0, 0.2, 0.13, 0.1); h.sph('#f07a9a', 0, -0.07, ez + 0.08, 0.05, 0.035, 0.03);
   if (spec.tongue) h.sph('#ff7fa8', 0.01, -0.22, ez + 0.07, 0.045, 0.06, 0.03);
@@ -159,21 +189,44 @@ export function buildCat(spec) {
   for (const sx of [-1, 1]) for (let i = 0; i < 2; i++) h.box('#ffffff', sx * 0.38, -0.13 - i * 0.05, ez - 0.02, 0.26, 0.012, 0.012, 0, sx * -0.4, sx * (0.1 - i * 0.25));
   // head accessories
   if (A.bow) { h.cone(A.bow, -0.17, 0.5, 0.1, 0.16, 0.3, 0.1, 0, 0, -Math.PI / 2 + 0.2); h.cone(A.bow, 0.17, 0.5, 0.1, 0.16, 0.3, 0.1, 0, 0, Math.PI / 2 - 0.2); h.sph('#ff8fd0', 0, 0.5, 0.1, 0.08); }
-  if (A.glasses) { for (const sx of [-1, 1]) { h.cyl('#2a1436', sx * ex, ey + 0.02, ez + 0.1, 0.17, 0.03, 0.15, Math.PI / 2); h.tor(A.glasses, sx * ex, ey + 0.02, ez + 0.11, 0.17, 0.16, 0.06); } h.box(A.glasses, 0, ey + 0.05, ez + 0.11, 0.14, 0.03, 0.03); }
-  if (A.crown) { h.cyl(A.crown, 0, 0.5, 0, 0.16, 0.1); for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; h.cone(A.crown, Math.sin(a) * 0.13, 0.6, Math.cos(a) * 0.13, 0.05, 0.14); } h.lo('#ff4fb8', 0, 0.52, 0.16, 0.035); }
+  if (A.glasses) {
+    const GF = A.glow ? hn : hm, gl = new GB();
+    for (const sx of [-1, 1]) { h.cyl(A.glow ? '#101a2a' : '#2a1436', sx * ex, ey + 0.02, ez + 0.1, 0.17, 0.03, 0.15, Math.PI / 2); GF.tor(A.glasses, sx * ex, ey + 0.02, ez + 0.11, 0.17, 0.16, 0.07); GF.box(A.glasses, sx * (ex + 0.17), ey + 0.03, ez - 0.02, 0.03, 0.03, 0.26); gl.box('#ffffff', sx * ex - 0.04, ey + 0.04, ez + 0.14, 0.025, 0.2, 0.01, 0, 0, 0.6); }
+    GF.box(A.glasses, 0, ey + 0.05, ez + 0.11, 0.14, 0.035, 0.035); lat('h', gl, MAT.neon, 0, 0, 0, 'flash', 1, 1.6, 0);
+  }
+  if (A.crown) { // crown: metal band + five tall points with ball tips, glowing jewels, a floating twinkle
+    hm.cyl(A.crown, 0, 0.5, 0, 0.2, 0.1, 0.21); hm.ring(A.crown, 0, 0.55, 0, 0.21, 0.22, 0.21); hm.ring(A.crown, 0, 0.45, 0, 0.21, 0.22, 0.21);
+    for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283, cx = Math.sin(a) * 0.17, cz = Math.cos(a) * 0.17; hm.cone(A.crown, cx, 0.66, cz, 0.065, 0.24, 0.065); hm.sph('#fff6c8', cx, 0.8, cz, 0.04); hn.gem(i % 2 ? '#ff4f7a' : '#2de2e6', cx, 0.53, cz * 1.0 + (cz > 0 ? 0.03 : 0), 0.04, 0.05, 0.04); }
+    const tw = new GB(); tw.gem('#ffffff', 0, 0, 0, 0.05, 0.1, 0.05); tw.gem('#fff3a8', 0, 0, 0, 0.1, 0.04, 0.04); lat('h', tw, MAT.spark, 0, 0.98, 0, 'bob', 0.05, 3, 0);
+  }
+  if (A.tag) { // floating mini crown over the head: readable from the gameplay camera
+    const tg = new GB(); tg.cyl(A.tag, 0, 0, 0, 0.17, 0.08, 0.18); for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; tg.cone(A.tag, Math.sin(a) * 0.14, 0.12, Math.cos(a) * 0.14, 0.055, 0.2, 0.055); tg.sph('#fff6c8', Math.sin(a) * 0.14, 0.23, Math.cos(a) * 0.14, 0.035); } lat('h', tg, MAT.gold, 0, 1.0, 0, 'tag', 0.06, 2.4, 0);
+  }
   if (A.hat) { h.cyl(A.hat, 0, 0.46, 0, 0.5, 0.04); h.cyl(A.hat, 0, 0.56, 0, 0.3, 0.2); }
-  if (A.cowboy) { h.cyl(A.cowboy, 0, 0.45, 0, 0.64, 0.04, 0.58); h.tor(A.cowboy, 0, 0.47, 0, 0.62, 0.3, 0.56, Math.PI / 2); h.cyl(A.cowboy, 0, 0.6, 0, 0.3, 0.26, 0.28); h.sph(A.cowboy, 0, 0.73, 0, 0.3, 0.1, 0.28); h.cyl(A.band || '#3a2140', 0, 0.51, 0, 0.31, 0.07, 0.29); }
-  if (A.antlers) { for (const sx of [-1, 1]) { h.cyl(A.antlers, sx * 0.2, 0.62, -0.02, 0.035, 0.36, 0.035, 0, 0, -sx * 0.35); h.cyl(A.antlers, sx * 0.33, 0.7, -0.02, 0.03, 0.2, 0.03, 0, 0, -sx * 1.1); h.cyl(A.antlers, sx * 0.2, 0.78, -0.02, 0.028, 0.18, 0.028, 0, 0, sx * 0.5); } h.sph('#ff3355', 0, -0.07, 0.52, 0.07); }
-  if (A.party) { h.cone(A.party, 0, 0.66, 0, 0.2, 0.46, 0.2); h.sph('#ffffff', 0, 0.9, 0, 0.07); for (let i = 0; i < 5; i++) { const a = i * 1.257; h.lo(i % 2 ? '#ffd23f' : '#2de2e6', Math.sin(a) * 0.14, 0.52 + (i % 3) * 0.08, Math.cos(a) * 0.14, 0.035); } }
-  if (A.halo) h.tor(A.halo, 0, 0.74, 0, 0.26, 0.26, 0.3, Math.PI / 2);
-  if (A.phones) { h.tor(A.phones, 0, 0.12, -0.02, 0.56, 0.5, 0.36); for (const sx of [-1, 1]) { h.sph(A.phones, sx * 0.56, 0.04, 0, 0.1, 0.18, 0.18); h.sph('#17101c', sx * 0.6, 0.04, 0, 0.07, 0.13, 0.13); } }
-  if (A.flowers) for (let i = 0; i < 7; i++) { const a = (i / 6 - 0.5) * 2.4; h.lo(A.flowers[i % A.flowers.length], Math.sin(a) * 0.42, 0.34 + Math.cos(a) * 0.14, 0.12, 0.085); h.lo('#ffd23f', Math.sin(a) * 0.42, 0.34 + Math.cos(a) * 0.14, 0.19, 0.035); }
-  if (A.beanie) { h.sph(A.beanie, 0, 0.36, -0.02, 0.5, 0.3, 0.44); h.tor(A.trim2 || '#ffffff', 0, 0.3, -0.02, 0.5, 0.44, 0.5, Math.PI / 2); h.sph(A.trim2 || '#ffffff', 0, 0.68, -0.02, 0.1); }
+  if (A.cowboy) { h.cyl(A.cowboy, 0, 0.45, 0, 0.64, 0.04, 0.58); h.tor(A.cowboy, 0, 0.47, 0, 0.62, 0.3, 0.56, Math.PI / 2); h.cyl(A.cowboy, 0, 0.6, 0, 0.3, 0.26, 0.28); h.sph(A.cowboy, 0, 0.73, 0, 0.3, 0.1, 0.28); h.cyl(A.band || '#3a2140', 0, 0.51, 0, 0.31, 0.07, 0.29); hm.box('#ffd23f', 0, 0.51, 0.31, 0.12, 0.1, 0.03); hm.gem('#fff6c8', 0, 0.51, 0.34, 0.04, 0.04, 0.02); }
+  if (A.antlers) { for (const sx of [-1, 1]) { h.cyl(A.antlers, sx * 0.2, 0.62, -0.02, 0.035, 0.36, 0.035, 0, 0, -sx * 0.35); h.cyl(A.antlers, sx * 0.33, 0.7, -0.02, 0.03, 0.2, 0.03, 0, 0, -sx * 1.1); h.cyl(A.antlers, sx * 0.2, 0.78, -0.02, 0.028, 0.18, 0.028, 0, 0, sx * 0.5); } h.sph('#ff3355', 0, -0.07, 0.52, 0.07); const al = new GB(), al2 = new GB(); for (const sx of [-1, 1]) { al.sph('#ff3355', sx * 0.33, 0.8, -0.02, 0.05); al2.sph('#7CFF6B', sx * 0.2, 0.9, -0.02, 0.05); al2.sph('#ffd23f', sx * 0.41, 0.72, -0.02, 0.045); al.sph('#2de2e6', sx * 0.2, 0.69, -0.02, 0.045); } lat('h', al, MAT.neon, 0, 0, 0, 'blink', 0, 2.4, 0); lat('h', al2, MAT.neon, 0, 0, 0, 'blink', 0, 2.4, 3.14); }
+  if (A.party) { h.cone(A.party, 0, 0.7, 0, 0.24, 0.56, 0.24); h.tor('#ffffff', 0, 0.56, 0, 0.17, 0.2, 0.17, Math.PI / 2); h.tor('#2de2e6', 0, 0.74, 0, 0.12, 0.14, 0.12, Math.PI / 2); const pm = new GB(); pm.sph('#fff3a8', 0, 0, 0, 0.09); for (let i = 0; i < 6; i++) pm.cone('#ffd23f', Math.sin(i * 1.047) * 0.09, Math.cos(i * 1.047) * 0.09, 0, 0.025, 0.12, 0.01, 0, 0, -i * 1.047 + 1.57); lat('h', pm, MAT.gold, 0, 0.98, 0, 'bob', 0.05, 4, 0); for (let i = 0; i < 5; i++) { const a = i * 1.257; h.lo(i % 2 ? '#ffd23f' : '#2de2e6', Math.sin(a) * 0.14, 0.52 + (i % 3) * 0.08, Math.cos(a) * 0.14, 0.035); } }
+  if (A.halo) { const ha = new GB(); ha.tor(A.halo, 0, 0, 0, 0.26, 0.26, 0.32, Math.PI / 2); lat('h', ha, MAT.neon, 0, 0.78, 0, 'bob', 0.04, 2.2, 0); const hb = new GB(); hb.tor(A.halo, 0, 0, 0, 0.3, 0.3, 0.5, Math.PI / 2); lat('h', hb, MAT.spark, 0, 0.78, 0, 'bob', 0.04, 2.2, 0); }
+  if (A.phones) { h.tor(A.phones, 0, 0.12, -0.02, 0.56, 0.5, 0.36); for (const sx of [-1, 1]) { h.sph(A.phones, sx * 0.56, 0.04, 0, 0.1, 0.18, 0.18); h.sph('#17101c', sx * 0.6, 0.04, 0, 0.07, 0.13, 0.13); hn.add(PR.torf, A.phones, sx * 0.67, 0.04, 0, 0.16, 0.16, 0.5, 0, Math.PI / 2, 0); hn.add(PR.torf, '#ffffff', sx * 0.7, 0.04, 0, 0.09, 0.09, 0.5, 0, Math.PI / 2, 0); } }
+  if (A.flowers) { const fl2 = new GB(); fl2.ring('#2f9a4a', 0, 0.36, 0.1, 0.43, 0.38, 0.5, 0.15); for (let i = 0; i < 7; i++) { const a = (i / 6 - 0.5) * 2.6, fx = Math.sin(a) * 0.44, fy = 0.36 + Math.cos(a) * 0.16, fz = 0.12 + (1 - Math.cos(a)) * 0.02; for (let k = 0; k < 5; k++) { const q = k * 1.257 + i; fl2.pet(A.flowers[i % A.flowers.length], fx + Math.cos(q) * 0.075, fy + Math.sin(q) * 0.075, fz, 0.07, 0.07, 0.04); } fl2.pet('#ffd23f', fx, fy, fz + 0.03, 0.05, 0.05, 0.04); } lat('h', fl2, null, 0, 0, 0, 'sway', 0.03, 1.5, 0); }
+  if (A.beanie) { h.sph(A.beanie, 0, 0.36, -0.02, 0.5, 0.3, 0.44); h.tor(A.trim2 || '#ffffff', 0, 0.3, -0.02, 0.5, 0.44, 0.5, Math.PI / 2); h.tor(A.trim2 || '#ffffff', 0, 0.5, -0.02, 0.4, 0.34, 0.4, Math.PI / 2); const bp = new GB(); bp.sph(A.trim2 || '#ffffff', 0.04, 0, 0, 0.12); bp.sph('#ffffff', 0.08, 0.05, 0.05, 0.04); lat('h', bp, null, 0, 0.68, -0.02, 'sway', 0.3, 3.2, 0); }
   if (A.star) { for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; h.cone(A.star, Math.sin(a) * 0.09, 0.62 + Math.cos(a) * 0.09, 0.05, 0.06, 0.16, 0.03, 0, 0, -a); } h.sph(A.star, 0, 0.62, 0.05, 0.08, 0.08, 0.03); }
   if (A.chef) { h.cyl(A.chef, 0, 0.5, 0, 0.3, 0.2); for (let i = 0; i < 5; i++) { const a = i * 1.257; h.sph(A.chef, Math.sin(a) * 0.2, 0.72, Math.cos(a) * 0.2, 0.2); } h.sph(A.chef, 0, 0.8, 0, 0.24); }
   if (A.nightcap) { h.sph(A.nightcap, 0, 0.36, -0.02, 0.5, 0.26, 0.44); h.cone(A.nightcap, 0.2, 0.66, -0.06, 0.26, 0.6, 0.26, 0, 0, -0.9); h.sph(A.nightcap2 || '#ffffff', 0.52, 0.72, -0.06, 0.1); h.tor(A.nightcap2 || '#ffffff', 0, 0.3, -0.02, 0.5, 0.44, 0.5, Math.PI / 2); }
-  if (A.santa) { h.cyl('#ffffff', 0, 0.42, 0, 0.36, 0.1); h.cone('#e01e37', 0.06, 0.66, -0.04, 0.3, 0.5, 0.3, 0, 0, -0.35); h.sph('#ffffff', 0.24, 0.86, -0.04, 0.09); }
+  if (A.santa) { h.cyl('#ffffff', 0, 0.42, 0, 0.36, 0.1); for (let i = 0; i < 8; i++) h.lo('#ffffff', Math.sin(i * 0.785) * 0.34, 0.4, Math.cos(i * 0.785) * 0.34 - 0.02, 0.09); h.cone('#e01e37', 0.06, 0.66, -0.04, 0.3, 0.5, 0.3, 0, 0, -0.35); const sp = new GB(); sp.sph('#ffffff', 0, 0, 0, 0.11); lat('h', sp, null, 0.26, 0.86, -0.04, 'sway', 0.35, 3, 0); }
   const head = h.mesh(); head.position.set(0, 1.12, 0.1); inner.add(head);
+  // ---- paid looks: metal / neon layers, animated parts, sparkles, floor aura ----
+  const anim = [];
+  for (const [gb, mat, par] of [[bm, MAT.gold, body], [bn, MAT.neon, body], [hm, MAT.gold, head], [hn, MAT.neon, head]]) if (gb.p.length) par.add(gb.mesh(mat));
+  for (const l of later) { const par = l.on === 'h' ? head : body, m = l.gb.mesh(l.mat || MAT.lit); m.position.set(l.x, l.y, l.z); par.add(m); if (l.k) anim.push({ m, k: l.k, a: l.a, s: l.s, p: l.p, y: l.y }); }
+  if (A.sparkle) { // orbiting glints around the whole cat
+    const cols = Array.isArray(A.sparkle) ? A.sparkle : [A.sparkle, '#ffffff'], sg = new GB();
+    for (let i = 0; i < 9; i++) { const a = i * 2.4, r = 0.62 + (i % 3) * 0.12, y = 0.2 + i * 0.19; sg.gem(cols[i % cols.length], Math.sin(a) * r, y, Math.cos(a) * r, 0.05 + (i % 3) * 0.015, 0.09 + (i % 3) * 0.02, 0.05 + (i % 3) * 0.015); }
+    const sm = sg.mesh(MAT.spark); inner.add(sm); anim.push({ m: sm, k: 'orbit', a: 0.08, s: 0.9, p: 0, y: 0 });
+  }
+  if (A.aura) { // glowing ring on the ground: tells "paid look" from far away
+    const ag = new GB(); ag.ring(A.aura, 0, 0.03, 0, 0.82, 0.82, 0.6); ag.ring('#ffffff', 0, 0.035, 0, 0.7, 0.7, 0.25); const am = ag.mesh(MAT.spark); am.position.y = 0.02; g.add(am); const sc = (spec.size || 1) * 1.1; am.scale.setScalar(sc); anim.push({ m: am, k: 'pulse', a: 0.1, s: 2.4, p: 0, y: 0, base: sc });
+  }
   // ---- tool (Mimo's toy blaster), pivot at the paw ----
   let tool = null;
   if (spec.tool === 'blaster') {
@@ -184,12 +237,25 @@ export function buildCat(spec) {
   }
   const s = (spec.size || 1) * 1.22; inner.scale.setScalar(s);
   const HS = { wedge: [0.9, 1, 1.06], square: [1.08, 0.94, 1], long: [0.93, 1.12, 1] }[spec.headShape] || [1, 1, 1];
-  g.userData = { inner, body, head, tail, legsA, legsB, tool, size: s, spec, hs: HS };
+  g.userData = { inner, body, head, tail, legsA, legsB, tool, size: s, spec, hs: HS, anim: anim.length ? anim : null, aura: A.aura || A.tag || null };
   return g;
 }
 // procedural animation. st: {t, walk(0/1), atk(0..1), down, sleepy, recoil, mouth, dance}
 export function animCat(g, st) {
   const u = g.userData, t = st.t, w = st.walk ? 1 : 0;
+  if (u.anim) {
+    premTick();
+    for (const a of u.anim) {
+      const m = a.m, x = t * a.s + a.p;
+      if (a.k === 'sway') m.rotation.z = Math.sin(x) * a.a + (w ? Math.sin(t * 13) * a.a * 0.6 : 0);
+      else if (a.k === 'bob') { m.position.y = a.y + Math.sin(x) * a.a; m.rotation.y = x * 0.5; }
+      else if (a.k === 'tag') { m.position.y = a.y + Math.sin(x) * a.a; m.rotation.y = x * 0.7; }
+      else if (a.k === 'pulse') m.scale.setScalar((a.base || 1) * (1 + Math.sin(x) * a.a));
+      else if (a.k === 'orbit') { m.rotation.y = x; m.scale.setScalar(1 + Math.sin(x * 1.7) * a.a); }
+      else if (a.k === 'blink') m.visible = Math.sin(x) > 0;
+      else if (a.k === 'flash') m.scale.setScalar(Math.max(0.001, Math.pow(Math.max(0, Math.sin(x)), 8) * a.a));
+    }
+  }
   const bob = w ? Math.abs(Math.sin(t * 13)) * 0.09 : Math.sin(t * 2.6) * 0.015;
   u.inner.position.y = bob + (st.hop || 0);
   u.inner.rotation.set(0, st.spin || 0, 0);

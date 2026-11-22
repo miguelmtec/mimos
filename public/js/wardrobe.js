@@ -21,7 +21,7 @@ Wd.spec = function (name, forceVip) {
   const out = Object.assign({}, base, { acc: {} });
   if (!NAMES.includes(name)) { out.acc = Object.assign({}, base.acc); return out; }
   const w = Wd.wearing(name, forceVip ? 'vip' : null);
-  for (const sl of D.slots) { const it = byId[w[sl]]; if (!it) continue; if (it.acc) Object.assign(out.acc, it.acc); if (it.trail) out.trail = it.trail; if (it.grant === 'vip' && sl === 'body') out.shiny = 1; }
+  for (const sl of D.slots) { const it = byId[w[sl]]; if (!it) continue; if (it.acc) Object.assign(out.acc, it.acc); if (it.trail) out.trail = it.trail; if (it.grant === 'vip' && sl === 'body') out.shiny = 1; if (it.fx) out.atkfx = it.fx; }
   return out;
 };
 Wd.item = id => byId[id] || null;
@@ -36,7 +36,36 @@ Wd.tradable = it => !!it && !!it.price && !it.grant && !it.free;
 Wd.give = function (id) { const s = S(), i = s.owned.indexOf(id); if (i < 0) return false; s.owned.splice(i, 1); for (const n of NAMES) for (const sl in s.wear[n] || {}) if (s.wear[n][sl] === id) s.wear[n][sl] = null; return true; };
 Wd.take = function (id) { const s = S(); if (!Wd.tradable(byId[id]) || s.owned.includes(id)) return false; s.owned.push(id); return true; };
 Wd.ownedTradable = () => D.items.filter(it => Wd.tradable(it) && S().owned.includes(it.id));
-Wd.equipSet = function (set) { const s = S(); for (const n of NAMES) s.wear[n] = Object.assign({}, s.wear[n], D.sets[set][n]); VP.persist(); if (VP.R3.refreshCats) VP.R3.refreshCats(); };
+// ---- paid sets (VIP, season and the cosmetic packs): what a purchase gives each cat, spec for previews, attack skins ----
+Wd.FX = { // cosmetic attack effects: colours and particle shape only, never damage, range or speed
+  gold: { cols: ['#ffd23f', '#fff3a8', '#ffffff'], shape: 'star', bub: '#ffd23f', glow: '#ffd23f', ring: '#ffd23f' },
+  praia: { cols: ['#8ff3ff', '#2de2e6', '#ffffff'], shape: 'dot', bub: '#7fe9ff', glow: '#2de2e6', ring: '#8ff3ff' },
+  festa: { cols: ['#ff4fb8', '#2de2e6', '#ffd23f', '#b967ff', '#7CFF6B'], shape: 'star', bub: '#ff4fb8', glow: '#ff4fb8', ring: '#b967ff' },
+  natal: { cols: ['#ffffff', '#bff4ff', '#e6f7ff'], shape: 'star', bub: '#e6f7ff', glow: '#bff4ff', ring: '#ffffff' },
+  agro: { cols: ['#e8c860', '#c98f4b', '#7CFF6B'], shape: 'dot', bub: '#e8c860', glow: '#e8c860', ring: '#c98f4b' },
+};
+Wd.atkOf = function (name) { if (!NAMES.includes(name)) return null; const w = S().wear[name], it = w && w.atk ? byId[w.atk] : null; return it && it.fx && Wd.owns(it) ? it.fx : null; };
+Wd.packSet = function (grant) {
+  if (D.sets[grant]) return D.sets[grant];
+  const items = D.items.filter(i => i.grant === grant), out = {};
+  NAMES.forEach((n, ci) => { out[n] = {}; for (const sl of D.slots) { const l = items.filter(i => i.slot === sl); if (l.length) out[n][sl] = l[ci % l.length].id; } });
+  return out;
+};
+Wd.setItems = grant => D.items.filter(i => i.grant === grant);
+// spec of a cat wearing exactly this wear map (ownership ignored): shop previews and the purchase celebration
+Wd.specFor = function (name, wear) {
+  const R3 = VP.R3, base = R3.SPECS[name] || R3.SPECS.mimo, out = Object.assign({}, base, { acc: {} });
+  for (const sl of D.slots) { const it = byId[wear[sl]]; if (!it) continue; if (it.acc) Object.assign(out.acc, it.acc); if (it.trail) out.trail = it.trail; if (it.fx) out.atkfx = it.fx; if (it.grant === 'vip' && sl === 'body') out.shiny = 1; }
+  return out;
+};
+Wd.setSpec = function (grant, name) {
+  const w = Object.assign({}, Wd.packSet(grant)[name]);
+  if (!w.body) w.body = (D.defaults[name] || {}).body;
+  return Wd.specFor(name, w);
+};
+Wd.equipSet = function (set) { const s = S(), ps = Wd.packSet(set); for (const n of NAMES) s.wear[n] = Object.assign({}, s.wear[n], ps[n]); VP.persist(); if (VP.R3.refreshCats) VP.R3.refreshCats(); };
+// a pack's attack effect switches on by itself when the pack arrives (it can be turned off in the wardrobe: slot "Efeito de ataque")
+Wd.autoAtk = function (grant) { const it = D.items.find(i => i.grant === grant && i.slot === 'atk'); if (!it) return; const s = S(); for (const n of NAMES) { s.wear[n] = s.wear[n] || {}; if (!s.wear[n].atk) s.wear[n].atk = it.id; } VP.persist(); };
 
 const packOf = it => (D.packs && D.packs[it.grant]) || null;
 const price = it => it.how ? ({ earn: '🏅', hidden: '📦', raro: '💎', epico: '💎', lendario: '🌟', unico: '🌟' }[it.how] || '🏅') + ' ' + t('mm_how_' + it.how) : it.free ? t('wd_free') : it.grant ? (it.grant === 'vip' ? '👑 VIP' : packOf(it) ? packOf(it).icon + ' R$' + ((VP.Shop.PRICE || {})[packOf(it).product] || '') : '🎄') : '🪙 ' + it.price;
@@ -50,7 +79,7 @@ UI.SCREENS.wardrobe = {
       <div class="tabs" style="justify-content:center;flex-wrap:wrap">${D.slots.map(sl => `<button class="tab ${sl === Wd.slot ? 'on' : ''}" data-act="wdSlot" data-s="${sl}">${t('slot_' + sl)}</button>`).join('')}</div>
       <div class="wdgrid">${Wd.slot !== 'body' ? `<button class="wdi ${!w[Wd.slot] ? 'on' : ''}" data-act="wdItem" data-i=""><b>✖</b><span>${t('wd_none')}</span></button>` : ''}
       ${items.map(it => { const own = Wd.owns(it), on = w[Wd.slot] === it.id; return `<button class="wdi ${on ? 'on' : ''} ${own ? '' : 'lock'} ${it.grant === 'vip' ? 'vip' : it.grant ? 'pk' : ''}" data-act="wdItem" data-i="${it.id}"><b>${it.name[VP.lang() === 'pt' ? 'pt' : 'en']}</b><span>${on ? '✓ ' + t('wd_equipped') : own ? '✓' : price(it)}</span></button>`; }).join('')}</div>
-      <p class="small">${t('wd_sub')}</p></div>`;
+      ${Wd.slot === 'atk' ? `<p class="small">${t('wd_atkNote')}</p>` : ''}<p class="small">${t('wd_sub')}</p></div>`;
   },
   after: () => { if (Wd.tryPack) { const w = Object.assign({}, S().wear[Wd.cat]); for (const it of D.items) if (it.grant === Wd.tryPack) w[it.slot] = w[it.slot] && byId[w[it.slot]] && byId[w[it.slot]].grant === Wd.tryPack ? w[it.slot] : it.id; Wd.tryPack = null; Wd.preview(w); } else Wd.preview(); },
 };
@@ -58,7 +87,7 @@ Wd.preview = function (wearOverride) {
   const R3 = VP.R3; if (!R3 || !R3.ok) return;
   let spec = Wd.spec(Wd.cat);
   if (wearOverride) { const s = VP.S, old = s.wear[Wd.cat]; s.wear[Wd.cat] = wearOverride; const keepOwn = Wd.owns; Wd.owns = () => true; spec = Wd.spec(Wd.cat); Wd.owns = keepOwn; s.wear[Wd.cat] = old; }
-  R3.showcase([{ spec, x: 0, z: 0, s: 1 }], { dist: 7.2, shift: 2.5, lookY: 1.0 });
+  R3.showcase([{ spec, x: 0, z: 0, s: 1 }], { dist: 5.2, shift: 1.2, lookY: 1.05, sway: true, fxDemo: spec.atkfx || (Wd.slot === 'atk' && Wd.demoFx) || null });
 };
 Wd.open = () => UI.show('wardrobe');
 UI.act.wdBack = () => { const G = VP.Game.G; if (VP.R3.refreshCats) VP.R3.refreshCats(); if (G && UI.state === 'play') { UI.hide(); UI.paused = false; } else UI.show('title'); };

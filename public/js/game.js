@@ -301,12 +301,18 @@ function autoAim(c, range, kind) {
   if (kind === 'bite') for (const p of G.props) if (!p.done && (p.k === 'fgate' || p.k === 'crate' || (p.k === 'cage' && p.lock === 'bite'))) { const d = U.d2(c.x, c.y, p.x, p.y); if (d < 90 * 90 && d < bd) { bd = d; best = p; bx = p.x; by = p.y; } }
   return best ? Math.atan2(by - c.y, bx - c.x) : null;
 }
+// cosmetic attack skins (VIP / packs, wardrobe slot "atk"): colours and particles only; no damage, range or speed ever depends on them
+const fxOf = c => { const Wd = VP.Wardrobe; if (!Wd || !Wd.atkOf || !c || c.ai) return null; const id = Wd.atkOf(c.name); return id ? { id, f: Wd.FX[id] } : null; };
+Game.fxOf = fxOf;
+function fxBurst(x, y, k, n) { if (!k) return; const f = k.f; burst(x, y, n || 7, f.cols, 170, f.shape, 5, 0.45); part({ x, y, k: 'ring', col: f.ring, size: 7, life: 0.26, grow: 150 }); if (k.id === 'gold') part({ x, y, k: 'flash', col: '#fff3a8', size: 10, life: 0.1 }); }
+function fxArc(c, ang, k, wide) { if (!k) return; const f = k.f, n = wide ? 9 : 7, span = wide ? 2.3 : 1.7; for (let i = 0; i < n; i++) { const a = ang + (i / (n - 1) - 0.5) * span, r = 34; part({ x: c.x + Math.cos(a) * r, y: c.y - 14 + Math.sin(a) * r, k: i % 3 === 1 ? 'star' : f.shape, col: f.cols[i % f.cols.length], size: 6.5 - Math.abs(i - n / 2) * 0.4, life: 0.2 + i * 0.012, vx: Math.cos(a) * 70, vy: Math.sin(a) * 70 }); } part({ x: c.x + Math.cos(ang) * 28, y: c.y - 14 + Math.sin(ang) * 28, k: 'slash', a: ang, size: 22, life: 0.16, col: f.cols[0] }); }
 function shoot(c, ang, ai, yarn) {
   const sp = ang + U.rand(-0.045, 0.045), mx = c.x + Math.cos(ang) * 22, my = c.y - 12 + Math.sin(ang) * 22, v = yarn ? 470 : 640;
-  G.bullets.push({ k: 'bolt', yarn: !!yarn, x: mx, y: my, vx: Math.cos(sp) * v, vy: Math.sin(sp) * v, life: yarn ? 1.1 : 0.8, dmg: (yarn ? 18 : (ai ? 9 : 13)) * (yarn && ai ? 0.7 : 1) * (c.exhausted ? 0.8 : 1) * pv('boltDmg', 1) * (c.bigT > 0 ? 2 : 1), from: 'cat', r: yarn ? 8 : 6, t: 0 });
+  G.bullets.push({ k: 'bolt', yarn: !!yarn, x: mx, y: my, vx: Math.cos(sp) * v, vy: Math.sin(sp) * v, life: yarn ? 1.1 : 0.8, dmg: (yarn ? 18 : (ai ? 9 : 13)) * (yarn && ai ? 0.7 : 1) * (c.exhausted ? 0.8 : 1) * pv('boltDmg', 1) * (c.bigT > 0 ? 2 : 1), from: 'cat', r: yarn ? 8 : 6, t: 0, fxs: (fxOf(c) || {}).id });
   if (VP.Prog) VP.Prog.shot(G, c, ang);
   c.recoil = 1; c.kx -= Math.cos(ang) * 26; c.ky -= Math.sin(ang) * 26;
   part({ x: mx, y: my, k: 'flash', col: '#bff4ff', size: 13, life: 0.07 });
+  { const k = fxOf(c); if (k) fxBurst(mx, my, k, 5); }
   if (!ai) { shake(1.6); c.energy = Math.max(0, c.energy - 1.7 * pv('energyCost', 1)); }
   sfx('shoot', 0.05);
 }
@@ -408,7 +414,7 @@ const OFFICIAL_ATK = { mimo: 'bubbles', mimosa: 'bite', morticia: 'pounce' };
 const atkOf = c => c.atkId || OFFICIAL_ATK[c.name];
 const isRanged = c => { const a = atkOf(c); return a === 'bubbles' || a === 'yarn'; };
 const dm = c => (c.bigT > 0 ? 2 : 1); // Super Lanchão: double damage
-Game.atkOf = atkOf; Game.isRanged = isRanged;
+Game.atkOf = atkOf; Game.isRanged = isRanged; Game.doAttack = (c, a, ai) => doAttack(c, a, ai); // test hook
 function doAttack(c, ang, ai) {
   const kind = atkOf(c);
   if (c.cd > 0 || c.down || (c.root > 0 && !isRanged(c))) return;
@@ -420,19 +426,21 @@ function doAttack(c, ang, ai) {
     c.kx += Math.cos(ang) * (third ? 230 : 130); c.ky += Math.sin(ang) * (third ? 230 : 130);
     let n = biteHit(c, ang, (third ? 34 : 21) * (ai ? 0.7 : 1) * pv('biteDmg', 1) * dm(c), 30, third ? 34 : 28, third ? 330 : 120);
     if (third && pv('spin', 0)) { c.hitSet = new Set(); for (let k = 0; k < 6; k++) n += biteHit(c, ang + k * 1.047, 20 * pv('biteDmg', 1), 34, 30, 260); c.hitSet = null; G.parts.push({ x: c.x, y: c.y - 14, k: 'ring', col: '#ff7ac0', size: 16, life: 0.3, grow: 300, t: 0, vx: 0, vy: 0 }); } // Mordida Giratória
-    c.atk = 1; c.mouth = 1; sfx(third ? 'bite3' : 'bite');
+    c.atk = 1; c.mouth = 1; sfx(third ? 'bite3' : 'bite'); fxArc(c, ang, fxOf(c), third);
+    if (n && fxOf(c)) { const k = fxOf(c); fxBurst(c.x + Math.cos(ang) * 40, c.y - 14 + Math.sin(ang) * 40, k, third ? 12 : 7); }
     if (n) { hitstop(third ? 0.085 : 0.045); if (!ai) shake(third ? 7 : 3.5); }
     c.combo = (c.combo + 1) % 3; c.comboT = 0.75; c.cd = (third ? 0.42 : 0.23) * (ai ? 1.5 : 1);
   } else if (kind === 'swipe') { // Patada: one wide, quick swing
     c.hitSet = new Set();
     c.kx += Math.cos(ang) * 110; c.ky += Math.sin(ang) * 110;
     const n = biteHit(c, ang, 17 * (ai ? 0.7 : 1) * pv('biteDmg', 1) * dm(c), 26, 36, 170, 'bite') + biteHit(c, ang + 0.7, 14 * dm(c), 24, 30, 130, 'bite') + biteHit(c, ang - 0.7, 14 * dm(c), 24, 30, 130, 'bite');
-    c.hitSet = null; c.atk = 1; c.mouth = 0.6; sfx('bite');
+    c.hitSet = null; c.atk = 1; c.mouth = 0.6; sfx('bite'); fxArc(c, ang, fxOf(c), true);
+    if (n && fxOf(c)) fxBurst(c.x + Math.cos(ang) * 44, c.y - 14 + Math.sin(ang) * 44, fxOf(c), 10);
     if (n) { hitstop(0.04); if (!ai) shake(3); }
     c.cd = 0.3 * (ai ? 1.5 : 1);
   } else { // Bote (pounce): lunges and grabs
     c.kx += Math.cos(ang) * 120; c.ky += Math.sin(ang) * 120;
-    snatch(c, ang); c.cd = (ai ? 0.5 : 0.3) * pv('stealCd', 1);
+    snatch(c, ang); c.cd = (ai ? 0.5 : 0.3) * pv('stealCd', 1); fxArc(c, ang, fxOf(c), false);
   }
 }
 // ---------- jump (Shift): a real hop with gravity; on a parkour course it reaches higher roofs and longer gaps ----------
@@ -882,7 +890,7 @@ function updBullet(b, dt) {
   }
   if (b.k === 'bolt' && Math.random() < 0.5) part({ x: b.x, y: b.y, k: 'dot', col: '#8ff3ff', size: 3, life: 0.2 });
 }
-function splash(b) { burst(b.x, b.y, 5, b.k === 'bolt' ? ['#8ff3ff', '#fff'] : b.k === 'perf' ? '#ff9fd6' : '#d7f25a', 130, 'dot', 4, 0.25); if (b.k === 'bolt') part({ x: b.x, y: b.y, k: 'ring', col: '#8ff3ff', size: 5, life: 0.18, grow: 120 }); }
+function splash(b) { if (b.fxs) fxBurst(b.x, b.y, { id: b.fxs, f: VP.Wardrobe.FX[b.fxs] }, 10); burst(b.x, b.y, 5, b.k === 'bolt' ? ['#8ff3ff', '#fff'] : b.k === 'perf' ? '#ff9fd6' : '#d7f25a', 130, 'dot', 4, 0.25); if (b.k === 'bolt') part({ x: b.x, y: b.y, k: 'ring', col: '#8ff3ff', size: 5, life: 0.18, grow: 120 }); }
 
 // ---------- items ----------
 function updItem(it, dt) {

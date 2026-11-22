@@ -449,7 +449,8 @@ O.drawHud = function (c, G, R3, k, tools) {
   for (const r of O.remotes.values()) {
     const f = r.f; if (!f || Math.abs(f.x - a.x) > 1100 || Math.abs(f.y - a.y) > 1100) continue;
     const p = R3.project(f.x, f.y, f.car ? 2.5 : 1.75); if (!p.on) continue;
-    const w = tag(r.name, p.x, p.y, '#2de2e6', r.lv, r.offer && !O.trade);
+    const Wd = VP.Wardrobe, vip = !!(Wd && Wd.item && Array.isArray(r.look.wear) && r.look.wear.some(id => { const it = Wd.item(id); return it && it.grant === 'vip'; })); // a VIP look: golden crown tag (same declared-look trust as the ranking crown)
+    const w = tag(vip ? '👑 ' + r.name : r.name, p.x, p.y, vip ? '#ffd23f' : '#2de2e6', r.lv, r.offer && !O.trade);
     O.tags.push({ id: r.id, x: p.x, y: p.y + 18 * k, w: Math.max(w, 60 * k) / 2 + 8, h: 44 * k });
     if (r.say) { c.globalAlpha = Math.min(1, r.say.t * 3); bubble(t('on_p' + r.say.i), p.x, p.y - 30 * k); c.globalAlpha = 1; }
   }

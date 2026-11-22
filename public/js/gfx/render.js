@@ -7,7 +7,7 @@ import { updateChunks } from './lod.js';
 const VP = window.VP, U = VP.U, I = VP.I, S = 1 / 24;
 const R = VP.R3 = { ok: false, lost: false, quality: 2, fps: 60, mode: 'game', draws: 0 };
 let renderer, scene, camera, city, W, dyn, hemi, sun, canvas;
-let stage, stageCam, stageGroup, stageItems = [];
+let stage, stageCam, stageGroup, stageItems = [], stageDemo = null;
 const ents = new Map(); let frame = 0;
 const cam = { yaw: -Math.PI / 2, dist: 9.5, pitch: 0.52, x: 0, y: 0, z: 0, init: false };
 const mood = { cur: null, i: -1 };
@@ -177,7 +177,13 @@ function syncCat(c, G, dt, near) {
   if (!c.down) shadow(o.position.x, o.position.z, o.position.y - zUp, 0.5 * ud.size * gs * (1 - Math.min(0.4, zUp * 0.2)), 0.5 * ud.size * gs * (1 - Math.min(0.4, zUp * 0.2)));
   if (c.shieldT > 0) { const n = obj(c.shKey || (c.shKey = { kind: 'shield' }), () => new THREE.Mesh(fx.bubbleGeo, fx.shieldMat || fx.netMat)); n.position.set(o.position.x, o.position.y + 0.7 * gs, o.position.z); n.scale.setScalar(1.25 * gs); n.rotation.y = G.real * 1.5; }
   if (c.root > 0) { const n = obj(c.netKey || (c.netKey = { kind: 'net' }), () => new THREE.Mesh(fx.bubbleGeo, fx.netMat)); n.position.set(o.position.x, o.position.y + 0.7, o.position.z); n.scale.setScalar(0.95); n.rotation.y = G.real * 2; }
-  const tr = ud.spec && ud.spec.trail; if (tr && c.walk && !c.down && Math.random() < dt * 14) VP.Game.fx.part({ x: c.x + U.rand(-8, 8), y: c.y + U.rand(-8, 8), k: tr.shape || 'star', col: tr.col || '#ffd23f', size: 5, life: 0.5, vy: -10 });
+  const tr = ud.spec && ud.spec.trail;
+  if (tr && c.walk && !c.down) { // trails: bigger and brighter, gold ones throw a second white glint (VIP)
+    const gold = tr.shape === 'star' && tr.col === '#ffd23f', P = VP.Game.fx.part;
+    if (Math.random() < dt * (gold ? 26 : 18)) P({ x: c.x + U.rand(-9, 9), y: c.y + U.rand(-6, 10), k: tr.shape || 'star', col: tr.col || '#ffd23f', size: gold ? 8 : 6.5, life: gold ? 0.8 : 0.6, vy: -14 });
+    if (gold && Math.random() < dt * 14) P({ x: c.x + U.rand(-12, 12), y: c.y + U.rand(-10, 6), k: 'star', col: Math.random() < 0.5 ? '#ffffff' : '#fff3a8', size: 4.5, life: 0.5, vy: -24 });
+  }
+  if (ud.aura && !c.down && !G.car) { const a = ud.aura, k = 0.5 + 0.5 * Math.sin(G.real * 2.6 + c.idx); glow(o.position.x, o.position.y + 0.95, o.position.z, typeof a === 'string' && a[0] === '#' ? a : '#ffd23f', (3.4 + k * 0.7) * gs); }
   void near;
 }
 // another player's cat (Cidade Online): position, heading, car and emote come from the network (js/online.js)
@@ -257,9 +263,12 @@ function syncProp(p, G) {
   if (p.k === 'house' && p.tree) glow(o.position.x, 6.2, o.position.z, '#ffd23f', 7);
   void G;
 }
+const _skinMats = {};
+function skinMat(id) { return _skinMats[id] || (_skinMats[id] = new THREE.MeshBasicMaterial({ color: VP.Wardrobe.FX[id].bub, transparent: true, opacity: 0.8, depthWrite: false, fog: false })); }
 function syncBullet(b) {
   const o = obj(b, () => {
     if (b.k === 'bolt' && b.yarn) { const g = new GB(); g.lo('#ff7ac0', 0, 0, 0, 0.34); g.lo('#ffd0ea', 0.08, 0.1, 0.1, 0.14); return g.mesh(); }
+    if (b.k === 'bolt' && b.fxs && VP.Wardrobe.FX[b.fxs]) { const F = VP.Wardrobe.FX[b.fxs], m = new THREE.Mesh(fx.bubbleGeo, skinMat(b.fxs)); m.scale.setScalar(0.4); const sg = new GB(); for (let i = 0; i < 4; i++) sg.gem(F.cols[i % F.cols.length], Math.sin(i * 1.57) * 1.5, Math.cos(i * 1.57) * 1.5, 0, 0.35, 0.6, 0.35); const sp = new THREE.Mesh(sg.geo(), MAT.spark); m.add(sp); m.userData.sp = sp; return m; }
     if (b.k === 'bolt') { const m = new THREE.Mesh(fx.bubbleGeo, fx.bubbleMat); m.scale.setScalar(0.34); const bn = new THREE.Mesh(fx.boneGeo, MAT.white); bn.scale.setScalar(0.75); m.add(bn); return m; }
     if (b.k === 'net') { const m = new THREE.Mesh(fx.bubbleGeo, fx.netMat); m.scale.setScalar(0.6); return m; }
     if (b.k === 'perf') { const m = new THREE.Mesh(fx.bubbleGeo, fx.perfMat); m.scale.setScalar(0.36); return m; }
@@ -268,7 +277,12 @@ function syncBullet(b) {
   });
   const yy = (b.k === 'hair' ? 0.5 + (b.z || 0) * S : 0.75) + H0(b.x, b.y);
   o.position.set(b.x * S, yy, (b.y + (b.k === 'hair' ? 0 : 12)) * S);
-  if (b.k === 'bolt') { o.rotation.y = Math.PI / 2 - Math.atan2(b.vy, b.vx) - Math.PI / 2; glow(o.position.x, yy, o.position.z, b.yarn ? '#ff7ac0' : '#8ff3ff', 2.2); } else o.rotation.y += 0.2;
+  if (b.k === 'bolt') {
+    o.rotation.y = Math.PI / 2 - Math.atan2(b.vy, b.vx) - Math.PI / 2;
+    const F = b.fxs && VP.Wardrobe.FX[b.fxs];
+    glow(o.position.x, yy, o.position.z, F ? F.glow : b.yarn ? '#ff7ac0' : '#8ff3ff', F ? 2.5 : 2.2);
+    if (F) { if (o.userData.sp) o.userData.sp.rotation.z += 0.35; if (Math.random() < 0.7) pt(o.position.x + U.rand(-0.25, 0.25), yy + U.rand(-0.2, 0.3), o.position.z + U.rand(-0.25, 0.25), F.cols[(Math.random() * F.cols.length) | 0], 0.9, 0.2, F.shape === 'dot' ? 0 : 1); }
+  } else o.rotation.y += 0.2;
 }
 function syncTele(t) {
   const o = obj(t, () => {
@@ -458,8 +472,24 @@ function initStage() {
   stageGroup = new THREE.Group(); stage.add(stageGroup);
 }
 // items: [{spec, x, z, s}] or car: {car:'gold'}
+// attack-effect demo (previews only): a bubble flies out of the cat and pops into a burst of the skin's colours
+function makeDemo(id) {
+  const F = VP.Wardrobe.FX[id], g = new THREE.Group(), bub = new THREE.Mesh(fx.bubbleGeo || new THREE.SphereGeometry(1, 10, 8), skinMat(id)), bg = new GB();
+  bub.scale.setScalar(0.2); g.add(bub);
+  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283; bg.gem(F.cols[i % F.cols.length], Math.cos(a) * 1, Math.sin(a) * 1, (i % 3 - 1) * 0.2, 0.09, 0.16, 0.09, 0, 0, a + 1.57); }
+  const burst = bg.mesh(MAT.spark); g.add(burst); g.userData = { bub, burst, F };
+  return g;
+}
+function demoPose(g, ph, x0, y0, z0, len) {
+  len = len || 2.2;
+  const u = g.userData; ph = ((ph % 1) + 1) % 1;
+  if (ph < 0.75) { const f = ph / 0.75; u.bub.visible = true; u.burst.visible = false; u.bub.position.set(x0 + f * len, y0 + Math.sin(f * 3) * 0.1, z0); u.bub.scale.setScalar(0.17 + 0.05 * Math.sin(ph * 40)); }
+  else { const f = (ph - 0.75) / 0.25; u.bub.visible = false; u.burst.visible = true; u.burst.position.set(x0 + len, y0, z0); u.burst.scale.setScalar(0.1 + f * 0.7); u.burst.rotation.z = f * 1.2; }
+}
 R.showcase = function (items, opts) {
   opts = opts || {};
+  if (stageDemo) { stage.remove(stageDemo); stageDemo = null; }
+  if (opts.fxDemo && VP.Wardrobe.FX[opts.fxDemo]) { stageDemo = makeDemo(opts.fxDemo); stage.add(stageDemo); }
   while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
   stageItems = [];
   for (const it of items) {
@@ -486,9 +516,36 @@ R.snapshot = function (items, w, h) {
   R.resize();
   return out;
 };
+// slow turntable of cats wearing a look, rendered once into a few 2D canvases (the shop cards play them back, ping-pong): front-facing, with idle animation phases
+R.turntable = function (items, o) {
+  if (!R.ok || R.lost) return null; o = o || {};
+  const w = o.w || 300, h = o.h || 220, N = o.frames || 9, amp = o.amp === undefined ? 0.5 : o.amp, frames = [];
+  const keep = stageGroup.children.slice(), rotY = stageGroup.rotation.y, bg0 = stage.background, fog0 = stage.fog, keepDemo = stageDemo;
+  if (keepDemo) stage.remove(keepDemo);
+  while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
+  const gs = []; for (const it of items) { const g = buildCat(it.spec); g.position.set(it.x || 0, 0.1, it.z || 0); if (it.s) g.scale.multiplyScalar(it.s); stageGroup.add(g); gs.push(g); }
+  const demo = o.fxDemo && VP.Wardrobe.FX[o.fxDemo] ? makeDemo(o.fxDemo) : null; if (demo) stage.add(demo);
+  if (o.bg) { stage.background = new THREE.Color(o.bg); stage.fog = new THREE.Fog(o.bg, 16, 44); }
+  renderer.setPixelRatio(1); renderer.setSize(w, h, false);
+  stageCam.aspect = w / h; stageCam.fov = o.fov || 34; stageCam.updateProjectionMatrix(); stageCam.position.set(0, o.camY || 1.9, o.dist || 8); stageCam.lookAt(0, o.lookY || 1.0, 0);
+  for (let i = 0; i < N; i++) {
+    const f = i / (N - 1); stageGroup.rotation.y = (f * 2 - 1) * amp;
+    gs.forEach((g, k) => animCat(g, { t: 0.6 + f * 2.2 + k * 0.7, walk: 0 }));
+    if (demo) demoPose(demo, f * 1.05, o.demoX === undefined ? 1.0 : o.demoX, 1.15, 1.2);
+    renderer.render(stage, stageCam);
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h); frames.push(cv);
+  }
+  if (demo) stage.remove(demo);
+  stage.background = bg0; stage.fog = fog0;
+  while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
+  for (const k of keep) stageGroup.add(k); stageGroup.rotation.y = rotY; if (keepDemo) stage.add(keepDemo);
+  R.resize();
+  return frames;
+};
 function renderStage(dt) {
   R.stageT += dt; const t = R.stageT, o = R.stageOpts || {};
-  if (o.spin !== false) stageGroup.rotation.y = t * 0.8;
+  if (o.sway) stageGroup.rotation.y = Math.sin(t * 0.7) * 0.5; else if (o.spin !== false) stageGroup.rotation.y = t * 0.8;
+  if (stageDemo) demoPose(stageDemo, t * 0.8, o.demoX === undefined ? -0.2 : o.demoX, 1.0, 1.3, o.demoLen || 1.4);
   for (const s of stageItems) if (!s.it.car) animCat(s.g, { t, walk: o.dance ? 1 : 0, hop: o.dance ? Math.abs(Math.sin(t * 6 + s.g.position.x)) * 0.35 : 0 });
   const portrait = R.w < R.h, dist = (o.dist || 7) * (portrait ? 1.45 : 1);
   stageCam.fov = portrait ? 48 : 38; stageCam.updateProjectionMatrix();

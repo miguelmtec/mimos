@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Vice Paws — Painel do dono</title>
+<style>
+:root{--bg:#120a24;--card:#1d1336;--ink:#f6f0ff;--mut:#b6a8d6;--pink:#ff3fa4;--cyan:#2de2e6;--ok:#4ade80;--warn:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 2px}h2{font-size:16px;margin:22px 0 8px;color:var(--cyan)}
+.sub{color:var(--mut);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.k{background:var(--card);border-radius:14px;padding:12px 14px}.k b{display:block;font-size:28px;line-height:1.1}.k span{color:var(--mut);font-size:12px}
+.wrap{overflow-x:auto;background:var(--card);border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #ffffff12;white-space:nowrap}th{color:var(--mut);font-weight:600}
+.bar{height:8px;border-radius:4px;background:var(--pink);display:inline-block;vertical-align:middle;min-width:2px}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.mut{color:var(--mut)}
+.msg{background:var(--card);padding:18px;border-radius:14px;margin-top:16px}
+a{color:var(--cyan)}button{background:var(--pink);color:#fff;border:0;border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+input{background:#0d071b;color:var(--ink);border:1px solid #ffffff22;border-radius:10px;padding:8px 10px;font:inherit;width:100%;max-width:280px}
+</style>
+</head>
+<body>
+<main>
+  <h1>🐾 Vice Paws — Painel do dono</h1>
+  <div class="sub" id="at">carregando…</div>
+  <div id="app"></div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const dt = v => v ? new Date(v).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+const brl = n => 'R$ ' + Number(n || 0).toFixed(2).replace('.', ',');
+const ST = { approved: ['pago', 'ok'], pending: ['aguardando', 'warn'], in_process: ['processando', 'warn'], rejected: ['recusado', 'mut'], cancelled: ['cancelado', 'mut'], expired: ['expirado', 'mut'] };
+async function load() {
+  const r = await fetch('/api/stats/admin', { credentials: 'same-origin' });
+  if (r.status === 401 || r.status === 403) {
+    $('#at').textContent = '';
+    $('#app').innerHTML = `<div class="msg"><p><b>Entre com a conta de dono.</b></p><p class="sub">Abra o jogo, faça login com o seu e-mail de administrador e volte para esta página.</p><p><a href="/">Abrir o jogo →</a></p></div>`;
+    return;
+  }
+  if (!r.ok) { $('#at').textContent = 'erro ao carregar (' + r.status + ')'; return; }
+  const d = await r.json();
+  const today = d.days[0] || { visitors: 0, played: 0 };
+  const paid = (d.payments.list || []).filter(p => p.status === 'approved');
+  const maxV = Math.max(1, ...d.days.map(x => x.visitors));
+  const newToday = d.users.filter(u => new Date(u.created_at).toDateString() === new Date().toDateString()).length;
+  $('#at').textContent = 'atualizado ' + dt(d.at) + ' · atualiza sozinho a cada minuto';
+  $('#app').innerHTML = `
+  <div class="kpis">
+    <div class="k"><b>${today.visitors}</b><span>visitantes hoje</span></div>
+    <div class="k"><b>${today.played}</b><span>apertaram JOGAR hoje</span></div>
+    <div class="k"><b>${d.total.visitors}</b><span>visitantes desde o início</span></div>
+    <div class="k"><b>${d.users.length}</b><span>contas cadastradas${newToday ? ` (+${newToday} hoje)` : ''}</span></div>
+    <div class="k"><b>${d.cats}</b><span>gatos criados</span></div>
+    <div class="k"><b>${d.onlineNow}</b><span>na Cidade Online agora</span></div>
+    <div class="k"><b>${paid.length}</b><span>compras pagas · ${brl(paid.reduce((s, p) => s + p.amount, 0))}</span></div>
+  </div>
+  <h2>Visitas por dia (últimos 30 dias)</h2>
+  <div class="wrap"><table><tr><th>Dia</th><th>Visitantes</th><th></th><th>Jogaram</th><th>Online</th></tr>
+  ${d.days.map(x => `<tr><td>${x.day.split('-').reverse().slice(0, 2).join('/')}</td><td>${x.visitors}</td><td style="width:40%"><span class="bar" style="width:${Math.round(x.visitors / maxV * 100)}%"></span></td><td>${x.played}</td><td>${x.online}</td></tr>`).join('') || '<tr><td colspan="5" class="mut">Ainda sem visitas registradas.</td></tr>'}
+  </table></div>
+  <p class="sub">Visitante = um navegador diferente no dia (anônimo: sem e-mail e sem IP). Quem não cadastrou aparece só aqui.</p>
+  <h2>Quem se cadastrou</h2>
+  <div class="wrap"><table><tr><th>E-mail</th><th>Cadastro</th><th>Último login</th><th>Gatos</th><th>Idade</th><th>Situação</th></tr>
+  ${d.users.map(u => `<tr><td>${esc(u.email)}${u.google ? ' <span class="mut">(Google)</span>' : ''}</td><td>${dt(u.created_at)}</td><td>${dt(u.last_login_at)}</td><td>${u.cats ? esc(u.cat_names) : '<span class="mut">nenhum</span>'}</td><td>${esc(u.age_band || '—')}</td><td class="${u.status === 'active' ? 'ok' : 'warn'}">${u.status === 'active' ? 'ativa' : esc(u.status)}</td></tr>`).join('') || '<tr><td colspan="6" class="mut">Ninguém se cadastrou ainda.</td></tr>'}
+  </table></div>
+  <h2>Compras (Pix)</h2>
+  <div class="wrap"><table><tr><th>Quando</th><th>Produto</th><th>Apelido</th><th>Valor</th><th>Situação</th></tr>
+  ${(d.payments.list || []).map(p => { const s = ST[p.status] || [p.status, 'mut']; return `<tr><td>${dt(p.at)}</td><td>${esc(p.product)}</td><td>${esc(p.nick)}</td><td>${brl(p.amount)}</td><td class="${s[1]}">${s[0]}</td></tr>`; }).join('') || `<tr><td colspan="5" class="mut">${d.payments.error ? 'Não consegui ler o Mercado Pago (' + esc(d.payments.error) + ').' : 'Nenhuma compra ainda.'}</td></tr>`}
+  </table></div>
+  <h2>Ranking</h2>
+  <div class="wrap"><table><tr><th>#</th><th>Nome</th><th>Pontos</th><th>Nível</th><th>Missões</th></tr>
+  ${d.ranking.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${x.score}</td><td>${x.level}</td><td>${x.missions}</td></tr>`).join('') || '<tr><td colspan="5" class="mut">Vazio.</td></tr>'}
+  </table></div>`;
+}
+load(); setInterval(load, 60000);
+</script>
+</body>
+</html>
